@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Calendar, Check, X } from "lucide-react";
+import { MapPin, Calendar, Check, X, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -32,6 +33,7 @@ interface MatchProposalsProps {
 }
 
 const MatchProposals = ({ userId }: MatchProposalsProps) => {
+  const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,12 +72,22 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
 
       if (error) throw error;
       
-      toast.success(status === "accepted" ? "Proposition acceptée" : "Proposition rejetée");
-      fetchMatches();
+      if (status === "accepted") {
+        toast.success("Proposition acceptée ! Vous pouvez maintenant discuter.");
+        // Redirect to messages page with the match pre-selected
+        navigate(`/messages?matchId=${matchId}`);
+      } else {
+        toast.success("Proposition rejetée");
+        fetchMatches();
+      }
     } catch (error) {
       console.error("Error updating match:", error);
       toast.error("Erreur lors de la mise à jour");
     }
+  };
+
+  const handleOpenChat = (matchId: string) => {
+    navigate(`/messages?matchId=${matchId}`);
   };
 
   if (loading) {
@@ -155,6 +167,17 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
                 Refuser
               </Button>
             </div>
+          )}
+
+          {(match.status === "accepted" || match.status === "completed") && (
+            <Button
+              size="sm"
+              onClick={() => handleOpenChat(match.id)}
+              className="w-full"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Discuter
+            </Button>
           )}
         </div>
       ))}

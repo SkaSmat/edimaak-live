@@ -15,6 +15,13 @@ const Messages = () => {
 
   useEffect(() => {
     checkAuth();
+    
+    // Check if there's a matchId in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchIdFromUrl = urlParams.get('matchId');
+    if (matchIdFromUrl) {
+      setSelectedMatchId(matchIdFromUrl);
+    }
   }, []);
 
   const checkAuth = async () => {

@@ -22,8 +22,22 @@ interface ChatWindowProps {
   userId: string;
 }
 
+interface MatchDetails {
+  trips: {
+    from_city: string;
+    to_city: string;
+    departure_date: string;
+  };
+  shipment_requests: {
+    from_city: string;
+    to_city: string;
+    item_type: string;
+  };
+}
+
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [matchDetails, setMatchDetails] = useState<MatchDetails | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -31,6 +45,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
 
   useEffect(() => {
     fetchMessages();
+    fetchMatchDetails();
     
     // Subscribe to new messages
     const channel = supabase
@@ -80,6 +95,24 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     }
   };
 
+  const fetchMatchDetails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("matches")
+        .select(`
+          trips:trip_id(from_city, to_city, departure_date),
+          shipment_requests:shipment_request_id(from_city, to_city, item_type)
+        `)
+        .eq("id", matchId)
+        .single();
+
+      if (error) throw error;
+      setMatchDetails(data as any);
+    } catch (error) {
+      console.error("Error fetching match details:", error);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -108,6 +141,25 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
 
   return (
     <div className="flex flex-col h-[500px]">
+      {/* Match Info */}
+      {matchDetails && (
+        <div className="mb-4 p-3 bg-muted/30 rounded-lg border text-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">
+                Voyage: {matchDetails.trips.from_city} → {matchDetails.trips.to_city}
+              </p>
+              <p className="text-muted-foreground">
+                Expédition: {matchDetails.shipment_requests.item_type}
+              </p>
+            </div>
+            <p className="text-muted-foreground">
+              {format(new Date(matchDetails.trips.departure_date), "d MMM yyyy", { locale: fr })}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 p-4 border rounded-lg bg-muted/20">
         {messages.length === 0 ? (
