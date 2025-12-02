@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Package, LogOut, MessageSquare, Plus, UserCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import ShipmentRequestForm from "@/components/ShipmentRequestForm";
 import ShipmentRequestList from "@/components/ShipmentRequestList";
 import MatchProposals from "@/components/MatchProposals";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 const SenderDashboard = () => {
   const navigate = useNavigate();
@@ -67,93 +67,71 @@ const SenderDashboard = () => {
   if (!user || !profile) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="w-6 h-6 text-accent" />
-            <h1 className="text-xl font-bold">ColisVoyage</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Bonjour, {profile.full_name}
-            </span>
-            <Button variant="outline" size="sm" onClick={() => setShowProfileSection(!showProfileSection)}>
-              <UserCircle className="w-4 h-4 mr-2" />
-              Mon profil
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/messages")}>
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Messages
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Déconnexion
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-muted/30">
+      <DashboardHeader
+        fullName={profile.full_name}
+        role="sender"
+        onLogout={handleLogout}
+        showProfileButton
+        onProfileClick={() => setShowProfileSection(!showProfileSection)}
+      />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Profile Section */}
+        {/* Section: Mon profil */}
         {showProfileSection && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Mon profil</CardTitle>
-              <CardDescription>
+          <section className="bg-card rounded-2xl shadow-sm border p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground">Mon profil</h2>
+              <p className="text-muted-foreground mt-1">
                 Gérez votre photo de profil
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProfileAvatarUpload
-                userId={user.id}
-                fullName={profile.full_name}
-                currentAvatarUrl={profile.avatar_url}
-                onAvatarUpdated={handleAvatarUpdated}
-              />
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+            <ProfileAvatarUpload
+              userId={user.id}
+              fullName={profile.full_name}
+              currentAvatarUrl={profile.avatar_url}
+              onAvatarUpdated={handleAvatarUpdated}
+            />
+          </section>
         )}
 
-        {/* My Requests Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Mes demandes d'expédition</CardTitle>
-                <CardDescription>
-                  Gérez vos demandes et acceptez les propositions
-                </CardDescription>
-              </div>
-              <Button onClick={() => setShowRequestForm(!showRequestForm)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle demande
-              </Button>
+        {/* Section: Mes demandes d'expédition */}
+        <section className="bg-card rounded-2xl shadow-sm border p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Mes demandes d'expédition</h2>
+              <p className="text-muted-foreground mt-1">
+                Gérez vos demandes et acceptez les propositions
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            {showRequestForm && (
-              <div className="mb-6">
-                <ShipmentRequestForm userId={user.id} onSuccess={handleRequestCreated} />
-              </div>
-            )}
-            <ShipmentRequestList key={refreshKey} userId={user.id} />
-          </CardContent>
-        </Card>
+            <Button 
+              onClick={() => setShowRequestForm(!showRequestForm)}
+              className="shrink-0"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle demande
+            </Button>
+          </div>
 
-        {/* Match Proposals Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Propositions de voyageurs</CardTitle>
-            <CardDescription>
+          {showRequestForm && (
+            <div className="mb-6 p-4 bg-muted/50 rounded-xl border">
+              <ShipmentRequestForm userId={user.id} onSuccess={handleRequestCreated} />
+            </div>
+          )}
+
+          <ShipmentRequestList key={refreshKey} userId={user.id} />
+        </section>
+
+        {/* Section: Propositions de voyageurs */}
+        <section className="bg-card rounded-2xl shadow-sm border p-6">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground">Propositions de voyageurs</h2>
+            <p className="text-muted-foreground mt-1">
               Voyageurs intéressés par vos demandes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MatchProposals userId={user.id} />
-          </CardContent>
-        </Card>
+            </p>
+          </div>
+          <MatchProposals userId={user.id} />
+        </section>
       </div>
     </div>
   );
