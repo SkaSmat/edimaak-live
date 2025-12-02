@@ -134,6 +134,7 @@ export type Database = {
           status: string
           to_city: string
           to_country: string
+          view_count: number
           weight_kg: number
         }
         Insert: {
@@ -150,6 +151,7 @@ export type Database = {
           status?: string
           to_city: string
           to_country: string
+          view_count?: number
           weight_kg: number
         }
         Update: {
@@ -166,6 +168,7 @@ export type Database = {
           status?: string
           to_city?: string
           to_country?: string
+          view_count?: number
           weight_kg?: number
         }
         Relationships: [
@@ -236,7 +239,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_shipment_view_count: {
+        Args: { shipment_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "traveler" | "sender" | "admin"
