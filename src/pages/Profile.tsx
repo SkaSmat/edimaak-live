@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react";
-import { DashboardHeader } from "@/components/DashboardHeader";
+import { Loader2 } from "lucide-react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
+import { useUserStats, getKycStatus, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
+import { ActivityBadge, KycBadge, ProfileStats } from "@/components/UserProfileBadges";
 
 interface ProfileData {
   id: string;
@@ -173,77 +174,79 @@ const Profile = () => {
     setSavingKyc(false);
   };
 
-  const getKycStatus = () => {
-    const kycFields = [phone, idType, idNumber, idExpiryDate];
-    const filledFields = kycFields.filter(f => f && f.trim() !== "").length;
-    
-    if (filledFields === 0) return "not_filled";
-    if (filledFields < kycFields.length) return "partial";
-    return "complete";
-  };
+  const stats = useUserStats(user?.id);
+  
+  const kycStatus = getKycStatus({
+    phone,
+    id_type: idType,
+    id_number: idNumber,
+    id_expiry_date: idExpiryDate,
+  });
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case "traveler": return "Voyageur";
-      case "sender": return "Expéditeur";
-      case "admin": return "Administrateur";
-      default: return role;
-    }
-  };
+  const isActive = profile?.role === "traveler" 
+    ? isActiveTraveler(stats.tripsCount)
+    : isActiveSender(stats.shipmentsCount);
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const kycStatus = getKycStatus();
-
   return (
-    <div className="min-h-screen bg-muted/30">
-      <DashboardHeader
-        fullName={profile.full_name}
-        role={profile.role as "traveler" | "sender"}
-        onLogout={handleLogout}
-      />
+    <DashboardLayout
+      role={profile.role as "traveler" | "sender"}
+      fullName={profile.full_name}
+      onLogout={handleLogout}
+    >
+      <div className="max-w-3xl mx-auto space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Mon profil</h1>
 
-      <div className="container mx-auto px-4 py-8 max-w-3xl space-y-8">
-        <h1 className="text-3xl font-bold text-foreground">Mon profil</h1>
-
-        {/* Section: Photo de profil */}
+        {/* Section: Aperçu du profil */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Photo de profil</h2>
-          <ProfileAvatarUpload
-            userId={user.id}
-            fullName={profile.full_name}
-            currentAvatarUrl={profile.avatar_url}
-            onAvatarUpdated={handleAvatarUpdated}
-          />
-        </section>
-
-        {/* Section: Informations de compte */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Informations de compte</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Email</Label>
-              <Input
-                value={user?.email || ""}
-                disabled
-                className="bg-muted/50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Rôle</Label>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <ProfileAvatarUpload
+              userId={user.id}
+              fullName={profile.full_name}
+              currentAvatarUrl={profile.avatar_url}
+              onAvatarUpdated={handleAvatarUpdated}
+            />
+            <div className="flex-1 space-y-3">
               <div>
-                <Badge variant="secondary" className="text-sm">
-                  {getRoleLabel(profile.role)}
-                </Badge>
+                <h2 className="text-xl font-bold text-foreground">
+                  {firstName || lastName 
+                    ? `${firstName} ${lastName}`.trim() 
+                    : profile.full_name}
+                </h2>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <ActivityBadge 
+                  isActive={isActive} 
+                  role={profile.role as "traveler" | "sender"} 
+                />
+                <KycBadge status={kycStatus} />
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Section: Statistiques */}
+        <section className="bg-card rounded-2xl shadow-sm border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Activité</h2>
+          {stats.isLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <ProfileStats 
+              tripsCount={stats.tripsCount}
+              shipmentsCount={stats.shipmentsCount}
+              matchesCount={stats.matchesCount}
+            />
+          )}
         </section>
 
         {/* Section: Informations personnelles */}
@@ -295,27 +298,8 @@ const Profile = () => {
         {/* Section: KYC */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground">KYC voyage / expédition</h2>
-            <div className="flex items-center gap-2">
-              {kycStatus === "complete" && (
-                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Complet
-                </Badge>
-              )}
-              {kycStatus === "partial" && (
-                <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Partiellement rempli
-                </Badge>
-              )}
-              {kycStatus === "not_filled" && (
-                <Badge variant="outline" className="text-muted-foreground">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  Non rempli
-                </Badge>
-              )}
-            </div>
+            <h2 className="text-lg font-semibold text-foreground">Vérification KYC</h2>
+            <KycBadge status={kycStatus} />
           </div>
           
           <p className="text-sm text-muted-foreground mb-6">
@@ -432,7 +416,7 @@ const Profile = () => {
           </div>
         </section>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

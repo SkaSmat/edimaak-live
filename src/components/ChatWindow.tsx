@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Send } from "lucide-react";
+import { Send, Plane, Package } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { ActivityBadge, KycIcon } from "@/components/UserProfileBadges";
+import { getKycStatus } from "@/hooks/useUserStats";
 
 interface Message {
   id: string;
@@ -22,22 +25,36 @@ interface ChatWindowProps {
   userId: string;
 }
 
+interface OtherUserProfile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  phone: string | null;
+  id_type: string | null;
+  id_number: string | null;
+  id_expiry_date: string | null;
+  role: "traveler" | "sender" | "admin";
+}
+
 interface MatchDetails {
   trips: {
     from_city: string;
     to_city: string;
     departure_date: string;
+    traveler_id: string;
   };
   shipment_requests: {
     from_city: string;
     to_city: string;
     item_type: string;
+    sender_id: string;
   };
 }
 
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [matchDetails, setMatchDetails] = useState<MatchDetails | null>(null);
+  const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -100,14 +117,31 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       const { data, error } = await supabase
         .from("matches")
         .select(`
-          trips:trip_id(from_city, to_city, departure_date),
-          shipment_requests:shipment_request_id(from_city, to_city, item_type)
+          trips:trip_id(from_city, to_city, departure_date, traveler_id),
+          shipment_requests:shipment_request_id(from_city, to_city, item_type, sender_id)
         `)
         .eq("id", matchId)
         .single();
 
       if (error) throw error;
       setMatchDetails(data as any);
+
+      // Fetch the other user's profile
+      if (data) {
+        const otherUserId = data.trips?.traveler_id === userId 
+          ? data.shipment_requests?.sender_id 
+          : data.trips?.traveler_id;
+
+        if (otherUserId) {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url, phone, id_type, id_number, id_expiry_date, role")
+            .eq("id", otherUserId)
+            .maybeSingle();
+
+          if (profileData) setOtherUser(profileData as OtherUserProfile);
+        }
+      }
     } catch (error) {
       console.error("Error fetching match details:", error);
     }
@@ -139,19 +173,51 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
+  const otherUserKycStatus = otherUser ? getKycStatus(otherUser) : "not_filled";
+  const isOtherUserActive = true; // Simplified - could be calculated from stats
+
   return (
     <div className="flex flex-col h-[500px]">
+      {/* Conversation Header with Other User Profile */}
+      {otherUser && (
+        <div className="mb-4 p-4 bg-card rounded-lg border">
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              fullName={otherUser.full_name}
+              avatarUrl={otherUser.avatar_url}
+              size="md"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-foreground">{otherUser.full_name}</p>
+                <KycIcon status={otherUserKycStatus} />
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <ActivityBadge 
+                  isActive={isOtherUserActive} 
+                  role={otherUser.role as "traveler" | "sender"} 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Match Info */}
       {matchDetails && (
         <div className="mb-4 p-3 bg-muted/30 rounded-lg border text-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">
-                Voyage: {matchDetails.trips.from_city} → {matchDetails.trips.to_city}
-              </p>
-              <p className="text-muted-foreground">
-                Expédition: {matchDetails.shipment_requests.item_type}
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Plane className="w-4 h-4 text-primary" />
+              <span className="font-medium">
+                {matchDetails.trips.from_city} → {matchDetails.trips.to_city}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">
+                {matchDetails.shipment_requests.item_type}
+              </span>
             </div>
             <p className="text-muted-foreground">
               {format(new Date(matchDetails.trips.departure_date), "d MMM yyyy", { locale: fr })}
