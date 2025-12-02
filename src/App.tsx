@@ -9,6 +9,8 @@ import TravelerDashboard from "./pages/TravelerDashboard";
 import TravelerTrips from "./pages/TravelerTrips";
 import TravelerMatches from "./pages/TravelerMatches";
 import SenderDashboard from "./pages/SenderDashboard";
+import SenderShipments from "./pages/SenderShipments";
+import SenderMatches from "./pages/SenderMatches";
 import Messages from "./pages/Messages";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/dashboard/traveler/trips" element={<TravelerTrips />} />
           <Route path="/dashboard/traveler/matches" element={<TravelerMatches />} />
           <Route path="/dashboard/sender" element={<SenderDashboard />} />
+          <Route path="/dashboard/sender/shipments" element={<SenderShipments />} />
+          <Route path="/dashboard/sender/matches" element={<SenderMatches />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/profile" element={<Profile />} />
