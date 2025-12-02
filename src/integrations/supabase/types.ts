@@ -337,6 +337,14 @@ export type Database = {
       }
     }
     Functions: {
+      get_sender_display_info: {
+        Args: { sender_uuid: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+        }[]
+      }
       has_match_with_user: { Args: { _profile_id: string }; Returns: boolean }
       has_role: {
         Args: {
