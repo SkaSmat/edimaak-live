@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plus, MapPin, Calendar, Weight } from "lucide-react";
+import { Plus } from "lucide-react";
 import TripForm from "@/components/TripForm";
 import TripList from "@/components/TripList";
 import CompatibleShipments from "@/components/CompatibleShipments";
 import MyMatches from "@/components/MyMatches";
-import { DashboardHeader } from "@/components/DashboardHeader";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 const TravelerDashboard = () => {
   const navigate = useNavigate();
@@ -62,20 +62,18 @@ const TravelerDashboard = () => {
   if (!user || !profile) return null;
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <DashboardHeader
-        fullName={profile.full_name}
-        role="traveler"
-        onLogout={handleLogout}
-      />
-
-      <div className="container mx-auto px-4 py-8 space-y-8">
+    <DashboardLayout
+      role="traveler"
+      fullName={profile.full_name}
+      onLogout={handleLogout}
+    >
+      <div className="space-y-6">
         {/* Section: Mes voyages */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Mes voyages</h2>
-              <p className="text-muted-foreground mt-1">
+              <h2 className="text-xl font-bold text-foreground">Mes voyages</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 Gérez vos voyages et acceptez des demandes d'expédition
               </p>
             </div>
@@ -100,8 +98,8 @@ const TravelerDashboard = () => {
         {/* Section: Mes matches acceptés */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Mes matches acceptés</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-xl font-bold text-foreground">Mes matches acceptés</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Expéditions que vous avez acceptées
             </p>
           </div>
@@ -111,15 +109,15 @@ const TravelerDashboard = () => {
         {/* Section: Demandes compatibles */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Demandes d'expédition compatibles</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-xl font-bold text-foreground">Demandes d'expédition compatibles</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Proposez vos services pour ces demandes
             </p>
           </div>
           <CompatibleShipments userId={user.id} />
         </section>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

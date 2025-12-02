@@ -1,0 +1,53 @@
+import { ReactNode } from "react";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
+import { Badge } from "@/components/ui/badge";
+
+interface DashboardLayoutProps {
+  children: ReactNode;
+  role: "traveler" | "sender";
+  fullName: string;
+  onLogout: () => void;
+}
+
+export const DashboardLayout = ({ 
+  children, 
+  role, 
+  fullName, 
+  onLogout 
+}: DashboardLayoutProps) => {
+  const firstName = fullName?.split(" ")[0] || "Utilisateur";
+  const roleLabel = role === "traveler" ? "Voyageur" : "Expéditeur";
+
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen flex w-full bg-background">
+        <DashboardSidebar role={role} onLogout={onLogout} />
+        
+        <SidebarInset className="flex-1">
+          <DashboardMobileHeader fullName={fullName} />
+          
+          {/* Desktop header bar */}
+          <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold text-foreground">
+                Bonjour, {firstName}
+              </h1>
+              <Badge 
+                variant="secondary" 
+                className="bg-primary/10 text-primary border-0"
+              >
+                {roleLabel}
+              </Badge>
+            </div>
+          </header>
+
+          {/* Main content */}
+          <main className="flex-1 p-4 md:p-6 lg:p-8">
+            {children}
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+};
