@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -11,6 +11,7 @@ import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
+import { ActivityBadge } from "@/components/UserProfileBadges";
 
 interface ShipmentRequest {
   id: string;
@@ -293,10 +294,21 @@ const Index = () => {
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">Expéditeur</p>
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {request.profiles ? formatShortName(request.profiles.full_name) : "Utilisateur"}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {request.profiles ? formatShortName(request.profiles.full_name) : "Utilisateur"}
+                        </p>
+                        {(request.sender_request_count || 0) > 2 && (
+                          <ShieldCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {(request.sender_request_count || 0) > 2 ? (
+                          <span className="text-xs text-primary font-medium">Expéditeur actif</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Nouvel expéditeur</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
