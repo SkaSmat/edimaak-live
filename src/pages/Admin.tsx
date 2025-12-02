@@ -4,14 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Users, Plane, Package, Handshake, LogOut, Home } from "lucide-react";
+import { Loader2, Users, Plane, Package, LogOut, Home } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AdminUsers from "@/components/AdminUsers";
 import AdminTrips from "@/components/AdminTrips";
 import AdminShipments from "@/components/AdminShipments";
-import AdminMatches from "@/components/AdminMatches";
 import { AdminStats } from "@/components/AdminStats";
 
 const Admin = () => {
@@ -74,7 +73,7 @@ const Admin = () => {
           <div className="flex items-center gap-4">
             <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
             <Badge variant="destructive" className="hidden sm:flex">
-              Administration
+              Administration Beta
             </Badge>
           </div>
           <div className="flex items-center gap-2">
@@ -95,7 +94,7 @@ const Admin = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tableau de bord Admin</h1>
           <p className="text-muted-foreground">
-            Gérez les utilisateurs, voyages, demandes et matches
+            Gérez les utilisateurs, voyages et demandes d'expédition
           </p>
         </div>
 
@@ -104,22 +103,18 @@ const Admin = () => {
 
         {/* Tabs Section */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4 hidden sm:block" />
               Utilisateurs
-            </TabsTrigger>
-            <TabsTrigger value="trips" className="gap-2">
-              <Plane className="w-4 h-4 hidden sm:block" />
-              Voyages
             </TabsTrigger>
             <TabsTrigger value="shipments" className="gap-2">
               <Package className="w-4 h-4 hidden sm:block" />
               Demandes
             </TabsTrigger>
-            <TabsTrigger value="matches" className="gap-2">
-              <Handshake className="w-4 h-4 hidden sm:block" />
-              Matches
+            <TabsTrigger value="trips" className="gap-2">
+              <Plane className="w-4 h-4 hidden sm:block" />
+              Voyages
             </TabsTrigger>
           </TabsList>
 
@@ -130,17 +125,6 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <AdminUsers />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="trips">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Liste des voyages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AdminTrips />
               </CardContent>
             </Card>
           </TabsContent>
@@ -156,13 +140,13 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="matches">
+          <TabsContent value="trips">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Liste des matches</CardTitle>
+                <CardTitle className="text-lg">Liste des voyages</CardTitle>
               </CardHeader>
               <CardContent>
-                <AdminMatches />
+                <AdminTrips />
               </CardContent>
             </Card>
           </TabsContent>

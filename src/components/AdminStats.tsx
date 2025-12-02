@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plane, Package, Handshake, Loader2 } from "lucide-react";
+import { Users, Plane, Package, Handshake, UserCheck } from "lucide-react";
 
 interface Stats {
+  totalUsers: number;
   totalTravelers: number;
   totalSenders: number;
   activeTrips: number;
   activeShipments: number;
-  totalMatches: number;
 }
 
 export const AdminStats = () => {
@@ -20,6 +20,11 @@ export const AdminStats = () => {
 
   const fetchStats = async () => {
     try {
+      // Fetch total users count
+      const { count: totalUsersCount } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+
       // Fetch traveler count
       const { count: travelerCount } = await supabase
         .from("profiles")
@@ -44,17 +49,12 @@ export const AdminStats = () => {
         .select("*", { count: "exact", head: true })
         .eq("status", "open");
 
-      // Fetch total matches count
-      const { count: matchesCount } = await supabase
-        .from("matches")
-        .select("*", { count: "exact", head: true });
-
       setStats({
+        totalUsers: totalUsersCount || 0,
         totalTravelers: travelerCount || 0,
         totalSenders: senderCount || 0,
         activeTrips: activeTripsCount || 0,
         activeShipments: activeShipmentsCount || 0,
-        totalMatches: matchesCount || 0,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -80,6 +80,13 @@ export const AdminStats = () => {
   if (!stats) return null;
 
   const statItems = [
+    {
+      icon: UserCheck,
+      value: stats.totalUsers,
+      label: "Total utilisateurs",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
     {
       icon: Users,
       value: stats.totalTravelers,
@@ -107,13 +114,6 @@ export const AdminStats = () => {
       label: "Demandes actives",
       color: "text-orange-500",
       bgColor: "bg-orange-500/10",
-    },
-    {
-      icon: Handshake,
-      value: stats.totalMatches,
-      label: "Total matches",
-      color: "text-primary",
-      bgColor: "bg-primary/10",
     },
   ];
 
