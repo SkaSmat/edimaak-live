@@ -188,10 +188,12 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
 };
 
 export const DashboardMobileHeader = ({ fullName }: { fullName: string }) => {
+  const navigate = useNavigate();
+  
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border/50">
       <SidebarTrigger className="h-9 w-9" />
-      <LogoEdiM3ak iconSize="sm" />
+      <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
       <div className="w-9" /> {/* Spacer for alignment */}
     </header>
   );
