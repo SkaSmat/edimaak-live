@@ -64,8 +64,9 @@ export const ShipmentDetailModal = ({
     if (isOpen && shipment?.id) {
       supabase.rpc('increment_shipment_view_count', { shipment_id: shipment.id });
       
-      // Fetch full sender profile for KYC status
-      if (shipment.profiles?.id) {
+      // Only fetch full sender profile for KYC status if user is authenticated
+      // Anonymous users can't access full profiles due to RLS
+      if (isAuthenticated && shipment.profiles?.id) {
         supabase
           .from("profiles")
           .select("id, full_name, avatar_url, phone, id_type, id_number, id_expiry_date")
@@ -76,7 +77,7 @@ export const ShipmentDetailModal = ({
           });
       }
     }
-  }, [isOpen, shipment?.id, shipment?.profiles?.id]);
+  }, [isOpen, shipment?.id, shipment?.profiles?.id, isAuthenticated]);
 
   const isActiveSender = (shipment.sender_request_count || 0) > 2;
   const senderKycStatus = senderProfile ? getKycStatus(senderProfile) : "not_filled";

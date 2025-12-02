@@ -91,23 +91,26 @@ const Index = () => {
 
   useEffect(() => {
     const fetchShipmentRequests = async () => {
+      // First fetch shipment requests
       const { data } = await supabase
         .from("shipment_requests")
-        .select(`
-          *,
-          profiles:sender_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(20);
       
       if (data) {
-        // Fetch sender request counts
+        // Fetch sender display info using secure RPC function
         const senderIds = [...new Set(data.map(r => r.sender_id))];
+        
+        // Get sender info for each unique sender via the secure function
+        const senderInfoPromises = senderIds.map(async (senderId) => {
+          const { data: senderData } = await supabase
+            .rpc("get_sender_display_info", { sender_uuid: senderId });
+          return { senderId, info: senderData?.[0] || null };
+        });
+        
+        // Get sender request counts
         const countsPromises = senderIds.map(async (senderId) => {
           const { count } = await supabase
             .from("shipment_requests")
@@ -116,11 +119,21 @@ const Index = () => {
           return { senderId, count: count || 0 };
         });
         
-        const counts = await Promise.all(countsPromises);
+        const [senderInfos, counts] = await Promise.all([
+          Promise.all(senderInfoPromises),
+          Promise.all(countsPromises)
+        ]);
+        
+        const senderInfoMap = Object.fromEntries(senderInfos.map(s => [s.senderId, s.info]));
         const countMap = Object.fromEntries(counts.map(c => [c.senderId, c.count]));
         
         const enrichedData = data.map(r => ({
           ...r,
+          profiles: senderInfoMap[r.sender_id] ? {
+            id: r.sender_id,
+            full_name: senderInfoMap[r.sender_id].display_name || "Utilisateur",
+            avatar_url: senderInfoMap[r.sender_id].avatar_url
+          } : null,
           sender_request_count: countMap[r.sender_id] || 0
         }));
         
