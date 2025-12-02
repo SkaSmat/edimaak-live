@@ -126,6 +126,7 @@ export type Database = {
           from_city: string
           from_country: string
           id: string
+          image_url: string | null
           item_type: string
           latest_date: string
           notes: string | null
@@ -141,6 +142,7 @@ export type Database = {
           from_city: string
           from_country: string
           id?: string
+          image_url?: string | null
           item_type: string
           latest_date: string
           notes?: string | null
@@ -156,6 +158,7 @@ export type Database = {
           from_city?: string
           from_country?: string
           id?: string
+          image_url?: string | null
           item_type?: string
           latest_date?: string
           notes?: string | null

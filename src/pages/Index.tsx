@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 
 interface ShipmentRequest {
   id: string;
@@ -18,6 +19,7 @@ interface ShipmentRequest {
   weight_kg: number;
   item_type: string;
   notes: string | null;
+  image_url: string | null;
 }
 
 const Index = () => {
@@ -229,8 +231,12 @@ const Index = () => {
                 key={request.id}
                 className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-lg transition-all duration-300 animate-fade-in"
               >
-                <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 flex items-center justify-center">
-                  <Package className="w-16 h-16 text-primary/40" />
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img 
+                    src={getShipmentImageUrl(request.image_url, request.item_type)}
+                    alt={request.item_type}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
                 
                 <div className="p-6">
