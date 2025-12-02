@@ -67,7 +67,8 @@ const Index = () => {
         .from("shipment_requests")
         .select("*")
         .eq("status", "open")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(20);
       
       if (data) {
         setShipmentRequests(data);
@@ -82,25 +83,34 @@ const Index = () => {
     setHasSearched(true);
     let filtered = shipmentRequests;
 
-    if (fromCity) {
+    // Filtre par ville de départ (insensible à la casse)
+    if (fromCity.trim()) {
       filtered = filtered.filter(req => 
-        req.from_city.toLowerCase().includes(fromCity.toLowerCase())
+        req.from_city.toLowerCase().includes(fromCity.toLowerCase().trim())
       );
     }
 
-    if (toCity) {
+    // Filtre par ville d'arrivée (insensible à la casse)
+    if (toCity.trim()) {
       filtered = filtered.filter(req => 
-        req.to_city.toLowerCase().includes(toCity.toLowerCase())
+        req.to_city.toLowerCase().includes(toCity.toLowerCase().trim())
       );
     }
 
-    if (searchDate) {
-      filtered = filtered.filter(req => {
+    // Filtre par date (permissif : si la date ne correspond pas mais les villes oui, on garde)
+    if (searchDate && filtered.length > 0) {
+      const dateFiltered = filtered.filter(req => {
         const earliest = new Date(req.earliest_date);
         const latest = new Date(req.latest_date);
         const selected = new Date(searchDate);
         return selected >= earliest && selected <= latest;
       });
+      
+      // Si le filtre par date donne des résultats, on l'utilise
+      // Sinon, on garde les résultats filtrés par villes seulement
+      if (dateFiltered.length > 0) {
+        filtered = dateFiltered;
+      }
     }
 
     setFilteredRequests(filtered);
