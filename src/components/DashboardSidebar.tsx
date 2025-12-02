@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { FeedbackButton } from "./FeedbackButton";
 
 interface DashboardSidebarProps {
   role: "traveler" | "sender";
@@ -172,6 +173,18 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
         </SidebarGroup>
       </SidebarContent>
 
+      <SidebarFooter className="p-2">
+        <Separator className="mb-2" />
+        <FeedbackButton variant="sidebar" collapsed={collapsed} />
+        <SidebarMenuButton
+          onClick={onLogout}
+          tooltip="Déconnexion"
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Déconnexion</span>
+        </SidebarMenuButton>
+      </SidebarFooter>
     </Sidebar>
   );
 };
