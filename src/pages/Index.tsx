@@ -195,16 +195,35 @@ const Index = () => {
       </section>
 
       {/* Results Section */}
-      <section className="py-12">
+      <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           {hasSearched && (
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
+            <div className="mb-8">
+              <h2 className="text-3xl font-semibold text-foreground mb-3">
                 Demandes d'expédition disponibles
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 Colis à transporter entre la France et l'Algérie
               </p>
+            </div>
+          )}
+
+          {hasSearched && filteredRequests.length === 0 && (
+            <div className="text-center py-16 px-4">
+              <Package className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Aucune demande ne correspond encore à ce trajet
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Crée ton compte voyageur et reviens plus tard, de nouvelles demandes arrivent régulièrement.
+              </p>
+              <Button
+                onClick={() => navigate("/auth?role=traveler")}
+                size="lg"
+                className="rounded-full px-8"
+              >
+                Créer mon compte voyageur
+              </Button>
             </div>
           )}
 
@@ -212,8 +231,7 @@ const Index = () => {
             {(hasSearched ? filteredRequests : shipmentRequests.slice(0, 6)).map((request) => (
               <div
                 key={request.id}
-                className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-xl transition-all duration-300 cursor-pointer animate-fade-in"
-                onClick={() => setShowAuthDialog(true)}
+                className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-lg transition-all duration-300 animate-fade-in"
               >
                 <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 flex items-center justify-center">
                   <Package className="w-16 h-16 text-primary/40" />
@@ -253,6 +271,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                    onClick={() => setShowAuthDialog(true)}
                   >
                     Voir plus
                   </Button>
@@ -335,9 +354,9 @@ const Index = () => {
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Créez un compte pour continuer</DialogTitle>
+            <DialogTitle>Crée un compte pour proposer ton trajet</DialogTitle>
             <DialogDescription>
-              Inscrivez-vous en tant que voyageur pour contacter les expéditeurs et proposer de transporter leurs colis.
+              Inscris-toi ou connecte-toi pour contacter cet expéditeur.
             </DialogDescription>
           </DialogHeader>
           
@@ -347,7 +366,7 @@ const Index = () => {
               size="lg"
               className="w-full"
             >
-              S'inscrire comme voyageur
+              S'inscrire
             </Button>
             <Button
               onClick={() => navigate("/auth")}
