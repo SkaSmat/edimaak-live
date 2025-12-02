@@ -8,6 +8,7 @@ import { Plane, LogOut, MessageSquare, Plus } from "lucide-react";
 import TripForm from "@/components/TripForm";
 import TripList from "@/components/TripList";
 import CompatibleShipments from "@/components/CompatibleShipments";
+import MyMatches from "@/components/MyMatches";
 
 const TravelerDashboard = () => {
   const navigate = useNavigate();
@@ -109,6 +110,19 @@ const TravelerDashboard = () => {
               </div>
             )}
             <TripList key={refreshKey} userId={user.id} />
+          </CardContent>
+        </Card>
+
+        {/* My Matches Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Mes matches acceptés</CardTitle>
+            <CardDescription>
+              Expéditions que vous avez acceptées
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MyMatches userId={user.id} />
           </CardContent>
         </Card>
 
