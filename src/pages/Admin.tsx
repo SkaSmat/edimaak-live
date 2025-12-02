@@ -4,14 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Users, Plane, Package, LogOut, Home } from "lucide-react";
-import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, Users, Plane, Package } from "lucide-react";
 import AdminUsers from "@/components/AdminUsers";
 import AdminTrips from "@/components/AdminTrips";
 import AdminShipments from "@/components/AdminShipments";
 import { AdminStats } from "@/components/AdminStats";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -66,30 +64,13 @@ const Admin = () => {
   if (!user || !profile) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Admin Header */}
-      <header className="border-b bg-card shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
-            <Badge variant="destructive" className="hidden sm:flex">
-              Administration Beta
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              <Home className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Accueil</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Déconnexion</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6 space-y-6">
+    <DashboardLayout
+      role="admin"
+      fullName={profile.full_name}
+      isAdmin={true}
+      onLogout={handleLogout}
+    >
+      <div className="space-y-6">
         {/* Page Title */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tableau de bord Admin</h1>
@@ -152,7 +133,7 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
