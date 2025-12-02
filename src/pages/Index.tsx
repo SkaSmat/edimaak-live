@@ -38,6 +38,7 @@ interface ShipmentRequest {
 const Index = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [fromCity, setFromCity] = useState("");
   const [toCity, setToCity] = useState("");
   const [searchDate, setSearchDate] = useState("");
@@ -56,13 +57,7 @@ const Index = () => {
           .eq("id", session.user.id)
           .single()
           .then(({ data }) => {
-            if (data?.role === "traveler") {
-              navigate("/dashboard/traveler");
-            } else if (data?.role === "sender") {
-              navigate("/dashboard/sender");
-            } else if (data?.role === "admin") {
-              navigate("/admin");
-            }
+            setUserRole(data?.role || null);
           });
       }
     });
@@ -71,10 +66,28 @@ const Index = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) {
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            setUserRole(data?.role || null);
+          });
+      } else {
+        setUserRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
+
+  const getDashboardPath = () => {
+    if (userRole === "sender") return "/dashboard/sender";
+    if (userRole === "admin") return "/admin";
+    return "/dashboard/traveler";
+  };
 
   useEffect(() => {
     const fetchShipmentRequests = async () => {
@@ -161,20 +174,31 @@ const Index = () => {
             <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
             
             <div className="flex items-center gap-6">
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/auth?role=sender")}
-                className="text-foreground hover:bg-muted/50"
-              >
-                Devenir expéditeur
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/auth")}
-                className="rounded-full px-6"
-              >
-                Se connecter
-              </Button>
+              {session ? (
+                <Button
+                  onClick={() => navigate(getDashboardPath())}
+                  className="rounded-full px-6"
+                >
+                  Mon Dashboard
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate("/auth?role=sender")}
+                    className="text-foreground hover:bg-muted/50"
+                  >
+                    Devenir expéditeur
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/auth")}
+                    className="rounded-full px-6"
+                  >
+                    Se connecter
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
