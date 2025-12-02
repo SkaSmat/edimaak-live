@@ -97,26 +97,56 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_city: string | null
+          address_country: string | null
+          address_line1: string | null
+          address_postal_code: string | null
           avatar_url: string | null
+          country_of_residence: string | null
           created_at: string
+          first_name: string | null
           full_name: string
           id: string
+          id_expiry_date: string | null
+          id_number: string | null
+          id_type: string | null
+          last_name: string | null
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
+          address_city?: string | null
+          address_country?: string | null
+          address_line1?: string | null
+          address_postal_code?: string | null
           avatar_url?: string | null
+          country_of_residence?: string | null
           created_at?: string
+          first_name?: string | null
           full_name: string
           id: string
+          id_expiry_date?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          last_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
         }
         Update: {
+          address_city?: string | null
+          address_country?: string | null
+          address_line1?: string | null
+          address_postal_code?: string | null
           avatar_url?: string | null
+          country_of_residence?: string | null
           created_at?: string
+          first_name?: string | null
           full_name?: string
           id?: string
+          id_expiry_date?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          last_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
         }

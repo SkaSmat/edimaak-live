@@ -8,16 +8,12 @@ interface DashboardHeaderProps {
   fullName: string;
   role: "traveler" | "sender";
   onLogout: () => void;
-  onProfileClick?: () => void;
-  showProfileButton?: boolean;
 }
 
 export const DashboardHeader = ({
   fullName,
   role,
   onLogout,
-  onProfileClick,
-  showProfileButton = false,
 }: DashboardHeaderProps) => {
   const navigate = useNavigate();
   const firstName = fullName.split(" ")[0];
@@ -40,18 +36,16 @@ export const DashboardHeader = ({
             </Badge>
           </div>
 
-          {/* Profile button (optional) */}
-          {showProfileButton && onProfileClick && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onProfileClick}
-              className="hidden md:flex"
-            >
-              <UserCircle className="w-4 h-4 mr-2" />
-              Mon profil
-            </Button>
-          )}
+          {/* Profile button */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate("/profile")}
+            className="hidden md:flex"
+          >
+            <UserCircle className="w-4 h-4 mr-2" />
+            Mon profil
+          </Button>
 
           {/* Messages button */}
           <Button 
