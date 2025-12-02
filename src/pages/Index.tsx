@@ -66,7 +66,6 @@ const Index = () => {
       const { data } = await supabase
         .from("shipment_requests")
         .select("*")
-        .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(20);
       
