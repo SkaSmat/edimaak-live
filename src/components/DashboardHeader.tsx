@@ -41,10 +41,9 @@ export const DashboardHeader = ({
             variant="outline" 
             size="sm" 
             onClick={() => navigate("/profile")}
-            className="hidden md:flex"
           >
-            <UserCircle className="w-4 h-4 mr-2" />
-            Mon profil
+            <UserCircle className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Mon profil</span>
           </Button>
 
           {/* Messages button */}
