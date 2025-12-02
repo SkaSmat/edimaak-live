@@ -97,21 +97,7 @@ const Index = () => {
       );
     }
 
-    // Filtre par date (permissif : si la date ne correspond pas mais les villes oui, on garde)
-    if (searchDate && filtered.length > 0) {
-      const dateFiltered = filtered.filter(req => {
-        const earliest = new Date(req.earliest_date);
-        const latest = new Date(req.latest_date);
-        const selected = new Date(searchDate);
-        return selected >= earliest && selected <= latest;
-      });
-      
-      // Si le filtre par date donne des résultats, on l'utilise
-      // Sinon, on garde les résultats filtrés par villes seulement
-      if (dateFiltered.length > 0) {
-        filtered = dateFiltered;
-      }
-    }
+    // Date ignorée pour l'instant pour simplifier
 
     setFilteredRequests(filtered);
   };
@@ -207,16 +193,17 @@ const Index = () => {
       {/* Results Section */}
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          {hasSearched && (
-            <div className="mb-8">
-              <h2 className="text-3xl font-semibold text-foreground mb-3">
-                Demandes d'expédition disponibles
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Colis à transporter entre la France et l'Algérie
-              </p>
-            </div>
-          )}
+          <div className="mb-8">
+            <h2 className="text-3xl font-semibold text-foreground mb-3">
+              Demandes d'expédition disponibles
+            </h2>
+            <p className="text-lg text-muted-foreground mb-2">
+              Colis à transporter entre la France et l'Algérie
+            </p>
+            <p className="text-sm text-muted-foreground/70">
+              {hasSearched ? filteredRequests.length : shipmentRequests.length} demande{(hasSearched ? filteredRequests.length : shipmentRequests.length) !== 1 ? 's' : ''} trouvée{(hasSearched ? filteredRequests.length : shipmentRequests.length) !== 1 ? 's' : ''}
+            </p>
+          </div>
 
           {hasSearched && filteredRequests.length === 0 && (
             <div className="text-center py-16 px-4">
@@ -300,7 +287,7 @@ const Index = () => {
                   setFilteredRequests(shipmentRequests);
                 }}
                 className="rounded-full px-8"
-              >
+               >
                 Voir toutes les demandes
               </Button>
             </div>
