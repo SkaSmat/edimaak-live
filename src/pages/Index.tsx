@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
+import { AvatarInitials } from "@/components/ui/avatar-initials";
+import { formatShortName } from "@/lib/nameHelper";
 
 interface ShipmentRequest {
   id: string;
@@ -20,6 +22,10 @@ interface ShipmentRequest {
   item_type: string;
   notes: string | null;
   image_url: string | null;
+  profiles?: {
+    id: string;
+    full_name: string;
+  };
 }
 
 const Index = () => {
@@ -67,7 +73,13 @@ const Index = () => {
     const fetchShipmentRequests = async () => {
       const { data } = await supabase
         .from("shipment_requests")
-        .select("*")
+        .select(`
+          *,
+          profiles:sender_id (
+            id,
+            full_name
+          )
+        `)
         .order("created_at", { ascending: false })
         .limit(20);
       
@@ -240,6 +252,31 @@ const Index = () => {
                 </div>
                 
                 <div className="p-6">
+                  {/* Bloc expéditeur */}
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/40">
+                    {request.profiles ? (
+                      <>
+                        <AvatarInitials fullName={request.profiles.full_name} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">Expéditeur</p>
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {formatShortName(request.profiles.full_name)}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">Expéditeur</p>
+                          <p className="text-sm font-medium text-foreground">Utilisateur</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                     <MapPin className="w-4 h-4" />
                     <span className="font-medium text-foreground">
