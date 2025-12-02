@@ -111,8 +111,12 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="p-4">
         <button 
-          onClick={() => navigate("/")}
+          onClick={() => {
+            console.log("Logo clicked - navigating to /");
+            navigate("/");
+          }}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          type="button"
         >
           <LogoEdiM3ak 
             iconSize={collapsed ? "sm" : "md"} 
