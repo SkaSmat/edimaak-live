@@ -7,7 +7,6 @@ import { Plus } from "lucide-react";
 import ShipmentRequestForm from "@/components/ShipmentRequestForm";
 import ShipmentRequestList from "@/components/ShipmentRequestList";
 import MatchProposals from "@/components/MatchProposals";
-import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 const SenderDashboard = () => {
@@ -15,7 +14,6 @@ const SenderDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
-  const [showProfileSection, setShowProfileSection] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -60,10 +58,6 @@ const SenderDashboard = () => {
     toast.success("Demande créée avec succès !");
   };
 
-  const handleAvatarUpdated = (newUrl: string | null) => {
-    setProfile({ ...profile, avatar_url: newUrl });
-  };
-
   if (!user || !profile) return null;
 
   return (
@@ -72,29 +66,9 @@ const SenderDashboard = () => {
         fullName={profile.full_name}
         role="sender"
         onLogout={handleLogout}
-        showProfileButton
-        onProfileClick={() => setShowProfileSection(!showProfileSection)}
       />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Section: Mon profil */}
-        {showProfileSection && (
-          <section className="bg-card rounded-2xl shadow-sm border p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground">Mon profil</h2>
-              <p className="text-muted-foreground mt-1">
-                Gérez votre photo de profil
-              </p>
-            </div>
-            <ProfileAvatarUpload
-              userId={user.id}
-              fullName={profile.full_name}
-              currentAvatarUrl={profile.avatar_url}
-              onAvatarUpdated={handleAvatarUpdated}
-            />
-          </section>
-        )}
-
         {/* Section: Mes demandes d'expédition */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
