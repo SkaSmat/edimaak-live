@@ -117,21 +117,32 @@ const Index = () => {
     setHasSearched(true);
     let filtered = shipmentRequests;
 
-    // Filtre par ville de départ (insensible à la casse)
+    // Filtre par ville de départ (insensible à la casse, correspondance partielle)
     if (fromCity.trim()) {
+      const searchFrom = fromCity.toLowerCase().trim();
       filtered = filtered.filter(req => 
-        req.from_city.toLowerCase().includes(fromCity.toLowerCase().trim())
+        req.from_city.toLowerCase().includes(searchFrom)
       );
     }
 
-    // Filtre par ville d'arrivée (insensible à la casse)
+    // Filtre par ville d'arrivée (insensible à la casse, correspondance partielle)
     if (toCity.trim()) {
+      const searchTo = toCity.toLowerCase().trim();
       filtered = filtered.filter(req => 
-        req.to_city.toLowerCase().includes(toCity.toLowerCase().trim())
+        req.to_city.toLowerCase().includes(searchTo)
       );
     }
 
-    // Date ignorée pour l'instant pour simplifier
+    // Filtre par date (doit être entre earliest_date et latest_date)
+    if (searchDate) {
+      const selectedDate = new Date(searchDate);
+      filtered = filtered.filter(req => {
+        if (!req.earliest_date || !req.latest_date) return true;
+        const earliest = new Date(req.earliest_date);
+        const latest = new Date(req.latest_date);
+        return selectedDate >= earliest && selectedDate <= latest;
+      });
+    }
 
     setFilteredRequests(filtered);
   };
