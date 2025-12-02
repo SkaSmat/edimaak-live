@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -200,7 +200,7 @@ const Index = () => {
           {hasSearched && (
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-foreground mb-2">
-                {filteredRequests.length} demande{filteredRequests.length > 1 ? 's' : ''} d'expédition
+                Demandes d'expédition disponibles
               </h2>
               <p className="text-muted-foreground">
                 Colis à transporter entre la France et l'Algérie
@@ -212,7 +212,7 @@ const Index = () => {
             {(hasSearched ? filteredRequests : shipmentRequests.slice(0, 6)).map((request) => (
               <div
                 key={request.id}
-                className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-xl transition-all duration-300 cursor-pointer"
+                className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-xl transition-all duration-300 cursor-pointer animate-fade-in"
                 onClick={() => setShowAuthDialog(true)}
               >
                 <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 flex items-center justify-center">
@@ -279,8 +279,51 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Why EdiM3ak Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="text-center animate-fade-in">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Sécurité
+              </h3>
+              <p className="text-muted-foreground">
+                Discutez directement avec l'expéditeur avant de vous engager
+              </p>
+            </div>
+
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Économie
+              </h3>
+              <p className="text-muted-foreground">
+                Partagez vos trajets pour arrondir vos fins de mois
+              </p>
+            </div>
+
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Rapidité
+              </h3>
+              <p className="text-muted-foreground">
+                Un matching instantané selon votre trajet
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t border-border/40 py-12 mt-20">
+      <footer className="border-t border-border/40 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center text-sm text-muted-foreground">
             © EdiM3ak – 2025
