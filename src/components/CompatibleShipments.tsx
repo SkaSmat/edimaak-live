@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Calendar, Weight, Package } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, Search } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 
 interface ShipmentRequest {
   id: string;
@@ -32,12 +33,16 @@ interface CompatibleShipmentsProps {
 const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const [shipments, setShipments] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [hasTrips, setHasTrips] = useState(false);
 
   useEffect(() => {
     fetchCompatibleShipments();
   }, [userId]);
 
   const fetchCompatibleShipments = async () => {
+    setError(false);
+    setLoading(true);
     try {
       // Get user's trips first
       const { data: trips } = await supabase
@@ -47,9 +52,12 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         .eq("status", "open");
 
       if (!trips || trips.length === 0) {
+        setHasTrips(false);
         setLoading(false);
         return;
       }
+
+      setHasTrips(true);
 
       // For simplicity, get all open shipment requests and filter on client side
       const { data, error } = await supabase
@@ -79,6 +87,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       setShipments(compatible);
     } catch (error) {
       console.error("Error fetching compatible shipments:", error);
+      setError(true);
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
@@ -119,7 +128,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       fetchCompatibleShipments();
     } catch (error: any) {
       console.error("Error creating match:", error);
-      toast.error("Erreur lors de l'envoi de la proposition");
+      toast.error("Une erreur est survenue. Vérifie ta connexion et réessaie.");
     }
   };
 
@@ -127,11 +136,27 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
+  if (error) {
+    return <ErrorState onRetry={fetchCompatibleShipments} />;
+  }
+
+  if (!hasTrips) {
+    return (
+      <EmptyState
+        icon={Search}
+        title="Aucun voyage actif"
+        description="Crée d'abord un voyage pour voir les demandes d'expédition compatibles."
+      />
+    );
+  }
+
   if (shipments.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Aucune demande compatible pour le moment
-      </div>
+      <EmptyState
+        icon={Search}
+        title="Aucune demande compatible"
+        description="Aucune demande d'expédition ne correspond à tes voyages pour le moment. Reviens plus tard !"
+      />
     );
   }
 

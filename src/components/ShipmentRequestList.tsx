@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Trash2, MapPin, Calendar, Weight, Package } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 
 interface ShipmentRequest {
   id: string;
@@ -24,17 +25,21 @@ interface ShipmentRequest {
 
 interface ShipmentRequestListProps {
   userId: string;
+  onCreateRequest?: () => void;
 }
 
-const ShipmentRequestList = ({ userId }: ShipmentRequestListProps) => {
+const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListProps) => {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetchRequests();
   }, [userId]);
 
   const fetchRequests = async () => {
+    setError(false);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("shipment_requests")
@@ -46,6 +51,7 @@ const ShipmentRequestList = ({ userId }: ShipmentRequestListProps) => {
       setRequests(data || []);
     } catch (error) {
       console.error("Error fetching requests:", error);
+      setError(true);
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
@@ -70,11 +76,19 @@ const ShipmentRequestList = ({ userId }: ShipmentRequestListProps) => {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
+  if (error) {
+    return <ErrorState onRetry={fetchRequests} />;
+  }
+
   if (requests.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Aucune demande pour le moment. Créez-en une !
-      </div>
+      <EmptyState
+        icon={Package}
+        title="Aucune demande d'expédition"
+        description="Tu n'as pas encore créé de demande. Clique sur le bouton ci-dessous pour commencer."
+        actionLabel={onCreateRequest ? "+ Nouvelle demande" : undefined}
+        onAction={onCreateRequest}
+      />
     );
   }
 

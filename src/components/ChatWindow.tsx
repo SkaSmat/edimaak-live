@@ -9,6 +9,7 @@ import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ActivityBadge, KycIcon } from "@/components/UserProfileBadges";
 import { getKycStatus } from "@/hooks/useUserStats";
+import { ErrorState } from "@/components/ui/empty-state";
 
 interface Message {
   id: string;
@@ -163,7 +164,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Erreur lors de l'envoi du message");
+      toast.error("Une erreur est survenue. Vérifie ta connexion et réessaie.");
     } finally {
       setSending(false);
     }

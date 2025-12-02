@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, MapPin, Calendar, Weight } from "lucide-react";
+import { Trash2, MapPin, Calendar, Weight, Plane } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 
 interface Trip {
   id: string;
@@ -23,17 +24,21 @@ interface Trip {
 
 interface TripListProps {
   userId: string;
+  onCreateTrip?: () => void;
 }
 
-const TripList = ({ userId }: TripListProps) => {
+const TripList = ({ userId, onCreateTrip }: TripListProps) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetchTrips();
   }, [userId]);
 
   const fetchTrips = async () => {
+    setError(false);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("trips")
@@ -45,6 +50,7 @@ const TripList = ({ userId }: TripListProps) => {
       setTrips(data || []);
     } catch (error) {
       console.error("Error fetching trips:", error);
+      setError(true);
       toast.error("Erreur lors du chargement des voyages");
     } finally {
       setLoading(false);
@@ -69,11 +75,19 @@ const TripList = ({ userId }: TripListProps) => {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
+  if (error) {
+    return <ErrorState onRetry={fetchTrips} />;
+  }
+
   if (trips.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Aucun voyage pour le moment. Créez-en un !
-      </div>
+      <EmptyState
+        icon={Plane}
+        title="Aucun voyage pour le moment"
+        description="Tu n'as pas encore créé de voyage. Clique sur le bouton ci-dessous pour commencer."
+        actionLabel={onCreateTrip ? "+ Nouveau voyage" : undefined}
+        onAction={onCreateTrip}
+      />
     );
   }
 
