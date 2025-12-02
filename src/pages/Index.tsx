@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
+import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { format } from "date-fns";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -155,10 +156,7 @@ const Index = () => {
       <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-2">
-              <Package className="w-7 h-7 text-primary" />
-              <span className="text-2xl font-semibold text-foreground">EdiM3ak</span>
-            </div>
+            <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
             
             <div className="flex items-center gap-6">
               <Button
