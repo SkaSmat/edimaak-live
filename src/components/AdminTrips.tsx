@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Loader2, Search, EyeOff } from "lucide-react";
+import { Loader2, Search, EyeOff, Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -47,7 +47,7 @@ const AdminTrips = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hiding, setHiding] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTrips();
@@ -81,36 +81,37 @@ const AdminTrips = () => {
     );
   }, [trips, searchQuery]);
 
-  const handleHide = async (id: string) => {
-    setHiding(id);
+  const handleToggleVisibility = async (id: string, currentStatus: string) => {
+    setToggling(id);
+    const newStatus = currentStatus === "closed" ? "open" : "closed";
+    
     try {
-      // Try to update status to 'hidden' (soft-delete approach)
       const { error } = await supabase
         .from("trips")
-        .update({ status: "closed" })
+        .update({ status: newStatus })
         .eq("id", id);
 
       if (error) throw error;
       
       // Update local state
-      setTrips(trips.map(t => t.id === id ? { ...t, status: "closed" } : t));
-      toast.success("Voyage masqué (statut changé en 'fermé')");
+      setTrips(trips.map(t => t.id === id ? { ...t, status: newStatus } : t));
+      toast.success(newStatus === "closed" ? "Voyage masqué" : "Voyage remis en ligne");
     } catch (error: any) {
-      console.error("Error hiding trip:", error);
-      toast.info("Action non prise en charge dans cette configuration.");
+      console.error("Error toggling trip visibility:", error);
+      toast.error("Erreur lors de la modification du statut");
     } finally {
-      setHiding(null);
+      setToggling(null);
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "open":
-        return <Badge className="bg-green-500/90">Ouvert</Badge>;
+        return <Badge className="bg-green-500/90">En ligne</Badge>;
       case "matched":
         return <Badge className="bg-blue-500/90">Associé</Badge>;
       case "closed":
-        return <Badge variant="secondary">Fermé</Badge>;
+        return <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">Masqué</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -148,7 +149,7 @@ const AdminTrips = () => {
               <TableHead>Capacité</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Créé le</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[140px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -180,17 +181,22 @@ const AdminTrips = () => {
                     {format(new Date(trip.created_at), "d MMM yyyy", { locale: fr })}
                   </TableCell>
                   <TableCell>
-                    {trip.status === "open" && (
+                    {trip.status !== "matched" && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 text-muted-foreground hover:text-orange-600"
-                            disabled={hiding === trip.id}
+                            className={`h-8 ${trip.status === "closed" ? "text-green-600 hover:text-green-700" : "text-muted-foreground hover:text-orange-600"}`}
+                            disabled={toggling === trip.id}
                           >
-                            {hiding === trip.id ? (
+                            {toggling === trip.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : trip.status === "closed" ? (
+                              <>
+                                <Eye className="h-4 w-4 mr-1" />
+                                Remettre
+                              </>
                             ) : (
                               <>
                                 <EyeOff className="h-4 w-4 mr-1" />
@@ -201,15 +207,21 @@ const AdminTrips = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Masquer ce voyage ?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {trip.status === "closed" 
+                                ? "Remettre en ligne ce voyage ?" 
+                                : "Masquer ce voyage ?"}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Le statut du voyage sera changé en "fermé". Il ne sera plus visible pour les nouveaux matches.
+                              {trip.status === "closed"
+                                ? "Le voyage sera à nouveau visible pour les correspondances."
+                                : "Le voyage ne sera plus visible pour les correspondances."}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleHide(trip.id)}>
-                              Masquer
+                            <AlertDialogAction onClick={() => handleToggleVisibility(trip.id, trip.status)}>
+                              {trip.status === "closed" ? "Remettre en ligne" : "Masquer"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
