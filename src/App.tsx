@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import TravelerDashboard from "./pages/TravelerDashboard";
+import TravelerTrips from "./pages/TravelerTrips";
+import TravelerMatches from "./pages/TravelerMatches";
 import SenderDashboard from "./pages/SenderDashboard";
 import Messages from "./pages/Messages";
 import Admin from "./pages/Admin";
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard/traveler" element={<TravelerDashboard />} />
+          <Route path="/dashboard/traveler/trips" element={<TravelerTrips />} />
+          <Route path="/dashboard/traveler/matches" element={<TravelerMatches />} />
           <Route path="/dashboard/sender" element={<SenderDashboard />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/admin" element={<Admin />} />

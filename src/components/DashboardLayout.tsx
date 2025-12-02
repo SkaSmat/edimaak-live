@@ -7,6 +7,7 @@ interface DashboardLayoutProps {
   children: ReactNode;
   role: "traveler" | "sender";
   fullName: string;
+  isAdmin?: boolean;
   onLogout: () => void;
 }
 
@@ -14,6 +15,7 @@ export const DashboardLayout = ({
   children, 
   role, 
   fullName, 
+  isAdmin = false,
   onLogout 
 }: DashboardLayoutProps) => {
   const firstName = fullName?.split(" ")[0] || "Utilisateur";
@@ -22,7 +24,7 @@ export const DashboardLayout = ({
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background">
-        <DashboardSidebar role={role} onLogout={onLogout} />
+        <DashboardSidebar role={role} isAdmin={isAdmin} onLogout={onLogout} />
         
         <SidebarInset className="flex-1">
           <DashboardMobileHeader fullName={fullName} />

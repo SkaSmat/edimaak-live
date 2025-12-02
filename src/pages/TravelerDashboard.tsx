@@ -3,19 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
-import TripForm from "@/components/TripForm";
-import TripList from "@/components/TripList";
-import CompatibleShipments from "@/components/CompatibleShipments";
-import MyMatches from "@/components/MyMatches";
+import { Plane, Handshake, CheckCircle, AlertCircle, ArrowRight, Package } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { useUserStats, getKycStatus } from "@/hooks/useUserStats";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import CompatibleShipments from "@/components/CompatibleShipments";
 
 const TravelerDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [showTripForm, setShowTripForm] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+
+  const { tripsCount, matchesCount, isLoading: statsLoading } = useUserStats(user?.id);
 
   useEffect(() => {
     checkAuth();
@@ -53,13 +53,10 @@ const TravelerDashboard = () => {
     toast.success("Déconnexion réussie");
   };
 
-  const handleTripCreated = () => {
-    setShowTripForm(false);
-    setRefreshKey((prev) => prev + 1);
-    toast.success("Voyage créé avec succès !");
-  };
-
   if (!user || !profile) return null;
+
+  const kycStatus = getKycStatus(profile);
+  const isKycComplete = kycStatus === "complete";
 
   return (
     <DashboardLayout
@@ -68,51 +65,91 @@ const TravelerDashboard = () => {
       onLogout={handleLogout}
     >
       <div className="space-y-6">
-        {/* Section: Mes voyages */}
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-card border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Voyages actifs
+              </CardTitle>
+              <Plane className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
+                {statsLoading ? "..." : tripsCount}
+              </div>
+              <Button
+                variant="link"
+                className="p-0 h-auto text-primary mt-2"
+                onClick={() => navigate("/dashboard/traveler/trips")}
+              >
+                Voir mes voyages <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Matches acceptés
+              </CardTitle>
+              <Handshake className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
+                {statsLoading ? "..." : matchesCount}
+              </div>
+              <Button
+                variant="link"
+                className="p-0 h-auto text-primary mt-2"
+                onClick={() => navigate("/dashboard/traveler/matches")}
+              >
+                Voir mes matches <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Statut KYC
+              </CardTitle>
+              {isKycComplete ? (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-orange-500" />
+              )}
+            </CardHeader>
+            <CardContent>
+              <Badge
+                variant={isKycComplete ? "default" : "secondary"}
+                className={isKycComplete ? "bg-green-500/10 text-green-600" : "bg-orange-500/10 text-orange-600"}
+              >
+                {isKycComplete ? "Complété" : "Incomplet"}
+              </Badge>
+              <Button
+                variant="link"
+                className="p-0 h-auto text-primary mt-2 block"
+                onClick={() => navigate("/profile")}
+              >
+                {isKycComplete ? "Voir mon profil" : "Compléter mon profil"} <ArrowRight className="ml-1 h-4 w-4 inline" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Compatible Shipments Section */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-xl font-bold text-foreground">Mes voyages</h2>
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Demandes d'expédition compatibles
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Gérez vos voyages et acceptez des demandes d'expédition
+                Proposez vos services pour ces demandes
               </p>
             </div>
-            <Button 
-              onClick={() => setShowTripForm(!showTripForm)}
-              className="shrink-0"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau voyage
-            </Button>
-          </div>
-
-          {showTripForm && (
-            <div className="mb-6 p-4 bg-muted/50 rounded-xl border">
-              <TripForm userId={user.id} onSuccess={handleTripCreated} />
-            </div>
-          )}
-
-          <TripList key={refreshKey} userId={user.id} />
-        </section>
-
-        {/* Section: Mes matches acceptés */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-foreground">Mes matches acceptés</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Expéditions que vous avez acceptées
-            </p>
-          </div>
-          <MyMatches userId={user.id} />
-        </section>
-
-        {/* Section: Demandes compatibles */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-foreground">Demandes d'expédition compatibles</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Proposez vos services pour ces demandes
-            </p>
           </div>
           <CompatibleShipments userId={user.id} />
         </section>
