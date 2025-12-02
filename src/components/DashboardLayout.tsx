@@ -2,6 +2,8 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -27,7 +29,7 @@ export const DashboardLayout = ({
         <DashboardSidebar role={role} isAdmin={isAdmin} onLogout={onLogout} />
         
         <SidebarInset className="flex-1">
-          <DashboardMobileHeader fullName={fullName} />
+          <DashboardMobileHeader fullName={fullName} onLogout={onLogout} />
           
           {/* Desktop header bar */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30">
@@ -42,6 +44,15 @@ export const DashboardLayout = ({
                 {roleLabel}
               </Badge>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLogout}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Déconnexion
+            </Button>
           </header>
 
           {/* Main content */}

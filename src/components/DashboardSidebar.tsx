@@ -169,32 +169,24 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={onLogout}
-              tooltip="Déconnexion"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Déconnexion</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 };
 
-export const DashboardMobileHeader = ({ fullName }: { fullName: string }) => {
+export const DashboardMobileHeader = ({ fullName, onLogout }: { fullName: string; onLogout: () => void }) => {
   const navigate = useNavigate();
   
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border/50">
       <SidebarTrigger className="h-9 w-9" />
       <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
-      <div className="w-9" /> {/* Spacer for alignment */}
+      <button
+        onClick={onLogout}
+        className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+        aria-label="Déconnexion"
+      >
+        <LogOut className="h-5 w-5" />
+      </button>
     </header>
   );
 };
