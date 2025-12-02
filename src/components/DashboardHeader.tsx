@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plane, Package, LogOut, MessageSquare, UserCircle } from "lucide-react";
+import { LogOut, MessageSquare, UserCircle } from "lucide-react";
+import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 
 interface DashboardHeaderProps {
   fullName: string;
@@ -25,16 +26,7 @@ export const DashboardHeader = ({
     <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo EdiM3ak */}
-        <div 
-          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => navigate("/")}
-        >
-          <div className="relative">
-            <Plane className="w-8 h-8 text-primary" />
-            <Package className="w-4 h-4 text-accent absolute -bottom-1 -right-1" />
-          </div>
-          <span className="text-xl font-bold text-primary">EdiM3ak</span>
-        </div>
+        <LogoEdiM3ak iconSize="md" onClick={() => navigate("/")} />
 
         {/* Right side */}
         <div className="flex items-center gap-3 md:gap-4">

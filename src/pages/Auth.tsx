@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plane, Package, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { z } from "zod";
+import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -129,12 +130,8 @@ const Auth = () => {
       <Card className="w-full max-w-lg shadow-lg rounded-2xl border-0">
         <CardHeader className="text-center pb-2">
           {/* Logo EdiM3ak */}
-          <div className="flex justify-center items-center gap-2 mb-4">
-            <div className="relative">
-              <Plane className="w-10 h-10 text-primary" />
-              <Package className="w-5 h-5 text-accent absolute -bottom-1 -right-1" />
-            </div>
-            <span className="text-2xl font-bold text-primary">EdiM3ak</span>
+          <div className="flex justify-center mb-4">
+            <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
           </div>
           
           <CardTitle className="text-2xl font-semibold">
