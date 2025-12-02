@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plane, Loader2 } from "lucide-react";
+import { Plane, Package, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const authSchema = z.object({
@@ -32,7 +32,6 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    // Check if already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         supabase
@@ -126,22 +125,29 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Plane className="w-10 h-10 text-primary" />
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg shadow-lg rounded-2xl border-0">
+        <CardHeader className="text-center pb-2">
+          {/* Logo EdiM3ak */}
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <div className="relative">
+              <Plane className="w-10 h-10 text-primary" />
+              <Package className="w-5 h-5 text-accent absolute -bottom-1 -right-1" />
+            </div>
+            <span className="text-2xl font-bold text-primary">EdiM3ak</span>
           </div>
-          <CardTitle className="text-2xl">
-            {isLogin ? "Connexion" : "Créer un compte"}
+          
+          <CardTitle className="text-2xl font-semibold">
+            {isLogin ? "Connexion" : "Créer mon compte"}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground mt-2">
             {isLogin
-              ? "Connectez-vous à votre compte ColisVoyage"
-              : "Rejoignez ColisVoyage aujourd'hui"}
+              ? "Connecte-toi à ton compte EdiM3ak pour retrouver tes voyages et tes colis."
+              : "Crée ton compte EdiM3ak pour transporter des colis lors de tes voyages."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        
+        <CardContent className="pt-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
@@ -153,6 +159,7 @@ const Auth = () => {
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required={!isLogin}
                     placeholder="Jean Dupont"
+                    className="h-11"
                   />
                 </div>
 
@@ -164,11 +171,14 @@ const Auth = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, role: e.target.value as "traveler" | "sender" })
                     }
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    className="w-full h-11 px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="traveler">Voyageur</option>
                     <option value="sender">Expéditeur</option>
                   </select>
+                  <p className="text-xs text-muted-foreground">
+                    Tu pourras choisir ton rôle (voyageur ou expéditeur) à la création du compte.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -179,6 +189,7 @@ const Auth = () => {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+33 6 12 34 56 78"
+                    className="h-11"
                   />
                 </div>
               </>
@@ -193,6 +204,7 @@ const Auth = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 placeholder="vous@example.com"
+                className="h-11"
               />
             </div>
 
@@ -205,10 +217,11 @@ const Auth = () => {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 placeholder="••••••••"
+                className="h-11"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -220,18 +233,22 @@ const Auth = () => {
                 "Créer mon compte"
               )}
             </Button>
-
-            <div className="text-center pt-4">
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm"
-              >
-                {isLogin ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
-              </Button>
-            </div>
           </form>
+
+          {/* Séparation claire login/signup */}
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              {isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsLogin(!isLogin)}
+              className="w-full"
+            >
+              {isLogin ? "Créer un compte" : "Se connecter"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
