@@ -7,7 +7,7 @@ import { LogOut } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  role: "traveler" | "sender";
+  role: "traveler" | "sender" | "admin";
   fullName: string;
   isAdmin?: boolean;
   onLogout: () => void;
@@ -21,12 +21,13 @@ export const DashboardLayout = ({
   onLogout 
 }: DashboardLayoutProps) => {
   const firstName = fullName?.split(" ")[0] || "Utilisateur";
-  const roleLabel = role === "traveler" ? "Voyageur" : "Expéditeur";
+  const roleLabel = role === "traveler" ? "Voyageur" : role === "sender" ? "Expéditeur" : "Administrateur";
+  const effectiveIsAdmin = isAdmin || role === "admin";
 
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background">
-        <DashboardSidebar role={role} isAdmin={isAdmin} onLogout={onLogout} />
+        <DashboardSidebar role={role === "admin" ? "traveler" : role} isAdmin={effectiveIsAdmin} onLogout={onLogout} />
         
         <SidebarInset className="flex-1">
           <DashboardMobileHeader fullName={fullName} onLogout={onLogout} />

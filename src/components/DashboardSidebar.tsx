@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { FeedbackButton } from "./FeedbackButton";
 
 interface DashboardSidebarProps {
-  role: "traveler" | "sender";
+  role: "traveler" | "sender" | "admin";
   isAdmin?: boolean;
   onLogout: () => void;
 }
@@ -87,7 +87,15 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
     },
   ];
 
-  const mainNavItems = role === "traveler" ? travelerNavItems : senderNavItems;
+  const adminNavItems = [
+    {
+      title: "Administration",
+      icon: ShieldCheck,
+      path: "/admin",
+    },
+  ];
+
+  const mainNavItems = role === "admin" ? adminNavItems : role === "traveler" ? travelerNavItems : senderNavItems;
 
   const accountNavItems = [
     {
@@ -97,8 +105,8 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
     },
   ];
 
-  // Add admin link if user is admin
-  if (isAdmin) {
+  // Add admin link if user is admin but role is not admin (to avoid duplicate)
+  if (isAdmin && role !== "admin") {
     accountNavItems.push({
       title: "Administration",
       icon: ShieldCheck,
