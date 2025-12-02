@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Loader2, Search, EyeOff } from "lucide-react";
+import { Loader2, Search, EyeOff, Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -48,7 +48,7 @@ const AdminShipments = () => {
   const [shipments, setShipments] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hiding, setHiding] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
     fetchShipments();
@@ -83,36 +83,37 @@ const AdminShipments = () => {
     );
   }, [shipments, searchQuery]);
 
-  const handleHide = async (id: string) => {
-    setHiding(id);
+  const handleToggleVisibility = async (id: string, currentStatus: string) => {
+    setToggling(id);
+    const newStatus = currentStatus === "closed" ? "open" : "closed";
+    
     try {
-      // Try to update status to 'closed' (soft-delete approach)
       const { error } = await supabase
         .from("shipment_requests")
-        .update({ status: "closed" })
+        .update({ status: newStatus })
         .eq("id", id);
 
       if (error) throw error;
       
       // Update local state
-      setShipments(shipments.map(s => s.id === id ? { ...s, status: "closed" } : s));
-      toast.success("Demande masquée (statut changé en 'fermée')");
+      setShipments(shipments.map(s => s.id === id ? { ...s, status: newStatus } : s));
+      toast.success(newStatus === "closed" ? "Demande masquée" : "Demande remise en ligne");
     } catch (error: any) {
-      console.error("Error hiding shipment:", error);
-      toast.info("Action non prise en charge dans cette configuration.");
+      console.error("Error toggling shipment visibility:", error);
+      toast.error("Erreur lors de la modification du statut");
     } finally {
-      setHiding(null);
+      setToggling(null);
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "open":
-        return <Badge className="bg-green-500/90">Ouverte</Badge>;
+        return <Badge className="bg-green-500/90">En ligne</Badge>;
       case "matched":
         return <Badge className="bg-blue-500/90">Associée</Badge>;
       case "closed":
-        return <Badge variant="secondary">Fermée</Badge>;
+        return <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">Masquée</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -150,7 +151,7 @@ const AdminShipments = () => {
               <TableHead>Poids</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Créé le</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[140px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -178,17 +179,22 @@ const AdminShipments = () => {
                     {format(new Date(shipment.created_at), "d MMM yyyy", { locale: fr })}
                   </TableCell>
                   <TableCell>
-                    {shipment.status === "open" && (
+                    {shipment.status !== "matched" && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 text-muted-foreground hover:text-orange-600"
-                            disabled={hiding === shipment.id}
+                            className={`h-8 ${shipment.status === "closed" ? "text-green-600 hover:text-green-700" : "text-muted-foreground hover:text-orange-600"}`}
+                            disabled={toggling === shipment.id}
                           >
-                            {hiding === shipment.id ? (
+                            {toggling === shipment.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : shipment.status === "closed" ? (
+                              <>
+                                <Eye className="h-4 w-4 mr-1" />
+                                Remettre
+                              </>
                             ) : (
                               <>
                                 <EyeOff className="h-4 w-4 mr-1" />
@@ -199,15 +205,21 @@ const AdminShipments = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Masquer cette demande ?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {shipment.status === "closed" 
+                                ? "Remettre en ligne cette demande ?" 
+                                : "Masquer cette demande ?"}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Le statut de la demande sera changé en "fermée". Elle ne sera plus visible pour les voyageurs.
+                              {shipment.status === "closed"
+                                ? "La demande sera à nouveau visible pour les voyageurs."
+                                : "La demande ne sera plus visible pour les voyageurs."}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleHide(shipment.id)}>
-                              Masquer
+                            <AlertDialogAction onClick={() => handleToggleVisibility(shipment.id, shipment.status)}>
+                              {shipment.status === "closed" ? "Remettre en ligne" : "Masquer"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

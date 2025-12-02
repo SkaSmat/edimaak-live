@@ -276,6 +276,7 @@ export type Database = {
         Args: { shipment_id: string }
         Returns: undefined
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "traveler" | "sender" | "admin"
