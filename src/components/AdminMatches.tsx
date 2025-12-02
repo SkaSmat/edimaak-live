@@ -26,43 +26,50 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-interface ShipmentRequest {
+interface Match {
   id: string;
-  from_city: string;
-  from_country: string;
-  to_city: string;
-  to_country: string;
-  earliest_date: string;
-  latest_date: string;
-  weight_kg: number;
-  item_type: string;
   status: string;
   created_at: string;
-  profiles: {
-    full_name: string;
+  trips: {
+    from_city: string;
+    to_city: string;
+    departure_date: string;
+    profiles: {
+      full_name: string;
+    };
+  };
+  shipment_requests: {
+    item_type: string;
+    profiles: {
+      full_name: string;
+    };
   };
 }
 
-const AdminShipments = () => {
-  const [shipments, setShipments] = useState<ShipmentRequest[]>([]);
+const AdminMatches = () => {
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchShipments();
+    fetchMatches();
   }, []);
 
-  const fetchShipments = async () => {
+  const fetchMatches = async () => {
     try {
       const { data, error } = await supabase
-        .from("shipment_requests")
-        .select("*, profiles:sender_id(full_name)")
+        .from("matches")
+        .select(`
+          *,
+          trips:trip_id(from_city, to_city, departure_date, profiles:traveler_id(full_name)),
+          shipment_requests:shipment_request_id(item_type, profiles:sender_id(full_name))
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setShipments(data as any || []);
+      setMatches(data as any || []);
     } catch (error) {
-      console.error("Error fetching shipments:", error);
+      console.error("Error fetching matches:", error);
     } finally {
       setLoading(false);
     }
@@ -71,13 +78,13 @@ const AdminShipments = () => {
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
-      const { error } = await supabase.from("shipment_requests").delete().eq("id", id);
+      const { error } = await supabase.from("matches").delete().eq("id", id);
       if (error) throw error;
-      setShipments(shipments.filter(s => s.id !== id));
-      toast.success("Demande supprimée");
+      setMatches(matches.filter(m => m.id !== id));
+      toast.success("Match supprimé");
     } catch (error: any) {
-      console.error("Error deleting shipment:", error);
-      toast.error("Impossible de supprimer cette demande (peut-être liée à un match)");
+      console.error("Error deleting match:", error);
+      toast.error("Impossible de supprimer ce match");
     } finally {
       setDeleting(null);
     }
@@ -85,23 +92,21 @@ const AdminShipments = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open":
-        return <Badge className="bg-green-500/90">Ouverte</Badge>;
-      case "matched":
-        return <Badge className="bg-blue-500/90">Associée</Badge>;
-      case "closed":
-        return <Badge variant="secondary">Fermée</Badge>;
+      case "pending":
+        return <Badge variant="outline">En attente</Badge>;
+      case "accepted":
+        return <Badge className="bg-green-500/90">Accepté</Badge>;
+      case "completed":
+        return <Badge className="bg-blue-500/90">Complété</Badge>;
+      case "rejected":
+        return <Badge variant="destructive">Refusé</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
   return (
@@ -109,39 +114,44 @@ const AdminShipments = () => {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
+            <TableHead>Voyageur</TableHead>
             <TableHead>Expéditeur</TableHead>
             <TableHead>Trajet</TableHead>
-            <TableHead>Période</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Poids</TableHead>
+            <TableHead>Type d'objet</TableHead>
+            <TableHead>Date voyage</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Créé le</TableHead>
             <TableHead className="w-[80px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {shipments.length === 0 ? (
+          {matches.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                Aucune demande
+                Aucun match
               </TableCell>
             </TableRow>
           ) : (
-            shipments.map((shipment: any) => (
-              <TableRow key={shipment.id} className="hover:bg-muted/30">
-                <TableCell className="font-medium">{shipment.profiles?.full_name || "-"}</TableCell>
-                <TableCell>
-                  {shipment.from_city} → {shipment.to_city}
+            matches.map((match: any) => (
+              <TableRow key={match.id} className="hover:bg-muted/30">
+                <TableCell className="font-medium">
+                  {match.trips?.profiles?.full_name || "-"}
                 </TableCell>
                 <TableCell>
-                  {format(new Date(shipment.earliest_date), "d MMM", { locale: fr })} -{" "}
-                  {format(new Date(shipment.latest_date), "d MMM", { locale: fr })}
+                  {match.shipment_requests?.profiles?.full_name || "-"}
                 </TableCell>
-                <TableCell>{shipment.item_type}</TableCell>
-                <TableCell>{shipment.weight_kg} kg</TableCell>
-                <TableCell>{getStatusBadge(shipment.status)}</TableCell>
                 <TableCell>
-                  {format(new Date(shipment.created_at), "d MMM yyyy", { locale: fr })}
+                  {match.trips?.from_city} → {match.trips?.to_city}
+                </TableCell>
+                <TableCell>{match.shipment_requests?.item_type || "-"}</TableCell>
+                <TableCell>
+                  {match.trips?.departure_date
+                    ? format(new Date(match.trips.departure_date), "d MMM yyyy", { locale: fr })
+                    : "-"}
+                </TableCell>
+                <TableCell>{getStatusBadge(match.status)}</TableCell>
+                <TableCell>
+                  {format(new Date(match.created_at), "d MMM yyyy", { locale: fr })}
                 </TableCell>
                 <TableCell>
                   <AlertDialog>
@@ -150,9 +160,9 @@ const AdminShipments = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        disabled={deleting === shipment.id}
+                        disabled={deleting === match.id}
                       >
-                        {deleting === shipment.id ? (
+                        {deleting === match.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Trash2 className="h-4 w-4" />
@@ -161,15 +171,15 @@ const AdminShipments = () => {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer cette demande ?</AlertDialogTitle>
+                        <AlertDialogTitle>Supprimer ce match ?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Cette action est irréversible. La demande d'expédition sera définitivement supprimée.
+                          Cette action est irréversible. Le match entre le voyageur et l'expéditeur sera supprimé.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleDelete(shipment.id)}
+                          onClick={() => handleDelete(match.id)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Supprimer
@@ -187,4 +197,4 @@ const AdminShipments = () => {
   );
 };
 
-export default AdminShipments;
+export default AdminMatches;
