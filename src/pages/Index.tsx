@@ -22,10 +22,13 @@ interface ShipmentRequest {
   item_type: string;
   notes: string | null;
   image_url: string | null;
+  view_count: number;
+  sender_id: string;
   profiles?: {
     id: string;
     full_name: string;
   };
+  sender_request_count?: number;
 }
 
 const Index = () => {
@@ -84,8 +87,26 @@ const Index = () => {
         .limit(20);
       
       if (data) {
-        setShipmentRequests(data);
-        setFilteredRequests(data);
+        // Fetch sender request counts
+        const senderIds = [...new Set(data.map(r => r.sender_id))];
+        const countsPromises = senderIds.map(async (senderId) => {
+          const { count } = await supabase
+            .from("shipment_requests")
+            .select("*", { count: "exact", head: true })
+            .eq("sender_id", senderId);
+          return { senderId, count: count || 0 };
+        });
+        
+        const counts = await Promise.all(countsPromises);
+        const countMap = Object.fromEntries(counts.map(c => [c.senderId, c.count]));
+        
+        const enrichedData = data.map(r => ({
+          ...r,
+          sender_request_count: countMap[r.sender_id] || 0
+        }));
+        
+        setShipmentRequests(enrichedData);
+        setFilteredRequests(enrichedData);
       }
     };
 

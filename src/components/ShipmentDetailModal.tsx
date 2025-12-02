@@ -1,11 +1,13 @@
+import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AvatarInitials } from "@/components/ui/avatar-initials";
 import { formatShortName } from "@/lib/nameHelper";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
-import { MapPin, Calendar, Package, User, Weight } from "lucide-react";
+import { MapPin, Calendar, Package, User, Weight, Eye, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ShipmentDetailModalProps {
   isOpen: boolean;
@@ -22,10 +24,12 @@ interface ShipmentDetailModalProps {
     item_type: string;
     notes: string | null;
     image_url: string | null;
+    view_count: number;
     profiles?: {
       id: string;
       full_name: string;
     };
+    sender_request_count?: number;
   };
   isAuthenticated: boolean;
   onSignUp: () => void;
@@ -40,6 +44,17 @@ export const ShipmentDetailModal = ({
   onSignUp,
   onLogin,
 }: ShipmentDetailModalProps) => {
+  // Increment view count when modal opens
+  useEffect(() => {
+    if (isOpen && shipment?.id) {
+      supabase.rpc('increment_shipment_view_count', { shipment_id: shipment.id });
+    }
+  }, [isOpen, shipment?.id]);
+
+  const senderTrustLabel = shipment.sender_request_count && shipment.sender_request_count > 1
+    ? `Expéditeur actif • ${shipment.sender_request_count} demandes publiées`
+    : "Nouvel expéditeur";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -57,7 +72,7 @@ export const ShipmentDetailModal = ({
             />
           </div>
 
-          {/* Bloc Expéditeur */}
+          {/* Bloc Expéditeur avec indicateur de confiance */}
           <div className="bg-muted/30 rounded-lg p-4">
             <p className="text-xs text-muted-foreground uppercase font-semibold mb-3">
               Expéditeur
@@ -65,11 +80,14 @@ export const ShipmentDetailModal = ({
             {shipment.profiles ? (
               <div className="flex items-center gap-3">
                 <AvatarInitials fullName={shipment.profiles.full_name} size="md" />
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-foreground">
                     {formatShortName(shipment.profiles.full_name)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Expéditeur vérifié</p>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <CheckCircle className="w-3.5 h-3.5 text-primary" />
+                    <span>{senderTrustLabel}</span>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -79,19 +97,22 @@ export const ShipmentDetailModal = ({
                 </div>
                 <div>
                   <p className="font-semibold text-foreground">Utilisateur</p>
-                  <p className="text-sm text-muted-foreground">Expéditeur</p>
+                  <p className="text-sm text-muted-foreground">Nouvel expéditeur</p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Type d'objet */}
+          {/* Type d'objet et description */}
           <div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Package className="w-4 h-4" />
               <span className="uppercase font-semibold">Type d'objet</span>
             </div>
             <p className="text-xl font-bold text-foreground">{shipment.item_type}</p>
+            {shipment.notes && (
+              <p className="text-muted-foreground mt-2">{shipment.notes}</p>
+            )}
           </div>
 
           {/* Trajet */}
@@ -140,17 +161,11 @@ export const ShipmentDetailModal = ({
             </div>
           </div>
 
-          {/* Notes */}
-          {shipment.notes && (
-            <div>
-              <p className="text-sm text-muted-foreground uppercase font-semibold mb-2">
-                Description
-              </p>
-              <div className="bg-muted/30 rounded-lg p-4">
-                <p className="text-foreground">{shipment.notes}</p>
-              </div>
-            </div>
-          )}
+          {/* Compteur de vues */}
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
+            <Eye className="w-4 h-4" />
+            <span>Ce colis a été vu {shipment.view_count + 1} fois</span>
+          </div>
 
           {/* CTA selon l'état d'authentification */}
           {!isAuthenticated ? (
@@ -163,13 +178,13 @@ export const ShipmentDetailModal = ({
                   Crée ton compte voyageur pour proposer ton trajet et discuter avec cet expéditeur.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={onSignUp}
                   size="lg"
                   className="flex-1"
                 >
-                  S'inscrire
+                  Créer un compte voyageur
                 </Button>
                 <Button
                   onClick={onLogin}
@@ -177,7 +192,7 @@ export const ShipmentDetailModal = ({
                   size="lg"
                   className="flex-1"
                 >
-                  Se connecter
+                  Je suis déjà inscrit
                 </Button>
               </div>
             </div>
@@ -196,7 +211,7 @@ export const ShipmentDetailModal = ({
                 size="lg"
                 className="w-full"
               >
-                Voir mon dashboard
+                Proposer mon trajet
               </Button>
             </div>
           )}
