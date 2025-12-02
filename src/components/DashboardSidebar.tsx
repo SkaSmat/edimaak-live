@@ -110,13 +110,15 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
+        <button 
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <LogoEdiM3ak 
             iconSize={collapsed ? "sm" : "md"} 
-            onClick={() => navigate("/")}
             className={collapsed ? "justify-center" : ""}
           />
-        </div>
+        </button>
       </SidebarHeader>
 
       <SidebarContent>
