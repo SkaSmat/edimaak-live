@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import ConversationList from "@/components/ConversationList";
 import ChatWindow from "@/components/ChatWindow";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const Messages = () => {
   const navigate = useNavigate();
@@ -80,9 +80,12 @@ const Messages = () => {
               {selectedMatchId ? (
                 <ChatWindow matchId={selectedMatchId} userId={user.id} />
               ) : (
-                <div className="text-center text-muted-foreground py-12">
-                  Sélectionnez une conversation pour commencer à échanger
-                </div>
+                <EmptyState
+                  icon={MessageSquare}
+                  title="Aucune conversation sélectionnée"
+                  description="Sélectionne une conversation dans la liste à gauche pour commencer à discuter."
+                  className="py-8"
+                />
               )}
             </CardContent>
           </Card>

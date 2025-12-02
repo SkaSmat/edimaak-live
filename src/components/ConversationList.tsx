@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Match {
   id: string;
@@ -77,9 +78,12 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
 
   if (matches.length === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground">
-        Aucune conversation active
-      </div>
+      <EmptyState
+        icon={MessageCircle}
+        title="Aucune conversation"
+        description="Tu n'as pas encore de conversation active. Accepte un match pour commencer à discuter."
+        className="py-8"
+      />
     );
   }
 

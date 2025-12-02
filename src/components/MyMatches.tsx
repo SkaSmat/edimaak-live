@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Calendar, MessageSquare, Package } from "lucide-react";
+import { MapPin, Calendar, MessageSquare, Package, Handshake } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 
 interface Match {
   id: string;
@@ -37,12 +38,15 @@ const MyMatches = ({ userId }: MyMatchesProps) => {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetchMatches();
   }, [userId]);
 
   const fetchMatches = async () => {
+    setError(false);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("matches")
@@ -59,6 +63,7 @@ const MyMatches = ({ userId }: MyMatchesProps) => {
       setMatches(data as any || []);
     } catch (error) {
       console.error("Error fetching matches:", error);
+      setError(true);
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
@@ -73,11 +78,17 @@ const MyMatches = ({ userId }: MyMatchesProps) => {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
+  if (error) {
+    return <ErrorState onRetry={fetchMatches} />;
+  }
+
   if (matches.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Aucun match accepté pour le moment
-      </div>
+      <EmptyState
+        icon={Handshake}
+        title="Aucun match accepté"
+        description="Tu n'as pas encore de match accepté. Explore les demandes compatibles et propose tes voyages."
+      />
     );
   }
 

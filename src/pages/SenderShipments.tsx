@@ -102,7 +102,7 @@ const SenderShipments = () => {
             </div>
           )}
 
-          <ShipmentRequestList key={refreshKey} userId={user.id} />
+          <ShipmentRequestList key={refreshKey} userId={user.id} onCreateRequest={() => setShowRequestForm(true)} />
         </section>
       </div>
     </DashboardLayout>

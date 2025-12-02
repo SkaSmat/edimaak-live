@@ -46,7 +46,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
       onSuccess();
     } catch (error: any) {
       console.error("Error creating trip:", error);
-      toast.error("Erreur lors de la création du voyage");
+      toast.error("Une erreur est survenue. Vérifie ta connexion et réessaie.");
     } finally {
       setLoading(false);
     }

@@ -89,7 +89,7 @@ const TravelerTrips = () => {
             </div>
           )}
 
-          <TripList key={refreshKey} userId={user.id} />
+          <TripList key={refreshKey} userId={user.id} onCreateTrip={() => setShowTripForm(true)} />
         </section>
       </div>
     </DashboardLayout>

@@ -99,7 +99,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
       onSuccess();
     } catch (error: any) {
       console.error("Error creating shipment request:", error);
-      toast.error("Erreur lors de la création");
+      toast.error("Une erreur est survenue. Vérifie ta connexion et réessaie.");
     } finally {
       setLoading(false);
     }

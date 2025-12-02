@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Calendar, Check, X, MessageSquare } from "lucide-react";
+import { MapPin, Calendar, Check, X, MessageSquare, Inbox } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 
 interface Match {
   id: string;
@@ -36,12 +37,15 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetchMatches();
   }, [userId]);
 
   const fetchMatches = async () => {
+    setError(false);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("matches")
@@ -57,6 +61,7 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
       setMatches(data || []);
     } catch (error) {
       console.error("Error fetching matches:", error);
+      setError(true);
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
@@ -82,7 +87,7 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
       }
     } catch (error) {
       console.error("Error updating match:", error);
-      toast.error("Erreur lors de la mise à jour");
+      toast.error("Une erreur est survenue. Vérifie ta connexion et réessaie.");
     }
   };
 
@@ -94,11 +99,17 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
+  if (error) {
+    return <ErrorState onRetry={fetchMatches} />;
+  }
+
   if (matches.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Aucune proposition pour le moment
-      </div>
+      <EmptyState
+        icon={Inbox}
+        title="Aucune proposition"
+        description="Tu n'as reçu aucune proposition de voyageur pour le moment."
+      />
     );
   }
 
