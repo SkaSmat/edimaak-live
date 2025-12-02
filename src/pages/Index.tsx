@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, User } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { AvatarInitials } from "@/components/ui/avatar-initials";
 import { formatShortName } from "@/lib/nameHelper";
+import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
 
 interface ShipmentRequest {
   id: string;
@@ -36,7 +36,7 @@ const Index = () => {
   const [searchDate, setSearchDate] = useState("");
   const [shipmentRequests, setShipmentRequests] = useState<ShipmentRequest[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<ShipmentRequest[]>([]);
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
@@ -310,7 +310,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                    onClick={() => setShowAuthDialog(true)}
+                    onClick={() => setSelectedShipment(request)}
                   >
                     Voir plus
                   </Button>
@@ -389,35 +389,17 @@ const Index = () => {
         </div>
       </footer>
 
-      {/* Auth Dialog */}
-      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Crée un compte pour proposer ton trajet</DialogTitle>
-            <DialogDescription>
-              Inscris-toi ou connecte-toi pour contacter cet expéditeur.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col gap-3 mt-4">
-            <Button
-              onClick={() => navigate("/auth?role=traveler")}
-              size="lg"
-              className="w-full"
-            >
-              S'inscrire
-            </Button>
-            <Button
-              onClick={() => navigate("/auth")}
-              variant="outline"
-              size="lg"
-              className="w-full"
-            >
-              Se connecter
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Shipment Detail Modal */}
+      {selectedShipment && (
+        <ShipmentDetailModal
+          isOpen={!!selectedShipment}
+          onClose={() => setSelectedShipment(null)}
+          shipment={selectedShipment}
+          isAuthenticated={!!session}
+          onSignUp={() => navigate("/auth?role=traveler")}
+          onLogin={() => navigate("/auth")}
+        />
+      )}
     </div>
   );
 };
