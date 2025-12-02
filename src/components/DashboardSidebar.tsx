@@ -5,9 +5,9 @@ import {
   Package, 
   MessageCircle, 
   User, 
-  Shield, 
   LogOut,
-  Menu
+  Handshake,
+  ShieldCheck
 } from "lucide-react";
 import { LogoEdiM3ak } from "./LogoEdiM3ak";
 import {
@@ -28,10 +28,11 @@ import { Separator } from "@/components/ui/separator";
 
 interface DashboardSidebarProps {
   role: "traveler" | "sender";
+  isAdmin?: boolean;
   onLogout: () => void;
 }
 
-export const DashboardSidebar = ({ role, onLogout }: DashboardSidebarProps) => {
+export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
@@ -39,16 +40,21 @@ export const DashboardSidebar = ({ role, onLogout }: DashboardSidebarProps) => {
 
   const dashboardPath = role === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
 
-  const mainNavItems = [
+  const travelerNavItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
-      path: dashboardPath,
+      path: "/dashboard/traveler",
     },
     {
-      title: role === "traveler" ? "Mes voyages" : "Mes demandes",
-      icon: role === "traveler" ? Plane : Package,
-      path: dashboardPath,
+      title: "Mes voyages",
+      icon: Plane,
+      path: "/dashboard/traveler/trips",
+    },
+    {
+      title: "Mes matches",
+      icon: Handshake,
+      path: "/dashboard/traveler/matches",
     },
     {
       title: "Messages",
@@ -57,18 +63,47 @@ export const DashboardSidebar = ({ role, onLogout }: DashboardSidebarProps) => {
     },
   ];
 
+  const senderNavItems = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard/sender",
+    },
+    {
+      title: "Mes demandes",
+      icon: Package,
+      path: "/dashboard/sender/shipments",
+    },
+    {
+      title: "Mes matches",
+      icon: Handshake,
+      path: "/dashboard/sender/matches",
+    },
+    {
+      title: "Messages",
+      icon: MessageCircle,
+      path: "/messages",
+    },
+  ];
+
+  const mainNavItems = role === "traveler" ? travelerNavItems : senderNavItems;
+
   const accountNavItems = [
     {
       title: "Mon profil",
       icon: User,
       path: "/profile",
     },
-    {
-      title: "Vérification KYC",
-      icon: Shield,
-      path: "/profile",
-    },
   ];
+
+  // Add admin link if user is admin
+  if (isAdmin) {
+    accountNavItems.push({
+      title: "Administration",
+      icon: ShieldCheck,
+      path: "/admin",
+    });
+  }
 
   const isActive = (path: string) => location.pathname === path;
 
