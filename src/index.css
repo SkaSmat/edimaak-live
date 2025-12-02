@@ -4,91 +4,92 @@
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
+EDIM3AK Brand: Warm red-orange primary, cream white background
 */
 
 @layer base {
   :root {
-    --background: 210 25% 98%;
-    --foreground: 210 20% 15%;
+    --background: 40 30% 97%;
+    --foreground: 20 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 20 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 20 15% 15%;
 
-    --primary: 210 85% 35%;
+    --primary: 14 80% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 210 85% 45%;
+    --primary-glow: 14 85% 60%;
 
-    --secondary: 210 20% 92%;
-    --secondary-foreground: 210 20% 15%;
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 20 15% 15%;
 
-    --muted: 210 20% 92%;
-    --muted-foreground: 210 15% 45%;
+    --muted: 40 15% 92%;
+    --muted-foreground: 20 10% 45%;
 
-    --accent: 16 85% 60%;
+    --accent: 14 85% 50%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 16 90% 55%;
+    --accent-hover: 14 90% 45%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 210 85% 35%;
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 14 80% 55%;
 
     --radius: 0.75rem;
 
-    --gradient-hero: linear-gradient(135deg, hsl(210 85% 35%), hsl(210 85% 45%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 98%));
+    --gradient-hero: linear-gradient(135deg, hsl(14 80% 55%), hsl(24 85% 60%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(40 30% 97%));
     
-    --shadow-sm: 0 1px 2px 0 hsl(210 20% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(210 20% 15% / 0.1), 0 2px 4px -2px hsl(210 20% 15% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(210 20% 15% / 0.1), 0 4px 6px -4px hsl(210 20% 15% / 0.1);
-    --shadow-glow: 0 0 20px hsl(210 85% 45% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(20 15% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(20 15% 15% / 0.1), 0 2px 4px -2px hsl(20 15% 15% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(20 15% 15% / 0.1), 0 4px 6px -4px hsl(20 15% 15% / 0.1);
+    --shadow-glow: 0 0 20px hsl(14 80% 55% / 0.3);
 
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 210 30% 8%;
-    --foreground: 210 20% 95%;
+    --background: 20 20% 8%;
+    --foreground: 40 20% 95%;
 
-    --card: 210 25% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 20 15% 12%;
+    --card-foreground: 40 20% 95%;
 
-    --popover: 210 25% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 20 15% 12%;
+    --popover-foreground: 40 20% 95%;
 
-    --primary: 210 85% 50%;
+    --primary: 14 80% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 210 85% 60%;
+    --primary-glow: 14 85% 65%;
 
-    --secondary: 210 20% 18%;
-    --secondary-foreground: 210 20% 95%;
+    --secondary: 20 15% 18%;
+    --secondary-foreground: 40 20% 95%;
 
-    --muted: 210 20% 18%;
-    --muted-foreground: 210 15% 60%;
+    --muted: 20 15% 18%;
+    --muted-foreground: 40 10% 60%;
 
-    --accent: 16 85% 55%;
+    --accent: 14 85% 50%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 16 90% 50%;
+    --accent-hover: 14 90% 45%;
 
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 20%;
-    --input: 210 20% 20%;
-    --ring: 210 85% 50%;
+    --border: 20 15% 20%;
+    --input: 20 15% 20%;
+    --ring: 14 80% 55%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(210 85% 40%), hsl(210 85% 50%));
-    --gradient-card: linear-gradient(180deg, hsl(210 25% 12%), hsl(210 30% 8%));
+    --gradient-hero: linear-gradient(135deg, hsl(14 80% 50%), hsl(24 85% 55%));
+    --gradient-card: linear-gradient(180deg, hsl(20 15% 12%), hsl(20 20% 8%));
     
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
-    --shadow-glow: 0 0 20px hsl(210 85% 50% / 0.4);
+    --shadow-glow: 0 0 20px hsl(14 80% 55% / 0.4);
   }
 }
 

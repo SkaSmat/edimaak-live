@@ -21,8 +21,8 @@ const sizeClasses = {
     text: "text-xl",
   },
   lg: {
-    container: "gap-2",
-    plane: "w-9 h-9",
+    container: "gap-2.5",
+    plane: "w-10 h-10",
     package: "w-5 h-5",
     text: "text-2xl",
   },
@@ -48,8 +48,8 @@ export const LogoEdiM3ak = ({
         <Plane className={cn(sizes.plane, "text-primary")} />
         <Package className={cn(sizes.package, "text-accent absolute -bottom-0.5 -right-0.5")} />
       </div>
-      <span className={cn(sizes.text, "font-bold text-primary")}>
-        EdiM3ak
+      <span className={cn(sizes.text, "font-bold text-primary tracking-tight")}>
+        EDIM3AK
       </span>
     </div>
   );
