@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, User } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
-import { AvatarInitials } from "@/components/ui/avatar-initials";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
 
@@ -27,6 +27,7 @@ interface ShipmentRequest {
   profiles?: {
     id: string;
     full_name: string;
+    avatar_url: string | null;
   };
   sender_request_count?: number;
 }
@@ -80,7 +81,8 @@ const Index = () => {
           *,
           profiles:sender_id (
             id,
-            full_name
+            full_name,
+            avatar_url
           )
         `)
         .order("created_at", { ascending: false })
@@ -286,27 +288,17 @@ const Index = () => {
                 <div className="p-6">
                   {/* Bloc expéditeur */}
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/40">
-                    {request.profiles ? (
-                      <>
-                        <AvatarInitials fullName={request.profiles.full_name} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-muted-foreground">Expéditeur</p>
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {formatShortName(request.profiles.full_name)}
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-muted-foreground">Expéditeur</p>
-                          <p className="text-sm font-medium text-foreground">Utilisateur</p>
-                        </div>
-                      </>
-                    )}
+                    <UserAvatar
+                      fullName={request.profiles?.full_name || ""}
+                      avatarUrl={request.profiles?.avatar_url}
+                      size="sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Expéditeur</p>
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {request.profiles ? formatShortName(request.profiles.full_name) : "Utilisateur"}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">

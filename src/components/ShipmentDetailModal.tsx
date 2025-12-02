@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AvatarInitials } from "@/components/ui/avatar-initials";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
-import { MapPin, Calendar, Package, User, Weight, Eye, CheckCircle } from "lucide-react";
+import { MapPin, Calendar, Package, Weight, Eye, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,7 @@ interface ShipmentDetailModalProps {
     profiles?: {
       id: string;
       full_name: string;
+      avatar_url: string | null;
     };
     sender_request_count?: number;
   };
@@ -77,30 +78,22 @@ export const ShipmentDetailModal = ({
             <p className="text-xs text-muted-foreground uppercase font-semibold mb-3">
               Expéditeur
             </p>
-            {shipment.profiles ? (
-              <div className="flex items-center gap-3">
-                <AvatarInitials fullName={shipment.profiles.full_name} size="md" />
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">
-                    {formatShortName(shipment.profiles.full_name)}
-                  </p>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <CheckCircle className="w-3.5 h-3.5 text-primary" />
-                    <span>{senderTrustLabel}</span>
-                  </div>
+            <div className="flex items-center gap-3">
+              <UserAvatar
+                fullName={shipment.profiles?.full_name || ""}
+                avatarUrl={shipment.profiles?.avatar_url}
+                size="md"
+              />
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">
+                  {shipment.profiles ? formatShortName(shipment.profiles.full_name) : "Utilisateur"}
+                </p>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <CheckCircle className="w-3.5 h-3.5 text-primary" />
+                  <span>{senderTrustLabel}</span>
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <User className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">Utilisateur</p>
-                  <p className="text-sm text-muted-foreground">Nouvel expéditeur</p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Type d'objet et description */}

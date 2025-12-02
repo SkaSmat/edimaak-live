@@ -4,16 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Package, LogOut, MessageSquare, Plus } from "lucide-react";
+import { Package, LogOut, MessageSquare, Plus, UserCircle } from "lucide-react";
 import ShipmentRequestForm from "@/components/ShipmentRequestForm";
 import ShipmentRequestList from "@/components/ShipmentRequestList";
 import MatchProposals from "@/components/MatchProposals";
+import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 
 const SenderDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
+  const [showProfileSection, setShowProfileSection] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -58,6 +60,10 @@ const SenderDashboard = () => {
     toast.success("Demande créée avec succès !");
   };
 
+  const handleAvatarUpdated = (newUrl: string | null) => {
+    setProfile({ ...profile, avatar_url: newUrl });
+  };
+
   if (!user || !profile) return null;
 
   return (
@@ -73,6 +79,10 @@ const SenderDashboard = () => {
             <span className="text-sm text-muted-foreground">
               Bonjour, {profile.full_name}
             </span>
+            <Button variant="outline" size="sm" onClick={() => setShowProfileSection(!showProfileSection)}>
+              <UserCircle className="w-4 h-4 mr-2" />
+              Mon profil
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/messages")}>
               <MessageSquare className="w-4 h-4 mr-2" />
               Messages
@@ -86,6 +96,26 @@ const SenderDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Profile Section */}
+        {showProfileSection && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Mon profil</CardTitle>
+              <CardDescription>
+                Gérez votre photo de profil
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileAvatarUpload
+                userId={user.id}
+                fullName={profile.full_name}
+                currentAvatarUrl={profile.avatar_url}
+                onAvatarUpdated={handleAvatarUpdated}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* My Requests Section */}
         <Card>
           <CardHeader>
