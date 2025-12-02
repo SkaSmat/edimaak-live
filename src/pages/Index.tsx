@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
+import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -153,7 +154,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <header className="border-b border-border/40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="flex items-center justify-between h-20">
             <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
@@ -178,62 +179,62 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section with Search */}
-      <section className="pt-16 pb-12 sm:pt-24 sm:pb-16">
+      {/* Hero Section */}
+      <section className="pt-16 pb-8 sm:pt-24 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              Transportez des colis lors de vos voyages
+              La plateforme qui fait voyager tes colis avec les passagers de confiance.
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Trouvez des demandes d'expédition compatibles avec votre trajet France-Algérie
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+              Expéditeurs et voyageurs réguliers France ⇄ Algérie se retrouvent sur EDIM3AK pour des livraisons sécurisées.
             </p>
-          </div>
-
-          {/* Search Bar */}
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-card rounded-full shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
-                <MapPin className="w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Ville de départ"
-                  value={fromCity}
-                  onChange={(e) => setFromCity(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-
-              <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
-                <MapPin className="w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Ville d'arrivée"
-                  value={toCity}
-                  onChange={(e) => setToCity(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-
-              <div className="flex-1 flex items-center px-4 py-2 gap-2">
-                <Calendar className="w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
-                />
-              </div>
-
-              <Button
-                onClick={handleSearch}
-                size="lg"
-                className="rounded-full w-full sm:w-auto px-8"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-            </div>
           </div>
         </div>
       </section>
+
+      {/* Sticky Search Bar */}
+      <div className="sticky top-20 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 border-b border-border/30 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+          <div className="bg-card rounded-full shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
+              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <CityAutocomplete
+                placeholder="Ville de départ"
+                value={fromCity}
+                onChange={setFromCity}
+              />
+            </div>
+
+            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
+              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <CityAutocomplete
+                placeholder="Ville d'arrivée"
+                value={toCity}
+                onChange={setToCity}
+              />
+            </div>
+
+            <div className="flex-1 flex items-center px-4 py-2 gap-2">
+              <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <Input
+                type="date"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
+              />
+            </div>
+
+            <Button
+              onClick={handleSearch}
+              size="lg"
+              className="rounded-full w-full sm:w-auto px-8"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Results Section */}
       <section className="py-16">
@@ -359,7 +360,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Why EdiM3ak Section */}
+      {/* Why EDIM3AK Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
           <div className="grid gap-8 md:grid-cols-3">
@@ -406,7 +407,7 @@ const Index = () => {
       <footer className="border-t border-border/40 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center text-sm text-muted-foreground">
-            © EdiM3ak – 2025
+            © EDIM3AK – 2025
           </div>
         </div>
       </footer>
