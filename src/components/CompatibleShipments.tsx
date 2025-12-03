@@ -3,11 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Calendar, Weight, Package, Search, Plane } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, Search, Plane, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
-import { MapPin, Calendar, Weight, Package, Search, Plane, Clock } from "lucide-react";
 
 interface ShipmentRequest {
   id: string;
@@ -26,7 +25,6 @@ interface ShipmentRequest {
   } | null;
 }
 
-// On crée un type pour lier un colis à UN voyage précis
 interface CompatibleMatch {
   shipment: ShipmentRequest;
   matchingTrip: {
@@ -42,8 +40,7 @@ interface CompatibleShipmentsProps {
 
 const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const [matches, setMatches] = useState<CompatibleMatch[]>([]);
-  const [proposedIds, setProposedIds] = useState<string[]>([]);
-  const [proposedIds, setProposedIds] = useState<string[]>([]);
+  const [proposedIds, setProposedIds] = useState<string[]>([]); // État pour gérer les boutons "En attente"
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
@@ -66,8 +63,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       }
       setHasTrips(true);
 
-      // 2. Récupérer les demandes (Idéalement, on devrait filtrer via une RPC Supabase pour la performance,
-      // mais cette correction corrige déjà la logique métier critique)
+      // 2. Récupérer les demandes
       const { data: shipments, error } = await supabase
         .from("shipment_requests")
         .select("*, profiles:sender_id(full_name)")
@@ -75,34 +71,28 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
       if (error) throw error;
 
-      // 3. L'ALGORITHME DE MATCHING CORRIGÉ
+      // 3. Algorithme de Matching corrigé
       const foundMatches: CompatibleMatch[] = [];
 
       (shipments || []).forEach((shipment: any) => {
-        // On cherche SI un de mes voyages correspond à ce colis
         const matchingTrip = trips.find((trip) => {
-          // A. Vérification de la Route (Ville exacte pour plus de précision, ou Pays si tu préfères large)
           const isSameRoute = trip.from_country === shipment.from_country && trip.to_country === shipment.to_country;
 
           if (!isSameRoute) return false;
 
-          // B. Vérification des Dates
           const tripDate = new Date(trip.departure_date);
           const earliestDate = new Date(shipment.earliest_date);
           const latestDate = new Date(shipment.latest_date);
-          // On ajoute 1 jour à la latestDate pour inclure le jour même
           latestDate.setDate(latestDate.getDate() + 1);
 
           const isDateCompatible = tripDate >= earliestDate && tripDate <= latestDate;
           if (!isDateCompatible) return false;
 
-          // C. Vérification du POIDS (Critique !)
           const isWeightCompatible = trip.max_weight_kg >= shipment.weight_kg;
 
           return isWeightCompatible;
         });
 
-        // Si on a trouvé un voyage compatible, on ajoute la paire à la liste
         if (matchingTrip) {
           foundMatches.push({
             shipment: shipment as ShipmentRequest,
@@ -125,11 +115,10 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
     }
   };
 
-  // La fonction prend maintenant l'ID du voyage spécifique !
   const handlePropose = async (shipmentId: string, tripId: string) => {
     try {
       const { error } = await supabase.from("matches").insert({
-        trip_id: tripId, // On utilise le BON voyage
+        trip_id: tripId,
         shipment_request_id: shipmentId,
         status: "pending",
       });
@@ -137,6 +126,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       if (error) {
         if (error.message.includes("duplicate") || error.code === "23505") {
           toast.error("Vous avez déjà proposé ce voyage");
+          // Si c'est déjà proposé, on le marque quand même visuellement
+          setProposedIds((prev) => [...prev, shipmentId]);
         } else {
           throw error;
         }
@@ -144,7 +135,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       }
 
       toast.success("Proposition envoyée !");
-      // On ajoute l'ID à la liste des "proposés" pour changer la couleur du bouton
+      // On ajoute l'ID à la liste "en attente" pour changer l'aspect du bouton
       setProposedIds((prev) => [...prev, shipmentId]);
     } catch (error: any) {
       console.error("Error creating match:", error);
@@ -182,7 +173,6 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           key={shipment.id}
           className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow relative overflow-hidden"
         >
-          {/* Indicateur visuel de compatibilité */}
           <div className="absolute top-0 right-0 bg-green-500/10 text-green-600 text-xs px-2 py-1 rounded-bl-lg font-medium">
             Compatible avec votre voyage du {format(new Date(matchingTrip.departure_date), "d MMM")}
           </div>
@@ -222,7 +212,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           <Button
             className={`w-full transition-all duration-300 ${
               proposedIds.includes(shipment.id)
-                ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-600 opacity-90"
+                ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 opacity-90"
                 : ""
             }`}
             onClick={() => handlePropose(shipment.id, matchingTrip.id)}
