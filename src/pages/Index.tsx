@@ -170,13 +170,13 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border/40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-16 sm:h-20">
             <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 sm:gap-6">
               {session ? (
-                <Button onClick={() => navigate(getDashboardPath())} className="rounded-full px-6">
-                  Mon Dashboard
+                <Button onClick={() => navigate(getDashboardPath())} className="rounded-full px-4 sm:px-6 text-sm">
+                  Dashboard
                 </Button>
               ) : (
                 <>
@@ -187,7 +187,7 @@ const Index = () => {
                   >
                     Devenir expéditeur
                   </Button>
-                  <Button variant="outline" onClick={() => navigate("/auth")} className="rounded-full px-6">
+                  <Button variant="outline" onClick={() => navigate("/auth")} className="rounded-full px-4 sm:px-6">
                     Se connecter
                   </Button>
                 </>
@@ -198,94 +198,97 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-16 pb-8 sm:pt-24 sm:pb-12">
+      <section className="pt-12 pb-8 sm:pt-24 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              La plateforme qui fait voyager tes colis avec les passagers de confiance.
+          <div className="text-center mb-8 sm:mb-10">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6 leading-tight">
+              Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Expéditeurs et voyageurs réguliers France ⇄ Algérie se retrouvent sur EDIM3AK pour des livraisons
-              sécurisées.
+            <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs France ⇄ Algérie.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Sticky Search Bar CORRIGÉE (Responsive) */}
-      <div className="relative md:sticky md:top-20 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 border-b border-border/30 shadow-sm mt-[-2rem] sm:mt-0">
+      {/* Barre de Recherche CORRIGÉE (Plus de sticky mobile, plus de transparence) */}
+      <div className="relative md:sticky md:top-20 z-40 py-4 sm:py-6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-          <div className="bg-card rounded-3xl shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
-              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              <CityAutocomplete placeholder="Ville de départ" value={fromCity} onChange={setFromCity} />
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl border border-border/40 p-3 sm:p-2 flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-background shadow-sm sm:border-0 sm:shadow-none">
+              <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+              <CityAutocomplete placeholder="Départ (ex: Paris)" value={fromCity} onChange={setFromCity} />
             </div>
 
-            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
-              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              <CityAutocomplete placeholder="Ville d'arrivée" value={toCity} onChange={setToCity} />
+            <div className="flex-1 flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-background shadow-sm sm:border-0 sm:shadow-none">
+              <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+              <CityAutocomplete placeholder="Arrivée (ex: Alger)" value={toCity} onChange={setToCity} />
             </div>
 
-            <div className="flex-1 flex items-center px-4 py-2 gap-2 bg-muted/30 rounded-full my-1 sm:my-0">
-              <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1 flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-background shadow-sm sm:border-0 sm:shadow-none">
+              <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
               <Input
                 type="date"
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground w-full"
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground w-full p-0 h-auto"
               />
             </div>
 
-            <Button onClick={handleSearch} size="lg" className="rounded-full w-full sm:w-auto px-8 mt-2 sm:mt-0">
-              <Search className="w-5 h-5" />
+            <Button
+              onClick={handleSearch}
+              size="lg"
+              className="rounded-xl sm:rounded-full w-full sm:w-auto px-8 h-12 sm:h-auto font-semibold shadow-lg shadow-primary/20"
+            >
+              <Search className="w-5 h-5 mr-2 sm:mr-0" />
+              <span className="sm:hidden">Rechercher</span>
             </Button>
           </div>
         </div>
       </div>
 
       {/* Results Section */}
-      <section className="py-16">
+      <section className="py-8 sm:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="mb-8">
-            <h2 className="text-3xl font-semibold text-foreground mb-3">Demandes d'expédition disponibles</h2>
-            <p className="text-lg text-muted-foreground mb-2">Colis à transporter entre la France et l'Algérie</p>
-            <p className="text-sm text-muted-foreground/70">
-              {hasSearched ? filteredRequests.length : shipmentRequests.length} demande
-              {(hasSearched ? filteredRequests.length : shipmentRequests.length) !== 1 ? "s" : ""} trouvée
-              {(hasSearched ? filteredRequests.length : shipmentRequests.length) !== 1 ? "s" : ""}
-            </p>
+          <div className="mb-6 sm:mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-2">Annonces récentes</h2>
+              <p className="text-sm text-muted-foreground">
+                {hasSearched ? filteredRequests.length : shipmentRequests.length} demande(s) disponible(s)
+              </p>
+            </div>
           </div>
 
           {hasSearched && filteredRequests.length === 0 && (
-            <div className="text-center py-16 px-4">
+            <div className="text-center py-16 px-4 bg-muted/20 rounded-3xl border border-dashed border-border/60">
               <Package className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Aucune demande ne correspond encore à ce trajet
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Crée ton compte voyageur et reviens plus tard, de nouvelles demandes arrivent régulièrement.
-              </p>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Aucun résultat pour cette recherche</h3>
+              <p className="text-muted-foreground mb-6">Essayez d'autres villes ou d'autres dates.</p>
               <Button onClick={() => navigate("/auth?role=traveler")} size="lg" className="rounded-full px-8">
-                Créer mon compte voyageur
+                Créer une alerte voyageur
               </Button>
             </div>
           )}
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {(hasSearched ? filteredRequests : shipmentRequests.slice(0, 6)).map((request) => (
               <div
                 key={request.id}
-                className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-lg transition-all duration-300 animate-fade-in"
+                className="group bg-card rounded-2xl overflow-hidden border border-border/40 hover:shadow-lg hover:border-primary/20 transition-all duration-300 animate-fade-in"
               >
-                <div className="aspect-[4/3] overflow-hidden">
+                <div className="aspect-[4/3] overflow-hidden relative">
                   <img
                     src={getShipmentImageUrl(request.image_url, request.item_type)}
                     alt={request.item_type}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <Package className="w-3 h-3" />
+                    {request.weight_kg} kg
+                  </div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/40">
                     <UserAvatar
                       fullName={request.profiles?.full_name || ""}
@@ -293,37 +296,29 @@ const Index = () => {
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
-                        </p>
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>Expéditeur</span>
                         {(request.sender_request_count || 0) > 2 && (
-                          <ShieldCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {(request.sender_request_count || 0) > 2 ? (
-                          <span className="text-xs text-primary font-medium">Expéditeur actif</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Nouvel expéditeur</span>
+                          <ShieldCheck className="w-3 h-3 text-green-500 ml-1" />
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4" />
-                    <span className="font-medium text-foreground">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="w-4 h-4 text-primary shrink-0" />
+                    <span className="font-semibold text-foreground text-sm sm:text-base truncate">
                       {request.from_city} → {request.to_city}
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{request.item_type}</h3>
-
-                  <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                  <div className="space-y-2 text-sm text-muted-foreground mb-4 bg-muted/30 p-3 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span>Poids</span>
-                      <span className="font-medium text-foreground">{request.weight_kg} kg</span>
+                      <span>Objet</span>
+                      <span className="font-medium text-foreground">{request.item_type}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Dates</span>
@@ -334,14 +329,11 @@ const Index = () => {
                     </div>
                   </div>
 
-                  {request.notes && <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{request.notes}</p>}
-
                   <Button
-                    variant="outline"
-                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                    className="w-full rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300"
                     onClick={() => setSelectedShipment(request)}
                   >
-                    Voir plus
+                    Voir l'annonce
                   </Button>
                 </div>
               </div>
@@ -359,48 +351,17 @@ const Index = () => {
                 }}
                 className="rounded-full px-8"
               >
-                Voir toutes les demandes
+                Voir plus d'annonces
               </Button>
             </div>
           )}
         </div>
       </section>
 
-      {/* Why EDIM3AK Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="text-center animate-fade-in">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Sécurité</h3>
-              <p className="text-muted-foreground">Discutez directement avec l'expéditeur avant de vous engager</p>
-            </div>
-
-            <div className="text-center animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Économie</h3>
-              <p className="text-muted-foreground">Partagez vos trajets pour arrondir vos fins de mois</p>
-            </div>
-
-            <div className="text-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Rapidité</h3>
-              <p className="text-muted-foreground">Un matching instantané selon votre trajet</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="border-t border-border/40 py-8">
+      <footer className="border-t border-border/40 py-8 mt-12 bg-muted/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="text-center text-sm text-muted-foreground">© EDIM3AK – 2025</div>
+          <div className="text-center text-sm text-muted-foreground">© EDIM3AK – 2025. Connecter les voyageurs.</div>
         </div>
       </footer>
 
@@ -412,12 +373,10 @@ const Index = () => {
           shipment={selectedShipment}
           isAuthenticated={!!session}
           onSignUp={() => {
-            // Redirection intelligente
             localStorage.setItem("targetShipmentId", selectedShipment.id);
             navigate("/auth?role=traveler");
           }}
           onLogin={() => {
-            // Redirection intelligente
             localStorage.setItem("targetShipmentId", selectedShipment.id);
             navigate("/auth");
           }}
