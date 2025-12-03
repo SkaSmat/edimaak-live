@@ -61,8 +61,18 @@ const Auth = () => {
       .eq("id", userId)
       .single()
       .then(({ data }) => {
+        // On vérifie s'il y a un colis en mémoire
+        const targetShipmentId = localStorage.getItem("targetShipmentId");
+
         if (data?.role === "traveler") {
-          navigate("/dashboard/traveler");
+          // Si on a un colis cible, on l'ajoute à l'URL
+          if (targetShipmentId) {
+            // On nettoie le storage pour ne pas que ça reste à vie
+            localStorage.removeItem("targetShipmentId");
+            navigate(`/dashboard/traveler?highlight=${targetShipmentId}`);
+          } else {
+            navigate("/dashboard/traveler");
+          }
         } else if (data?.role === "sender") {
           navigate("/dashboard/sender");
         } else if (data?.role === "admin") {
