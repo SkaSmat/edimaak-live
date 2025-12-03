@@ -49,11 +49,13 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
     try {
       const { data, error } = await supabase
         .from("matches")
-        .select(`
+        .select(
+          `
           *,
           trips:trip_id(id, from_city, to_city, departure_date, traveler_id, profiles:traveler_id(full_name, phone)),
           shipment_requests:shipment_request_id(id, item_type, sender_id)
-        `)
+        `,
+        )
         .eq("shipment_requests.sender_id", userId)
         .order("created_at", { ascending: false });
 
@@ -70,13 +72,10 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
 
   const handleUpdateStatus = async (matchId: string, status: "accepted" | "rejected") => {
     try {
-      const { error } = await supabase
-        .from("matches")
-        .update({ status })
-        .eq("id", matchId);
+      const { error } = await supabase.from("matches").update({ status }).eq("id", matchId);
 
       if (error) throw error;
-      
+
       if (status === "accepted") {
         toast.success("Proposition acceptée ! Vous pouvez maintenant discuter.");
         // Redirect to messages page with the match pre-selected
@@ -115,83 +114,64 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
 
   return (
     <div className="space-y-4">
-      {matches.map((match: any) => (
-        <div
-          key={match.id}
-          className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <div>
-                <h3 className="font-semibold">
-                  {match.trips.from_city} → {match.trips.to_city}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Par {match.trips.profiles.full_name}
-                </p>
+      {matches
+        .filter((match) => match.trips && match.trips.profiles)
+        .map((match: any) => (
+          <div key={match.id} className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold">
+                    {match.trips.from_city} → {match.trips.to_city}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Par {match.trips?.profiles?.full_name || "Voyageur"}</p>
+                </div>
               </div>
-            </div>
-            <Badge
-              variant={
-                match.status === "pending"
-                  ? "default"
+              <Badge
+                variant={match.status === "pending" ? "default" : match.status === "accepted" ? "default" : "secondary"}
+              >
+                {match.status === "pending"
+                  ? "En attente"
                   : match.status === "accepted"
-                  ? "default"
-                  : "secondary"
-              }
-            >
-              {match.status === "pending"
-                ? "En attente"
-                : match.status === "accepted"
-                ? "Accepté"
-                : match.status === "rejected"
-                ? "Refusé"
-                : "Complété"}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Calendar className="w-4 h-4" />
-            <span>
-              Départ: {format(new Date(match.trips.departure_date), "d MMMM yyyy", { locale: fr })}
-            </span>
-          </div>
-
-          {match.status === "pending" && (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => handleUpdateStatus(match.id, "accepted")}
-                className="flex-1"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Accepter
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleUpdateStatus(match.id, "rejected")}
-                className="flex-1"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Refuser
-              </Button>
+                    ? "Accepté"
+                    : match.status === "rejected"
+                      ? "Refusé"
+                      : "Complété"}
+              </Badge>
             </div>
-          )}
 
-          {(match.status === "accepted" || match.status === "completed") && (
-            <Button
-              size="sm"
-              onClick={() => handleOpenChat(match.id)}
-              className="w-full"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Discuter
-            </Button>
-          )}
-        </div>
-      ))}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <Calendar className="w-4 h-4" />
+              <span>Départ: {format(new Date(match.trips.departure_date), "d MMMM yyyy", { locale: fr })}</span>
+            </div>
+
+            {match.status === "pending" && (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleUpdateStatus(match.id, "accepted")} className="flex-1">
+                  <Check className="w-4 h-4 mr-2" />
+                  Accepter
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUpdateStatus(match.id, "rejected")}
+                  className="flex-1"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Refuser
+                </Button>
+              </div>
+            )}
+
+            {(match.status === "accepted" || match.status === "completed") && (
+              <Button size="sm" onClick={() => handleOpenChat(match.id)} className="w-full">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Discuter
+              </Button>
+            )}
+          </div>
+        ))}
     </div>
   );
 };
