@@ -173,22 +173,22 @@ export const DashboardMobileHeader = ({
   const navigate = useNavigate();
 
   return (
-    <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
+    <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full transition-all duration-200">
       <div className="flex items-center gap-3">
-        {/* Wrapper en relative pour le point rouge */}
-        <div className="relative inline-flex">
-          <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
+        {/* Le bouton menu */}
+        <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
 
-          {/* LE POINT ROUGE MOBILE - Force Z-Index élevé et position absolue */}
+        {/* Le Logo */}
+        <div className="flex items-center gap-2" onClick={() => navigate("/")}>
+          <LogoEdiM3ak iconSize="sm" />
+
+          {/* LE NOUVEAU BADGE ROUGE (Visible et impossible à rater) */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-3 w-3 z-50 pointer-events-none">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+            <span className="flex h-5 w-5 animate-in zoom-in duration-300 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </div>
-
-        <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
       </div>
 
       <button
