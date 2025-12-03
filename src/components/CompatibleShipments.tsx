@@ -175,7 +175,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                   {shipment.from_city} ({shipment.from_country}) → {shipment.to_city} ({shipment.to_country})
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Par {shipment.profiles.full_name}
+                  Par {shipment.profiles?.full_name || "Expéditeur"}
                 </p>
               </div>
             </div>
