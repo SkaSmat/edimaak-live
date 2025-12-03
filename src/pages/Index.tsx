@@ -221,7 +221,7 @@ const Index = () => {
       </section>
 
       {/* Sticky Search Bar */}
-      <div className="sticky top-20 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 border-b border-border/30 shadow-sm">
+      <div className="relative md:sticky md:top-20 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 border-b border-border/30 shadow-sm mt-[-2rem] sm:mt-0">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
           <div className="bg-card rounded-full shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
             <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
