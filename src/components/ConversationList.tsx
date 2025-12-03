@@ -47,23 +47,25 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
       // We fetch all matches with accepted/completed status
       const { data, error } = await supabase
         .from("matches")
-        .select(`
+        .select(
+          `
           *,
           trips:trip_id(from_city, to_city, traveler_id, profiles:traveler_id(full_name)),
           shipment_requests:shipment_request_id(item_type, from_city, to_city, sender_id, profiles:sender_id(full_name))
-        `)
+        `,
+        )
         .in("status", ["accepted", "completed"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      
+
       // Filter client-side to only include matches where user is traveler or sender
       const filteredMatches = (data || []).filter((match: any) => {
         const isTraveler = match.trips?.traveler_id === userId;
         const isSender = match.shipment_requests?.sender_id === userId;
         return isTraveler || isSender;
       });
-      
+
       setMatches(filteredMatches as Match[]);
     } catch (error) {
       console.error("Error fetching matches:", error);
@@ -92,11 +94,13 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
       {matches.map((match) => {
         const isUserTraveler = match.trips?.traveler_id === userId;
         const otherUser = isUserTraveler
-          ? match.shipment_requests?.profiles?.full_name
-          : match.trips?.profiles?.full_name;
+          ? match.shipment_requests?.profiles?.full_name || "Utilisateur"
+          : match.trips?.profiles?.full_name || "Utilisateur";
         const route = match.trips
           ? `${match.trips.from_city} → ${match.trips.to_city}`
-          : "";
+          : match.shipment_requests
+            ? `${match.shipment_requests.from_city} → ${match.shipment_requests.to_city}`
+            : "Trajet inconnu";
         const itemType = match.shipment_requests?.item_type || "";
 
         return (
@@ -105,17 +109,15 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
             onClick={() => onSelectMatch(match.id)}
             className={cn(
               "w-full text-left p-3 rounded-lg border transition-colors hover:bg-accent/50",
-              selectedMatchId === match.id ? "bg-accent/50 border-primary" : "bg-card"
+              selectedMatchId === match.id ? "bg-accent/50 border-primary" : "bg-card",
             )}
           >
             <div className="flex items-start gap-3">
               <MessageCircle className="w-5 h-5 text-primary mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{otherUser || "Utilisateur"}</p>
+                <p className="font-medium truncate">{otherUser}</p>
                 <p className="text-sm text-muted-foreground truncate">{route}</p>
-                {itemType && (
-                  <p className="text-xs text-muted-foreground/70 truncate">{itemType}</p>
-                )}
+                {itemType && <p className="text-xs text-muted-foreground/70 truncate">{itemType}</p>}
               </div>
               {match.status === "accepted" && (
                 <Badge variant="outline" className="text-xs flex-shrink-0">
