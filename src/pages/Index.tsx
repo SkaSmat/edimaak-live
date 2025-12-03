@@ -420,8 +420,15 @@ const Index = () => {
           onClose={() => setSelectedShipment(null)}
           shipment={selectedShipment}
           isAuthenticated={!!session}
-          onSignUp={() => navigate("/auth?role=traveler")}
-          onLogin={() => navigate("/auth")}
+          onSignUp={() => {
+            // ON SAUVEGARDE L'ID DU COLIS CIBLÉ AVANT DE PARTIR
+            localStorage.setItem("targetShipmentId", selectedShipment.id);
+            navigate("/auth?role=traveler");
+          }}
+          onLogin={() => {
+            localStorage.setItem("targetShipmentId", selectedShipment.id);
+            navigate("/auth");
+          }}
         />
       )}
     </div>
