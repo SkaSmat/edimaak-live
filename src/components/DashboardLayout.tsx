@@ -4,8 +4,8 @@ import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LogOut, MessageCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client"; // Import Supabase
-import { toast } from "sonner"; // Import des notifications
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -20,22 +20,25 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
   const roleLabel = role === "traveler" ? "Voyageur" : role === "sender" ? "Expéditeur" : "Administrateur";
   const effectiveIsAdmin = isAdmin || role === "admin";
 
-  // Ref pour éviter de jouer le son deux fois si le composant remonte
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  // Mouchard de notification
   useEffect(() => {
-    // 1. Initialiser le son de notification
-    audioRef.current = new Audio("/notification.mp3"); // On utilisera un son par défaut si celui-ci n'existe pas
+    console.log("🟢 [DEBUG] Système de notification initialisé");
 
     const setupRealtimeListener = async () => {
-      // On récupère l'ID de l'utilisateur actuel
+      // 1. Récupérer l'utilisateur
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session) return;
-      const currentUserId = session.user.id;
 
-      // 2. On s'abonne aux nouveaux messages
+      if (!session) {
+        console.log("🔴 [DEBUG] Pas de session active, abandon.");
+        return;
+      }
+
+      const currentUserId = session.user.id;
+      console.log("👤 [DEBUG] Mon ID :", currentUserId);
+
+      // 2. S'abonner aux messages
       const channel = supabase
         .channel("global_messages")
         .on(
@@ -46,48 +49,50 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
             table: "messages",
           },
           (payload) => {
+            console.log("📨 [DEBUG] Message reçu du serveur :", payload);
             const newMessage = payload.new as any;
 
-            // Si le message ne vient pas de moi, c'est une notification !
+            // Vérification : est-ce moi qui ai envoyé le message ?
             if (newMessage.sender_id !== currentUserId) {
-              // A. Jouer un petit son (si possible)
-              // Note: Les navigateurs bloquent parfois le son sans interaction, c'est normal.
+              console.log("🔔 [DEBUG] Ce n'est pas moi ! DÉCLENCHEMENT NOTIF");
+
+              // A. Son
               try {
-                // On utilise un son système simple encodé en base64 pour éviter d'avoir à gérer un fichier mp3
                 const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
                 audio.volume = 0.5;
-                audio.play().catch((e) => console.log("Audio play blocked", e));
+                audio
+                  .play()
+                  .catch((e) => console.log("🔇 Son bloqué par le navigateur (il faut cliquer sur la page avant)", e));
               } catch (e) {
-                console.error("Erreur audio", e);
+                console.error("Erreur lecture audio", e);
               }
 
-              // B. Afficher la notification visuelle
+              // B. Toast visuel
               toast.message("Nouveau message !", {
                 description:
-                  newMessage.content.length > 50 ? newMessage.content.substring(0, 50) + "..." : newMessage.content,
+                  newMessage.content.length > 40 ? newMessage.content.substring(0, 40) + "..." : newMessage.content,
                 icon: <MessageCircle className="w-5 h-5 text-primary" />,
                 duration: 5000,
-                // On pourrait ajouter un bouton pour aller direct au message
                 action: {
                   label: "Voir",
                   onClick: () => (window.location.href = `/messages?matchId=${newMessage.match_id}`),
                 },
               });
+            } else {
+              console.log("✋ [DEBUG] C'est mon propre message, j'ignore.");
             }
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log("📡 [DEBUG] Statut connexion Supabase :", status);
+        });
 
       return () => {
         supabase.removeChannel(channel);
       };
     };
 
-    const cleanupPromise = setupRealtimeListener();
-
-    return () => {
-      cleanupPromise.then((cleanup) => cleanup && cleanup());
-    };
+    setupRealtimeListener();
   }, []);
 
   return (
@@ -96,7 +101,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
         <DashboardSidebar role={role === "admin" ? "traveler" : role} isAdmin={effectiveIsAdmin} onLogout={onLogout} />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
-          {/* Header Mobile */}
+          {/* Header Mobile Sticky */}
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
             <DashboardMobileHeader fullName={fullName} onLogout={onLogout} />
           </div>
