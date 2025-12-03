@@ -13,7 +13,7 @@ interface DashboardLayoutProps {
   role: "traveler" | "sender" | "admin";
   fullName: string;
   isAdmin?: boolean;
-  onLogout?: () => void; // Rendu optionnel car on gère la déco ici maintenant
+  onLogout?: () => void; // Optionnel car géré en interne
 }
 
 export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: DashboardLayoutProps) => {
@@ -24,87 +24,71 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
 
-  // --- LA CORRECTION EST ICI : FONCTION DE DÉCONNEXION ROBUSTE ---
+  // --- FONCTION DE DÉCONNEXION (Hard Logout) ---
   const handleLogout = async () => {
     try {
-      // 1. On prévient Supabase
       await supabase.auth.signOut();
-
-      // 2. On vide brutalement la mémoire du navigateur
       localStorage.clear();
       sessionStorage.clear();
-
-      // 3. On force le rechargement de la page vers l'accueil
-      // (Cela évite que React garde des infos en cache)
       window.location.href = "/";
     } catch (error) {
-      console.error("Erreur lors de la déconnexion", error);
-      // En cas d'erreur, on force quand même la sortie
+      console.error("Erreur déco", error);
       window.location.href = "/";
     }
   };
-  // -------------------------------------------------------------
 
+  // Reset compteur sur page messages
   useEffect(() => {
     if (location.pathname === "/messages") {
       setUnreadCount(0);
     }
   }, [location.pathname]);
 
+  // Système de notification
   useEffect(() => {
-    console.log("🟢 [DEBUG] Système de notification initialisé");
-
     const setupRealtimeListener = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
-
       const currentUserId = session.user.id;
 
       const channel = supabase
         .channel("global_messages")
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "messages",
-          },
-          (payload) => {
-            const newMessage = payload.new as any;
-
-            if (newMessage.sender_id !== currentUserId) {
-              if (window.location.pathname !== "/messages") {
-                setUnreadCount((prev) => prev + 1);
-              }
-
-              try {
-                const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
-                audio.volume = 0.5;
-                audio.play().catch(() => {});
-              } catch (e) {}
-
-              toast.message("Nouveau message !", {
-                description:
-                  newMessage.content.length > 40 ? newMessage.content.substring(0, 40) + "..." : newMessage.content,
-                icon: <MessageCircle className="w-5 h-5 text-primary" />,
-                duration: 5000,
-                action: {
-                  label: "Voir",
-                  onClick: () => (window.location.href = `/messages?matchId=${newMessage.match_id}`),
-                },
-              });
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+          const newMessage = payload.new as any;
+          if (newMessage.sender_id !== currentUserId) {
+            if (window.location.pathname !== "/messages") {
+              setUnreadCount((prev) => prev + 1);
             }
-          },
-        )
+
+            // Son + Vibration
+            try {
+              const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
+              audio.volume = 0.5;
+              audio.play().catch(() => {});
+              if (typeof navigator !== "undefined" && navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+              }
+            } catch (e) {}
+
+            toast.message("Nouveau message !", {
+              description: newMessage.content.substring(0, 40) + "...",
+              icon: <MessageCircle className="w-5 h-5 text-primary" />,
+              duration: 5000,
+              action: {
+                label: "Voir",
+                onClick: () => (window.location.href = `/messages?matchId=${newMessage.match_id}`),
+              },
+            });
+          }
+        })
         .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
       };
     };
-
     setupRealtimeListener();
   }, []);
 
@@ -114,19 +98,21 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
         <DashboardSidebar
           role={role === "admin" ? "traveler" : role}
           isAdmin={effectiveIsAdmin}
-          onLogout={handleLogout} // On utilise notre nouvelle fonction
+          onLogout={handleLogout} // Utilise la fonction interne
           unreadCount={unreadCount}
         />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
+          {/* Header Mobile */}
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
             <DashboardMobileHeader
               fullName={fullName}
-              onLogout={onLogout} // Ici aussi
+              onLogout={handleLogout} // Utilise la fonction interne
               unreadCount={unreadCount}
             />
           </div>
 
+          {/* Desktop Header */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">Bonjour, {firstName}</h1>
@@ -137,7 +123,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleLogout} // Et ici aussi
+              onClick={handleLogout} // Utilise la fonction interne
               className="text-muted-foreground hover:text-destructive transition-colors"
             >
               <LogOut className="h-4 w-4 mr-2" />
