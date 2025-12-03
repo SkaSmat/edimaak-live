@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react"; // Ajout de Lock
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 import { useUserStats, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
@@ -38,15 +38,20 @@ const Profile = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [privateInfo, setPrivateInfo] = useState<PrivateInfoData | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingKyc, setSavingKyc] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false); // Nouvel état
 
   // Form states
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [countryOfResidence, setCountryOfResidence] = useState("");
-  
-  // KYC states (now from private_info)
+
+  // Password Reset state
+  const [newPassword, setNewPassword] = useState(""); // Nouveau champ
+
+  // KYC states
   const [phone, setPhone] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [addressCity, setAddressCity] = useState("");
@@ -56,15 +61,24 @@ const Profile = () => {
   const [idNumber, setIdNumber] = useState("");
   const [idExpiryDate, setIdExpiryDate] = useState("");
 
-  // Phone validation error
   const [phoneError, setPhoneError] = useState("");
 
   useEffect(() => {
     checkAuth();
+
+    // Vérifier si on vient d'un reset password (hash dans l'url type #access_token=...)
+    supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // Optionnel : Afficher un toast pour dire "Veuillez changer votre mot de passe ci-dessous"
+        toast.info("Vous pouvez maintenant définir votre nouveau mot de passe.");
+      }
+    });
   }, []);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       navigate("/auth");
       return;
@@ -89,7 +103,7 @@ const Profile = () => {
     setLastName(profileData.last_name || "");
     setCountryOfResidence(profileData.country_of_residence || "");
 
-    // Fetch private_info data (GDPR separated)
+    // Fetch private_info data
     const { data: privateData } = await supabase
       .from("private_info")
       .select("*")
@@ -107,7 +121,7 @@ const Profile = () => {
       setIdNumber(privateData.id_number || "");
       setIdExpiryDate(privateData.id_expiry_date || "");
     }
-    
+
     setLoading(false);
   };
 
@@ -118,8 +132,29 @@ const Profile = () => {
   };
 
   const handleAvatarUpdated = (newUrl: string | null) => {
-    if (profile) {
-      setProfile({ ...profile, avatar_url: newUrl });
+    if (profile) setProfile({ ...profile, avatar_url: newUrl });
+  };
+
+  // NOUVELLE FONCTION : Mise à jour du mot de passe
+  const handleUpdatePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) throw error;
+
+      toast.success("Mot de passe mis à jour avec succès !");
+      setNewPassword(""); // Reset le champ
+    } catch (error: any) {
+      console.error("Erreur password:", error);
+      toast.error("Impossible de mettre à jour le mot de passe");
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -155,7 +190,6 @@ const Profile = () => {
   const saveKycInfo = async () => {
     if (!user) return;
 
-    // Validation: phone is REQUIRED
     if (!phone.trim()) {
       setPhoneError("Le numéro de téléphone est obligatoire");
       toast.error("Le numéro de téléphone est obligatoire");
@@ -177,43 +211,25 @@ const Profile = () => {
       id_expiry_date: idExpiryDate || null,
     };
 
-    // Upsert into private_info table
-    const { error } = await supabase
-      .from("private_info")
-      .upsert(kycData, { onConflict: "id" });
+    const { error } = await supabase.from("private_info").upsert(kycData, { onConflict: "id" });
 
     if (error) {
       console.error("KYC save error:", error);
       toast.error("Erreur lors de la sauvegarde KYC");
     } else {
       toast.success("Informations KYC enregistrées");
-      setPrivateInfo({
-        phone: phone || null,
-        address_line1: addressLine1 || null,
-        address_city: addressCity || null,
-        address_postal_code: addressPostalCode || null,
-        address_country: addressCountry || null,
-        id_type: idType || null,
-        id_number: idNumber || null,
-        id_expiry_date: idExpiryDate || null,
-      });
+      setPrivateInfo(kycData as PrivateInfoData);
     }
     setSavingKyc(false);
   };
 
   const stats = useUserStats(user?.id);
-  
-  // Verified status: phone + ID info filled
-  const isVerified = Boolean(
-    phone?.trim() && 
-    idType?.trim() && 
-    idNumber?.trim()
-  );
 
-  // KYC status for detailed badge
+  const isVerified = Boolean(phone?.trim() && idType?.trim() && idNumber?.trim());
+
   const getKycStatus = () => {
     const kycFields = [phone, idType, idNumber, idExpiryDate];
-    const filledFields = kycFields.filter(f => f && String(f).trim() !== "").length;
+    const filledFields = kycFields.filter((f) => f && String(f).trim() !== "").length;
     if (filledFields === 0) return "not_filled";
     if (filledFields < kycFields.length) return "partial";
     return "complete";
@@ -221,9 +237,8 @@ const Profile = () => {
 
   const kycStatus = getKycStatus();
 
-  const isActive = profile?.role === "traveler" 
-    ? isActiveTraveler(stats.tripsCount)
-    : isActiveSender(stats.shipmentsCount);
+  const isActive =
+    profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
 
   if (loading || !profile) {
     return (
@@ -234,15 +249,11 @@ const Profile = () => {
   }
 
   return (
-    <DashboardLayout
-      role={profile.role as "traveler" | "sender"}
-      fullName={profile.full_name}
-      onLogout={handleLogout}
-    >
+    <DashboardLayout role={profile.role as "traveler" | "sender"} fullName={profile.full_name} onLogout={handleLogout}>
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Mon profil</h1>
 
-        {/* Section: Aperçu du profil */}
+        {/* Section: Aperçu */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <ProfileAvatarUpload
@@ -254,21 +265,50 @@ const Profile = () => {
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-foreground">
-                  {firstName || lastName 
-                    ? `${firstName} ${lastName}`.trim() 
-                    : profile.full_name}
+                  {firstName || lastName ? `${firstName} ${lastName}`.trim() : profile.full_name}
                 </h2>
                 <VerifiedBadge isVerified={isVerified} />
               </div>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <ActivityBadge 
-                  isActive={isActive} 
-                  role={profile.role as "traveler" | "sender"} 
-                />
+                <ActivityBadge isActive={isActive} role={profile.role as "traveler" | "sender"} />
                 <KycBadge status={kycStatus} />
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* NOUVELLE SECTION : SÉCURITÉ (Changement de mot de passe) */}
+        <section className="bg-card rounded-2xl shadow-sm border p-6 border-l-4 border-l-primary/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Lock className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Sécurité</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Entrez votre nouveau mot de passe"
+                className="max-w-md"
+              />
+              <p className="text-sm text-muted-foreground">
+                Utilisez ce champ pour modifier votre mot de passe ou en définir un nouveau après une réinitialisation.
+              </p>
+            </div>
+            <Button onClick={handleUpdatePassword} disabled={savingPassword || !newPassword} variant="secondary">
+              {savingPassword ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Mise à jour...
+                </>
+              ) : (
+                "Mettre à jour le mot de passe"
+              )}
+            </Button>
           </div>
         </section>
 
@@ -280,7 +320,7 @@ const Profile = () => {
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : (
-            <ProfileStats 
+            <ProfileStats
               tripsCount={stats.tripsCount}
               shipmentsCount={stats.shipmentsCount}
               matchesCount={stats.matchesCount}
@@ -324,8 +364,7 @@ const Profile = () => {
             <Button onClick={savePersonalInfo} disabled={savingPersonal}>
               {savingPersonal ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Enregistrement...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement...
                 </>
               ) : (
                 "Enregistrer"
@@ -340,9 +379,9 @@ const Profile = () => {
             <h2 className="text-lg font-semibold text-foreground">Vérification KYC</h2>
             <VerifiedBadge isVerified={isVerified} showLabel />
           </div>
-          
+
           <p className="text-sm text-muted-foreground mb-6">
-            Ces informations sont confidentielles et permettent de sécuriser les échanges entre voyageurs et expéditeurs.
+            Ces informations sont confidentielles et permettent de sécuriser les échanges.
           </p>
 
           <div className="space-y-4">
@@ -361,9 +400,7 @@ const Profile = () => {
                 placeholder="+33 6 12 34 56 78"
                 className={phoneError ? "border-destructive" : ""}
               />
-              {phoneError && (
-                <p className="text-sm text-destructive">{phoneError}</p>
-              )}
+              {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
             </div>
 
             <div className="border-t pt-4 mt-4">
@@ -454,8 +491,7 @@ const Profile = () => {
             <Button onClick={saveKycInfo} disabled={savingKyc} className="mt-4">
               {savingKyc ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Enregistrement...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement...
                 </>
               ) : (
                 "Enregistrer les informations KYC"
