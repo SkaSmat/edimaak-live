@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom"; // Import nécessaire pour savoir où on est
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -20,25 +21,29 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
   const roleLabel = role === "traveler" ? "Voyageur" : role === "sender" ? "Expéditeur" : "Administrateur";
   const effectiveIsAdmin = isAdmin || role === "admin";
 
-  // Mouchard de notification
+  // État pour le compteur de messages
+  const [unreadCount, setUnreadCount] = useState(0);
+  const location = useLocation();
+
+  // Reset du compteur quand on va sur la page Messages
+  useEffect(() => {
+    if (location.pathname === "/messages") {
+      setUnreadCount(0);
+    }
+  }, [location.pathname]);
+
+  // Système de notification Realtime
   useEffect(() => {
     console.log("🟢 [DEBUG] Système de notification initialisé");
 
     const setupRealtimeListener = async () => {
-      // 1. Récupérer l'utilisateur
       const {
         data: { session },
       } = await supabase.auth.getSession();
-
-      if (!session) {
-        console.log("🔴 [DEBUG] Pas de session active, abandon.");
-        return;
-      }
+      if (!session) return;
 
       const currentUserId = session.user.id;
-      console.log("👤 [DEBUG] Mon ID :", currentUserId);
 
-      // 2. S'abonner aux messages
       const channel = supabase
         .channel("global_messages")
         .on(
@@ -49,25 +54,27 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
             table: "messages",
           },
           (payload) => {
-            console.log("📨 [DEBUG] Message reçu du serveur :", payload);
             const newMessage = payload.new as any;
 
-            // Vérification : est-ce moi qui ai envoyé le message ?
+            // Si ce n'est pas moi qui ai envoyé le message
             if (newMessage.sender_id !== currentUserId) {
-              console.log("🔔 [DEBUG] Ce n'est pas moi ! DÉCLENCHEMENT NOTIF");
+              console.log("🔔 [DEBUG] Notification reçue !");
 
-              // A. Son
+              // 1. Incrémenter le compteur (seulement si on n'est pas déjà sur la page messages)
+              if (window.location.pathname !== "/messages") {
+                setUnreadCount((prev) => prev + 1);
+              }
+
+              // 2. Jouer le son
               try {
                 const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
                 audio.volume = 0.5;
-                audio
-                  .play()
-                  .catch((e) => console.log("🔇 Son bloqué par le navigateur (il faut cliquer sur la page avant)", e));
+                audio.play().catch((e) => console.log("Son bloqué (auto-play policy)"));
               } catch (e) {
-                console.error("Erreur lecture audio", e);
+                console.error("Erreur audio", e);
               }
 
-              // B. Toast visuel
+              // 3. Afficher le Toast
               toast.message("Nouveau message !", {
                 description:
                   newMessage.content.length > 40 ? newMessage.content.substring(0, 40) + "..." : newMessage.content,
@@ -78,14 +85,10 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
                   onClick: () => (window.location.href = `/messages?matchId=${newMessage.match_id}`),
                 },
               });
-            } else {
-              console.log("✋ [DEBUG] C'est mon propre message, j'ignore.");
             }
           },
         )
-        .subscribe((status) => {
-          console.log("📡 [DEBUG] Statut connexion Supabase :", status);
-        });
+        .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
@@ -98,15 +101,19 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex w-full bg-background relative">
-        <DashboardSidebar role={role === "admin" ? "traveler" : role} isAdmin={effectiveIsAdmin} onLogout={onLogout} />
+        {/* On passe le compteur à la Sidebar */}
+        <DashboardSidebar
+          role={role === "admin" ? "traveler" : role}
+          isAdmin={effectiveIsAdmin}
+          onLogout={onLogout}
+          unreadCount={unreadCount}
+        />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
-          {/* Header Mobile Sticky */}
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
             <DashboardMobileHeader fullName={fullName} onLogout={onLogout} />
           </div>
 
-          {/* Desktop header bar */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">Bonjour, {firstName}</h1>
@@ -125,7 +132,6 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
             </Button>
           </header>
 
-          {/* Main content */}
           <main className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>
           </main>
