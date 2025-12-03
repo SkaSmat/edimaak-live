@@ -19,19 +19,18 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
   const effectiveIsAdmin = isAdmin || role === "admin";
 
   return (
-    // 1. On retire defaultOpen={true} pour laisser le mobile gérer l'état fermé par défaut
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background overflow-hidden">
+      {/* Correction ici : On retire overflow-hidden du conteneur principal pour laisser le menu mobile "flotter" au-dessus */}
+      <div className="min-h-screen flex w-full bg-background relative">
         <DashboardSidebar role={role === "admin" ? "traveler" : role} isAdmin={effectiveIsAdmin} onLogout={onLogout} />
 
-        {/* 2. On ajoute w-full et overflow-hidden pour éviter que le contenu ne sorte de l'écran */}
-        <SidebarInset className="flex-1 w-full overflow-hidden flex flex-col">
-          {/* Header Mobile : On le cache sur les écrans moyens et grands (md:hidden) */}
-          <div className="md:hidden">
+        <SidebarInset className="flex-1 w-full flex flex-col">
+          {/* Header Mobile */}
+          <div className="md:hidden z-10 relative">
             <DashboardMobileHeader fullName={fullName} onLogout={onLogout} />
           </div>
 
-          {/* Desktop header bar : Reste caché sur mobile (hidden) */}
+          {/* Desktop header bar */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">Bonjour, {firstName}</h1>
@@ -50,8 +49,9 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
             </Button>
           </header>
 
-          {/* Main content : Scrollable indépendamment */}
-          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+          {/* Main content */}
+          {/* On remet overflow-x-hidden ici pour le contenu principal uniquement */}
+          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
             <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>
           </main>
         </SidebarInset>
