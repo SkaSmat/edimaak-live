@@ -27,14 +27,11 @@ interface DashboardSidebarProps {
 export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  // On récupère isMobile et setOpenMobile pour gérer la fermeture auto
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
-  // Fonction intelligente de navigation
   const handleNavigation = (path: string) => {
     navigate(path);
-    // Si on est sur mobile, on ferme le menu après le clic
     if (isMobile) {
       setOpenMobile(false);
     }
@@ -71,8 +68,12 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50 bg-card">
-      <SidebarHeader className="p-4">
+    <Sidebar
+      collapsible="icon"
+      /* CORRECTION ICI : on force le fond blanc (bg-background) et on le met au premier plan (z-50) */
+      className="border-r border-border/50 bg-background z-50 h-full"
+    >
+      <SidebarHeader className="p-4 bg-background">
         <button
           onClick={() => handleNavigation("/")}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -82,7 +83,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
         </button>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="bg-background">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -132,7 +133,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 bg-background">
         <Separator className="mb-2" />
         <FeedbackButton variant="sidebar" collapsed={collapsed} />
         <SidebarMenuButton
@@ -152,10 +153,10 @@ export const DashboardMobileHeader = ({ fullName, onLogout }: { fullName: string
   const navigate = useNavigate();
 
   return (
-    <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border/50 sticky top-0 z-50">
+    <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-3">
-        {/* C'est ce bouton qui ouvre le menu */}
-        <SidebarTrigger className="h-9 w-9 border border-border/50" />
+        {/* On s'assure que le bouton trigger a aussi un fond pour ne pas être transparent */}
+        <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
         <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
       </div>
 
