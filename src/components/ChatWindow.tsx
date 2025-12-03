@@ -7,8 +7,7 @@ import { Send, Plane, Package, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { ActivityBadge, KycIcon } from "@/components/UserProfileBadges";
-import { getKycStatus } from "@/hooks/useUserStats";
+import { ActivityBadge, VerifiedBadge } from "@/components/UserProfileBadges";
 
 interface Message {
   id: string;
@@ -17,7 +16,7 @@ interface Message {
   created_at: string;
   profiles: {
     full_name: string;
-  } | null; // Peut être null si user supprimé
+  } | null;
 }
 
 interface ChatWindowProps {
@@ -29,32 +28,30 @@ interface OtherUserProfile {
   id: string;
   full_name: string;
   avatar_url: string | null;
-  phone: string | null;
-  id_type: string | null;
-  id_number: string | null;
-  id_expiry_date: string | null;
   role: "traveler" | "sender" | "admin";
 }
 
-// ... Interfaces MatchDetails inchangées ...
+interface OtherUserPrivateInfo {
+  phone: string | null;
+  id_type: string | null;
+  id_number: string | null;
+}
 
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  // ... autres states inchangés ...
   const [matchDetails, setMatchDetails] = useState<any | null>(null);
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
+  const [otherUserPrivateInfo, setOtherUserPrivateInfo] = useState<OtherUserPrivateInfo | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [accessDenied, setAccessDenied] = useState(false); // Nouveau state
+  const [accessDenied, setAccessDenied] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ... useEffects inchangés ...
   useEffect(() => {
     fetchMessages();
     fetchMatchDetails();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`messages:${matchId}`)
       .on(
@@ -66,7 +63,6 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           filter: `match_id=eq.${matchId}`,
         },
         (payload) => {
-          // On recharge tout pour être sûr d'avoir le profil de l'expéditeur
           fetchMessages();
         },
       )
@@ -97,7 +93,6 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       setMessages(data || []);
     } catch (error) {
       console.error("Error fetching messages:", error);
-      // Ne pas spammer d'erreur, c'est peut-être juste un accès refusé normal
     } finally {
       setLoading(false);
     }
@@ -114,7 +109,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         `,
         )
         .eq("id", matchId)
-        .maybeSingle(); // Utiliser maybeSingle pour éviter l'erreur si vide
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -125,11 +120,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
 
       setMatchDetails(data);
 
-      // Logique pour trouver "l'autre" utilisateur
-      // Si je suis l'admin, je veux voir le voyageur par défaut (ou on pourrait afficher les deux)
       let targetUserId = null;
-
-      // Conversion sécurisée des types
       const trip = data.trips as any;
       const request = data.shipment_requests as any;
 
@@ -138,18 +129,27 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       } else if (request?.sender_id === userId) {
         targetUserId = trip?.traveler_id;
       } else {
-        // Cas Admin ou Observateur : On montre le Voyageur par défaut
         targetUserId = trip?.traveler_id;
       }
 
       if (targetUserId) {
+        // Fetch profile data (public info)
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("id, full_name, avatar_url, phone, id_type, id_number, id_expiry_date, role")
+          .select("id, full_name, avatar_url, role")
           .eq("id", targetUserId)
           .maybeSingle();
 
         if (profileData) setOtherUser(profileData as OtherUserProfile);
+
+        // Fetch private_info for verified status (only if matched - RLS allows this)
+        const { data: privateData } = await supabase
+          .from("private_info")
+          .select("phone, id_type, id_number")
+          .eq("id", targetUserId)
+          .maybeSingle();
+
+        if (privateData) setOtherUserPrivateInfo(privateData as OtherUserPrivateInfo);
       }
     } catch (error) {
       console.error("Error fetching match details:", error);
@@ -179,6 +179,13 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     }
   };
 
+  // Check if user is verified (phone + ID)
+  const isOtherUserVerified = Boolean(
+    otherUserPrivateInfo?.phone?.trim() &&
+    otherUserPrivateInfo?.id_type?.trim() &&
+    otherUserPrivateInfo?.id_number?.trim()
+  );
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Chargement de la conversation...</div>;
   }
@@ -195,14 +202,9 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     );
   }
 
-  const otherUserKycStatus = otherUser ? getKycStatus(otherUser) : "not_filled";
-  const isOtherUserActive = true;
-
   return (
     <div className="flex flex-col h-[600px]">
-      {" "}
-      {/* Hauteur augmentée pour confort */}
-      {/* Header et Info Match - Inchangé mais sécurisé via matchDetails?. */}
+      {/* Header with other user info */}
       {otherUser && (
         <div className="mb-4 p-4 bg-card rounded-lg border shadow-sm">
           <div className="flex items-center gap-3">
@@ -210,15 +212,17 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <p className="font-semibold text-foreground">{otherUser.full_name}</p>
-                <KycIcon status={otherUserKycStatus} />
+                <VerifiedBadge isVerified={isOtherUserVerified} size="sm" />
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <ActivityBadge isActive={isOtherUserActive} role={otherUser.role as "traveler" | "sender"} />
+                <ActivityBadge isActive={true} role={otherUser.role as "traveler" | "sender"} />
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Match details */}
       {matchDetails && matchDetails.trips && (
         <div className="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -235,6 +239,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           </div>
         </div>
       )}
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto space-y-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
         {messages.length === 0 ? (
@@ -245,7 +250,6 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         ) : (
           messages.map((message: any) => {
             const isOwn = message.sender_id === userId;
-            // PROTECTION CRASH : On vérifie si profile existe
             const senderName = message.profiles?.full_name || "Utilisateur inconnu";
 
             return (
@@ -271,6 +275,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         )}
         <div ref={messagesEndRef} />
       </div>
+
       {/* Input */}
       <form onSubmit={handleSend} className="flex gap-2 mt-4">
         <Input

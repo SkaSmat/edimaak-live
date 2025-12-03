@@ -8,18 +8,21 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
-import { useUserStats, getKycStatus, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
-import { ActivityBadge, KycBadge, ProfileStats } from "@/components/UserProfileBadges";
+import { useUserStats, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
+import { ActivityBadge, KycBadge, ProfileStats, VerifiedBadge } from "@/components/UserProfileBadges";
 
 interface ProfileData {
   id: string;
   full_name: string;
   role: "traveler" | "sender" | "admin";
-  phone: string | null;
   avatar_url: string | null;
   first_name: string | null;
   last_name: string | null;
   country_of_residence: string | null;
+}
+
+interface PrivateInfoData {
+  phone: string | null;
   address_line1: string | null;
   address_city: string | null;
   address_postal_code: string | null;
@@ -33,6 +36,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [privateInfo, setPrivateInfo] = useState<PrivateInfoData | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingKyc, setSavingKyc] = useState(false);
@@ -42,7 +46,7 @@ const Profile = () => {
   const [lastName, setLastName] = useState("");
   const [countryOfResidence, setCountryOfResidence] = useState("");
   
-  // KYC states
+  // KYC states (now from private_info)
   const [phone, setPhone] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [addressCity, setAddressCity] = useState("");
@@ -51,6 +55,9 @@ const Profile = () => {
   const [idType, setIdType] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [idExpiryDate, setIdExpiryDate] = useState("");
+
+  // Phone validation error
+  const [phoneError, setPhoneError] = useState("");
 
   useEffect(() => {
     checkAuth();
@@ -65,31 +72,41 @@ const Profile = () => {
 
     setUser(session.user);
 
-    const { data: profileData, error } = await supabase
+    // Fetch profile data
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, full_name, role, avatar_url, first_name, last_name, country_of_residence")
       .eq("id", session.user.id)
       .single();
 
-    if (error || !profileData) {
+    if (profileError || !profileData) {
       navigate("/auth");
       return;
     }
 
     setProfile(profileData as ProfileData);
-    
-    // Initialize form fields
     setFirstName(profileData.first_name || "");
     setLastName(profileData.last_name || "");
     setCountryOfResidence(profileData.country_of_residence || "");
-    setPhone(profileData.phone || "");
-    setAddressLine1(profileData.address_line1 || "");
-    setAddressCity(profileData.address_city || "");
-    setAddressPostalCode(profileData.address_postal_code || "");
-    setAddressCountry(profileData.address_country || "");
-    setIdType(profileData.id_type || "");
-    setIdNumber(profileData.id_number || "");
-    setIdExpiryDate(profileData.id_expiry_date || "");
+
+    // Fetch private_info data (GDPR separated)
+    const { data: privateData } = await supabase
+      .from("private_info")
+      .select("*")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    if (privateData) {
+      setPrivateInfo(privateData as PrivateInfoData);
+      setPhone(privateData.phone || "");
+      setAddressLine1(privateData.address_line1 || "");
+      setAddressCity(privateData.address_city || "");
+      setAddressPostalCode(privateData.address_postal_code || "");
+      setAddressCountry(privateData.address_country || "");
+      setIdType(privateData.id_type || "");
+      setIdNumber(privateData.id_number || "");
+      setIdExpiryDate(privateData.id_expiry_date || "");
+    }
     
     setLoading(false);
   };
@@ -137,11 +154,40 @@ const Profile = () => {
 
   const saveKycInfo = async () => {
     if (!user) return;
+
+    // Validation: phone is REQUIRED
+    if (!phone.trim()) {
+      setPhoneError("Le numéro de téléphone est obligatoire");
+      toast.error("Le numéro de téléphone est obligatoire");
+      return;
+    }
+    setPhoneError("");
+
     setSavingKyc(true);
 
+    const kycData = {
+      id: user.id,
+      phone: phone || null,
+      address_line1: addressLine1 || null,
+      address_city: addressCity || null,
+      address_postal_code: addressPostalCode || null,
+      address_country: addressCountry || null,
+      id_type: idType || null,
+      id_number: idNumber || null,
+      id_expiry_date: idExpiryDate || null,
+    };
+
+    // Upsert into private_info table
     const { error } = await supabase
-      .from("profiles")
-      .update({
+      .from("private_info")
+      .upsert(kycData, { onConflict: "id" });
+
+    if (error) {
+      console.error("KYC save error:", error);
+      toast.error("Erreur lors de la sauvegarde KYC");
+    } else {
+      toast.success("Informations KYC enregistrées");
+      setPrivateInfo({
         phone: phone || null,
         address_line1: addressLine1 || null,
         address_city: addressCity || null,
@@ -150,38 +196,30 @@ const Profile = () => {
         id_type: idType || null,
         id_number: idNumber || null,
         id_expiry_date: idExpiryDate || null,
-      })
-      .eq("id", user.id);
-
-    if (error) {
-      toast.error("Erreur lors de la sauvegarde KYC");
-    } else {
-      toast.success("Informations KYC enregistrées");
-      if (profile) {
-        setProfile({
-          ...profile,
-          phone: phone || null,
-          address_line1: addressLine1 || null,
-          address_city: addressCity || null,
-          address_postal_code: addressPostalCode || null,
-          address_country: addressCountry || null,
-          id_type: idType || null,
-          id_number: idNumber || null,
-          id_expiry_date: idExpiryDate || null,
-        });
-      }
+      });
     }
     setSavingKyc(false);
   };
 
   const stats = useUserStats(user?.id);
   
-  const kycStatus = getKycStatus({
-    phone,
-    id_type: idType,
-    id_number: idNumber,
-    id_expiry_date: idExpiryDate,
-  });
+  // Verified status: phone + ID info filled
+  const isVerified = Boolean(
+    phone?.trim() && 
+    idType?.trim() && 
+    idNumber?.trim()
+  );
+
+  // KYC status for detailed badge
+  const getKycStatus = () => {
+    const kycFields = [phone, idType, idNumber, idExpiryDate];
+    const filledFields = kycFields.filter(f => f && String(f).trim() !== "").length;
+    if (filledFields === 0) return "not_filled";
+    if (filledFields < kycFields.length) return "partial";
+    return "complete";
+  };
+
+  const kycStatus = getKycStatus();
 
   const isActive = profile?.role === "traveler" 
     ? isActiveTraveler(stats.tripsCount)
@@ -214,14 +252,15 @@ const Profile = () => {
               onAvatarUpdated={handleAvatarUpdated}
             />
             <div className="flex-1 space-y-3">
-              <div>
+              <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-foreground">
                   {firstName || lastName 
                     ? `${firstName} ${lastName}`.trim() 
                     : profile.full_name}
                 </h2>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <VerifiedBadge isVerified={isVerified} />
               </div>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
               <div className="flex flex-wrap items-center gap-2">
                 <ActivityBadge 
                   isActive={isActive} 
@@ -299,7 +338,7 @@ const Profile = () => {
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Vérification KYC</h2>
-            <KycBadge status={kycStatus} />
+            <VerifiedBadge isVerified={isVerified} showLabel />
           </div>
           
           <p className="text-sm text-muted-foreground mb-6">
@@ -308,14 +347,23 @@ const Profile = () => {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Numéro de téléphone</Label>
+              <Label htmlFor="phone">
+                Numéro de téléphone <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="phone"
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (phoneError) setPhoneError("");
+                }}
                 placeholder="+33 6 12 34 56 78"
+                className={phoneError ? "border-destructive" : ""}
               />
+              {phoneError && (
+                <p className="text-sm text-destructive">{phoneError}</p>
+              )}
             </div>
 
             <div className="border-t pt-4 mt-4">
