@@ -88,23 +88,38 @@ export const useUserStats = (userId: string | undefined) => {
   return stats;
 };
 
-export const getKycStatus = (profile: {
+// KYC status based on private_info fields
+export const getKycStatus = (privateInfo: {
   phone?: string | null;
   id_type?: string | null;
   id_number?: string | null;
   id_expiry_date?: string | null;
 }) => {
   const kycFields = [
-    profile.phone,
-    profile.id_type,
-    profile.id_number,
-    profile.id_expiry_date,
+    privateInfo.phone,
+    privateInfo.id_type,
+    privateInfo.id_number,
+    privateInfo.id_expiry_date,
   ];
   const filledFields = kycFields.filter(f => f && String(f).trim() !== "").length;
 
-  if (filledFields === 0) return "not_filled";
-  if (filledFields < kycFields.length) return "partial";
-  return "complete";
+  if (filledFields === 0) return "not_filled" as const;
+  if (filledFields < kycFields.length) return "partial" as const;
+  return "complete" as const;
+};
+
+// Check if user is verified (phone + ID info)
+export const isUserVerified = (privateInfo: {
+  phone?: string | null;
+  id_type?: string | null;
+  id_number?: string | null;
+} | null) => {
+  if (!privateInfo) return false;
+  return Boolean(
+    privateInfo.phone?.trim() &&
+    privateInfo.id_type?.trim() &&
+    privateInfo.id_number?.trim()
+  );
 };
 
 export const isActiveSender = (shipmentsCount: number) => shipmentsCount > 2;

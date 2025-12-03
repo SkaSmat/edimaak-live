@@ -102,62 +102,95 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      private_info: {
         Row: {
           address_city: string | null
           address_country: string | null
           address_line1: string | null
           address_postal_code: string | null
-          avatar_url: string | null
-          country_of_residence: string | null
-          created_at: string
-          first_name: string | null
-          full_name: string
+          created_at: string | null
           id: string
           id_expiry_date: string | null
           id_number: string | null
           id_type: string | null
-          is_active: boolean | null
-          last_name: string | null
           phone: string | null
-          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
         }
         Insert: {
           address_city?: string | null
           address_country?: string | null
           address_line1?: string | null
           address_postal_code?: string | null
-          avatar_url?: string | null
-          country_of_residence?: string | null
-          created_at?: string
-          first_name?: string | null
-          full_name: string
+          created_at?: string | null
           id: string
           id_expiry_date?: string | null
           id_number?: string | null
           id_type?: string | null
-          is_active?: boolean | null
-          last_name?: string | null
           phone?: string | null
-          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
         }
         Update: {
           address_city?: string | null
           address_country?: string | null
           address_line1?: string | null
           address_postal_code?: string | null
+          created_at?: string | null
+          id?: string
+          id_expiry_date?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_info_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_info_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          country_of_residence: string | null
+          created_at: string
+          first_name: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          last_name: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          avatar_url?: string | null
+          country_of_residence?: string | null
+          created_at?: string
+          first_name?: string | null
+          full_name: string
+          id: string
+          is_active?: boolean | null
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
           avatar_url?: string | null
           country_of_residence?: string | null
           created_at?: string
           first_name?: string | null
           full_name?: string
           id?: string
-          id_expiry_date?: string | null
-          id_number?: string | null
-          id_type?: string | null
           is_active?: boolean | null
           last_name?: string | null
-          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []

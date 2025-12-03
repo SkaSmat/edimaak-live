@@ -14,16 +14,21 @@ interface Profile {
   id: string;
   full_name: string;
   role: string;
-  phone: string | null;
   created_at: string;
+  is_active: boolean;
+}
+
+interface PrivateInfo {
+  id: string;
+  phone: string | null;
   id_type: string | null;
   id_number: string | null;
   id_expiry_date: string | null;
-  is_active: boolean;
 }
 
 const AdminUsers = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [privateInfoMap, setPrivateInfoMap] = useState<Map<string, PrivateInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -33,13 +38,29 @@ const AdminUsers = () => {
 
   const fetchProfiles = async () => {
     try {
-      // Version optimisée : on charge juste les profils sans les comptes lourds
-      const { data: profilesData, error } = await supabase
+      // Fetch profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, full_name, role, created_at, is_active")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
+
+      // Fetch private_info for KYC status (admin has access via RLS)
+      const { data: privateData, error: privateError } = await supabase
+        .from("private_info")
+        .select("id, phone, id_type, id_number, id_expiry_date");
+
+      if (privateError) {
+        console.error("Error fetching private info:", privateError);
+      }
+
+      // Create a map of private info by user id
+      const infoMap = new Map<string, PrivateInfo>();
+      (privateData || []).forEach((info: PrivateInfo) => {
+        infoMap.set(info.id, info);
+      });
+      setPrivateInfoMap(infoMap);
 
       // Protection : si la colonne est vide (null), on considère l'user comme actif
       const sanitizedProfiles = (profilesData || []).map((p) => ({
@@ -77,20 +98,23 @@ const AdminUsers = () => {
   const filteredProfiles = useMemo(() => {
     if (!searchQuery.trim()) return profiles;
     const query = searchQuery.toLowerCase();
-    return profiles.filter(
-      (profile) =>
+    return profiles.filter((profile) => {
+      const privateInfo = privateInfoMap.get(profile.id);
+      return (
         profile.full_name.toLowerCase().includes(query) ||
         profile.role.toLowerCase().includes(query) ||
-        profile.phone?.toLowerCase().includes(query),
-    );
-  }, [profiles, searchQuery]);
+        privateInfo?.phone?.toLowerCase().includes(query)
+      );
+    });
+  }, [profiles, privateInfoMap, searchQuery]);
 
-  const getKycBadge = (profile: Profile) => {
+  const getKycBadge = (profileId: string) => {
+    const privateInfo = privateInfoMap.get(profileId);
     const status = getKycStatus({
-      phone: profile.phone,
-      id_type: profile.id_type,
-      id_number: profile.id_number,
-      id_expiry_date: profile.id_expiry_date,
+      phone: privateInfo?.phone,
+      id_type: privateInfo?.id_type,
+      id_number: privateInfo?.id_number,
+      id_expiry_date: privateInfo?.id_expiry_date,
     });
 
     switch (status) {
@@ -169,51 +193,54 @@ const AdminUsers = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProfiles.map((profile) => (
-                <TableRow key={profile.id} className={!profile.is_active ? "bg-red-50/50" : ""}>
-                  <TableCell>
-                    {profile.is_active ? (
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 block" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-500 block" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {profile.full_name}
-                    {!profile.is_active && <span className="ml-2 text-xs text-red-500 font-bold">(Banni)</span>}
-                  </TableCell>
-                  <TableCell>{getRoleBadge(profile.role)}</TableCell>
-                  <TableCell>{getKycBadge(profile)}</TableCell>
-                  <TableCell>{profile.phone || "-"}</TableCell>
-                  <TableCell>{format(new Date(profile.created_at), "d MMM yyyy", { locale: fr })}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant={profile.is_active ? "ghost" : "outline"}
-                      size="sm"
-                      onClick={() => handleToggleStatus(profile.id, profile.is_active)}
-                      className={
-                        profile.is_active
-                          ? "text-red-500 hover:text-red-700 hover:bg-red-50"
-                          : "text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
-                      }
-                    >
+              filteredProfiles.map((profile) => {
+                const privateInfo = privateInfoMap.get(profile.id);
+                return (
+                  <TableRow key={profile.id} className={!profile.is_active ? "bg-red-50/50" : ""}>
+                    <TableCell>
                       {profile.is_active ? (
-                        <>
-                          <Ban className="h-4 w-4 mr-1" /> Bannir
-                        </>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500 block" />
+                        </div>
                       ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-1" /> Activer
-                        </>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-red-500 block" />
+                        </div>
                       )}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {profile.full_name}
+                      {!profile.is_active && <span className="ml-2 text-xs text-red-500 font-bold">(Banni)</span>}
+                    </TableCell>
+                    <TableCell>{getRoleBadge(profile.role)}</TableCell>
+                    <TableCell>{getKycBadge(profile.id)}</TableCell>
+                    <TableCell>{privateInfo?.phone || "-"}</TableCell>
+                    <TableCell>{format(new Date(profile.created_at), "d MMM yyyy", { locale: fr })}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant={profile.is_active ? "ghost" : "outline"}
+                        size="sm"
+                        onClick={() => handleToggleStatus(profile.id, profile.is_active)}
+                        className={
+                          profile.is_active
+                            ? "text-red-500 hover:text-red-700 hover:bg-red-50"
+                            : "text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
+                        }
+                      >
+                        {profile.is_active ? (
+                          <>
+                            <Ban className="h-4 w-4 mr-1" /> Bannir
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-1" /> Activer
+                          </>
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

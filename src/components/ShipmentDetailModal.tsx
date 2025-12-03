@@ -8,17 +8,18 @@ import { MapPin, Calendar, Package, Weight, Eye, CheckCircle } from "lucide-reac
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { ActivityBadge, KycIcon } from "@/components/UserProfileBadges";
-import { getKycStatus } from "@/hooks/useUserStats";
+import { ActivityBadge, VerifiedBadge } from "@/components/UserProfileBadges";
 
 interface SenderProfile {
   id: string;
   full_name: string;
   avatar_url: string | null;
-  phone?: string | null;
-  id_type?: string | null;
-  id_number?: string | null;
-  id_expiry_date?: string | null;
+}
+
+interface SenderPrivateInfo {
+  phone: string | null;
+  id_type: string | null;
+  id_number: string | null;
 }
 
 interface ShipmentDetailModalProps {
@@ -57,30 +58,36 @@ export const ShipmentDetailModal = ({
   onSignUp,
   onLogin,
 }: ShipmentDetailModalProps) => {
-  const [senderProfile, setSenderProfile] = useState<SenderProfile | null>(null);
+  const [senderPrivateInfo, setSenderPrivateInfo] = useState<SenderPrivateInfo | null>(null);
 
-  // Increment view count and fetch sender profile when modal opens
+  // Increment view count and fetch sender private info when modal opens
   useEffect(() => {
     if (isOpen && shipment?.id) {
       supabase.rpc('increment_shipment_view_count', { shipment_id: shipment.id });
       
-      // Only fetch full sender profile for KYC status if user is authenticated
-      // Anonymous users can't access full profiles due to RLS
+      // Only fetch private_info for verified status if user is authenticated
+      // Anonymous users can't access private_info due to RLS
       if (isAuthenticated && shipment.profiles?.id) {
         supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, phone, id_type, id_number, id_expiry_date")
+          .from("private_info")
+          .select("phone, id_type, id_number")
           .eq("id", shipment.profiles.id)
           .maybeSingle()
           .then(({ data }) => {
-            if (data) setSenderProfile(data);
+            if (data) setSenderPrivateInfo(data as SenderPrivateInfo);
           });
       }
     }
   }, [isOpen, shipment?.id, shipment?.profiles?.id, isAuthenticated]);
 
   const isActiveSender = (shipment.sender_request_count || 0) > 2;
-  const senderKycStatus = senderProfile ? getKycStatus(senderProfile) : "not_filled";
+  
+  // Check if sender is verified (phone + ID)
+  const isSenderVerified = Boolean(
+    senderPrivateInfo?.phone?.trim() &&
+    senderPrivateInfo?.id_type?.trim() &&
+    senderPrivateInfo?.id_number?.trim()
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -115,11 +122,11 @@ export const ShipmentDetailModal = ({
                   <p className="font-semibold text-foreground">
                     {shipment.profiles ? formatShortName(shipment.profiles.full_name) : "Utilisateur"}
                   </p>
-                  <KycIcon status={senderKycStatus} />
+                  {isAuthenticated && <VerifiedBadge isVerified={isSenderVerified} size="sm" />}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <ActivityBadge isActive={isActiveSender} role="sender" />
-                  {senderKycStatus === "complete" && (
+                  {isAuthenticated && isSenderVerified && (
                     <span className="text-xs text-green-600 flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" />
                       Identité vérifiée

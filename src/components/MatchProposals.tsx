@@ -20,12 +20,12 @@ interface Match {
     traveler_id: string;
     profiles: {
       full_name: string;
-      phone: string | null;
-    };
+    } | null;
   };
   shipment_requests: {
     id: string;
     item_type: string;
+    sender_id: string;
   };
 }
 
@@ -52,7 +52,7 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
         .select(
           `
           *,
-          trips:trip_id(id, from_city, to_city, departure_date, traveler_id, profiles:traveler_id(full_name, phone)),
+          trips:trip_id(id, from_city, to_city, departure_date, traveler_id, profiles:traveler_id(full_name)),
           shipment_requests:shipment_request_id(id, item_type, sender_id)
         `,
         )
@@ -60,7 +60,7 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setMatches(data || []);
+      setMatches((data || []) as Match[]);
     } catch (error) {
       console.error("Error fetching matches:", error);
       setError(true);

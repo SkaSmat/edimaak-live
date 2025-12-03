@@ -22,8 +22,7 @@ interface ShipmentRequest {
   notes: string | null;
   profiles: {
     full_name: string;
-    phone: string | null;
-  };
+  } | null;
 }
 
 interface CompatibleShipmentsProps {
@@ -62,7 +61,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       // For simplicity, get all open shipment requests and filter on client side
       const { data, error } = await supabase
         .from("shipment_requests")
-        .select("*, profiles:sender_id(full_name, phone)")
+        .select("*, profiles:sender_id(full_name)")
         .eq("status", "open");
 
       if (error) throw error;
@@ -84,7 +83,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         });
       });
 
-      setShipments(compatible);
+      setShipments(compatible as ShipmentRequest[]);
     } catch (error) {
       console.error("Error fetching compatible shipments:", error);
       setError(true);

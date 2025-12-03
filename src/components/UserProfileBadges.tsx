@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ShieldCheck, Clock, AlertCircle, Plane, Package, Users } from "lucide-react";
+import { CheckCircle, ShieldCheck, Clock, AlertCircle, Plane, Package, Users, BadgeCheck, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ActivityBadgeProps {
@@ -26,6 +26,63 @@ export const ActivityBadge = ({ isActive, role, className }: ActivityBadgeProps)
       {label}
     </Badge>
   );
+};
+
+// NEW: Verified Badge Component (phone + ID)
+interface VerifiedBadgeProps {
+  isVerified: boolean;
+  showLabel?: boolean;
+  size?: "sm" | "md";
+  className?: string;
+}
+
+export const VerifiedBadge = ({ isVerified, showLabel = false, size = "md", className }: VerifiedBadgeProps) => {
+  const iconSize = size === "sm" ? "w-3 h-3" : "w-4 h-4";
+
+  if (isVerified) {
+    return (
+      <Badge 
+        variant="default" 
+        className={cn(
+          "bg-green-500 hover:bg-green-600 text-white border-0 gap-1",
+          size === "sm" && "text-xs px-1.5 py-0",
+          className
+        )}
+      >
+        <BadgeCheck className={iconSize} />
+        {showLabel && "Vérifié ✅"}
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge 
+      variant="outline" 
+      className={cn(
+        "text-muted-foreground gap-1 border-muted-foreground/30",
+        size === "sm" && "text-xs px-1.5 py-0",
+        className
+      )}
+    >
+      <XCircle className={iconSize} />
+      {showLabel && "Non vérifié"}
+    </Badge>
+  );
+};
+
+// Verified Icon for inline display
+interface VerifiedIconProps {
+  isVerified: boolean;
+  className?: string;
+}
+
+export const VerifiedIcon = ({ isVerified, className }: VerifiedIconProps) => {
+  if (isVerified) {
+    return (
+      <BadgeCheck className={cn("w-4 h-4 text-green-500", className)} />
+    );
+  }
+  return null;
 };
 
 interface KycBadgeProps {
