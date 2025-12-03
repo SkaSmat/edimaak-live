@@ -1,14 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Plane, 
-  Package, 
-  MessageCircle, 
-  User, 
-  LogOut,
-  Handshake,
-  ShieldCheck
-} from "lucide-react";
+import { LayoutDashboard, Plane, Package, MessageCircle, User, LogOut, Handshake, ShieldCheck } from "lucide-react";
 import { LogoEdiM3ak } from "./LogoEdiM3ak";
 import {
   Sidebar,
@@ -36,76 +27,39 @@ interface DashboardSidebarProps {
 export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state } = useSidebar();
+  // On récupère isMobile et setOpenMobile pour gérer la fermeture auto
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
-  const dashboardPath = role === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
+  // Fonction intelligente de navigation
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    // Si on est sur mobile, on ferme le menu après le clic
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const travelerNavItems = [
-    {
-      title: "Dashboard",
-      icon: LayoutDashboard,
-      path: "/dashboard/traveler",
-    },
-    {
-      title: "Mes voyages",
-      icon: Plane,
-      path: "/dashboard/traveler/trips",
-    },
-    {
-      title: "Mes matches",
-      icon: Handshake,
-      path: "/dashboard/traveler/matches",
-    },
-    {
-      title: "Messages",
-      icon: MessageCircle,
-      path: "/messages",
-    },
+    { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/traveler" },
+    { title: "Mes voyages", icon: Plane, path: "/dashboard/traveler/trips" },
+    { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" },
+    { title: "Messages", icon: MessageCircle, path: "/messages" },
   ];
 
   const senderNavItems = [
-    {
-      title: "Dashboard",
-      icon: LayoutDashboard,
-      path: "/dashboard/sender",
-    },
-    {
-      title: "Mes demandes",
-      icon: Package,
-      path: "/dashboard/sender/shipments",
-    },
-    {
-      title: "Mes matches",
-      icon: Handshake,
-      path: "/dashboard/sender/matches",
-    },
-    {
-      title: "Messages",
-      icon: MessageCircle,
-      path: "/messages",
-    },
+    { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/sender" },
+    { title: "Mes demandes", icon: Package, path: "/dashboard/sender/shipments" },
+    { title: "Mes matches", icon: Handshake, path: "/dashboard/sender/matches" },
+    { title: "Messages", icon: MessageCircle, path: "/messages" },
   ];
 
-  const adminNavItems = [
-    {
-      title: "Administration",
-      icon: ShieldCheck,
-      path: "/admin",
-    },
-  ];
+  const adminNavItems = [{ title: "Administration", icon: ShieldCheck, path: "/admin" }];
 
   const mainNavItems = role === "admin" ? adminNavItems : role === "traveler" ? travelerNavItems : senderNavItems;
 
-  const accountNavItems = [
-    {
-      title: "Mon profil",
-      icon: User,
-      path: "/profile",
-    },
-  ];
+  const accountNavItems = [{ title: "Mon profil", icon: User, path: "/profile" }];
 
-  // Add admin link if user is admin but role is not admin (to avoid duplicate)
   if (isAdmin && role !== "admin") {
     accountNavItems.push({
       title: "Administration",
@@ -117,17 +71,14 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50">
+    <Sidebar collapsible="icon" className="border-r border-border/50 bg-card">
       <SidebarHeader className="p-4">
-        <button 
-          onClick={() => navigate("/")}
+        <button
+          onClick={() => handleNavigation("/")}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           type="button"
         >
-          <LogoEdiM3ak 
-            iconSize={collapsed ? "sm" : "md"} 
-            className={collapsed ? "justify-center" : ""}
-          />
+          <LogoEdiM3ak iconSize={collapsed ? "sm" : "md"} className={collapsed ? "justify-center" : ""} />
         </button>
       </SidebarHeader>
 
@@ -138,12 +89,12 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
+                    onClick={() => handleNavigation(item.path)}
                     isActive={isActive(item.path)}
                     tooltip={item.title}
                     className={cn(
                       "transition-all duration-200",
-                      isActive(item.path) && "bg-primary/10 text-primary font-medium"
+                      isActive(item.path) && "bg-primary/10 text-primary font-medium",
                     )}
                   >
                     <item.icon className="h-5 w-5" />
@@ -163,12 +114,12 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
               {accountNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
+                    onClick={() => handleNavigation(item.path)}
                     isActive={isActive(item.path)}
                     tooltip={item.title}
                     className={cn(
                       "transition-all duration-200",
-                      isActive(item.path) && "bg-primary/10 text-primary font-medium"
+                      isActive(item.path) && "bg-primary/10 text-primary font-medium",
                     )}
                   >
                     <item.icon className="h-5 w-5" />
@@ -199,14 +150,18 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
 
 export const DashboardMobileHeader = ({ fullName, onLogout }: { fullName: string; onLogout: () => void }) => {
   const navigate = useNavigate();
-  
+
   return (
-    <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border/50">
-      <SidebarTrigger className="h-9 w-9" />
-      <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
+    <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border/50 sticky top-0 z-50">
+      <div className="flex items-center gap-3">
+        {/* C'est ce bouton qui ouvre le menu */}
+        <SidebarTrigger className="h-9 w-9 border border-border/50" />
+        <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
+      </div>
+
       <button
         onClick={onLogout}
-        className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+        className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-full hover:bg-muted/50"
         aria-label="Déconnexion"
       >
         <LogOut className="h-5 w-5" />
