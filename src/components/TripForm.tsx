@@ -71,7 +71,8 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg bg-card shadow-sm">
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* "grid-cols-1" par défaut (Mobile), "md:grid-cols-2" à partir de la taille "Medium" (Tablette/PC) */}
         {/* Départ */}
         <div className="space-y-2">
           <Label htmlFor="fromCountry">Pays de départ *</Label>
