@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom"; // Ajout de useNavigate
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -44,38 +44,29 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const highlightId = searchParams.get("highlight");
 
   const [matches, setMatches] = useState<CompatibleMatch[]>([]);
-  // Nouvel état pour stocker l'annonce ciblée si elle n'est pas compatible
   const [targetShipment, setTargetShipment] = useState<ShipmentRequest | null>(null);
-
   const [proposedIds, setProposedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
 
-  // 1. Charger l'annonce ciblée si elle existe
   useEffect(() => {
     const fetchTargetShipment = async () => {
       if (!highlightId) return;
-
       try {
         const { data, error } = await supabase
           .from("shipment_requests")
           .select("*, profiles:sender_id(full_name)")
           .eq("id", highlightId)
           .single();
-
-        if (!error && data) {
-          setTargetShipment(data as unknown as ShipmentRequest);
-        }
+        if (!error && data) setTargetShipment(data as unknown as ShipmentRequest);
       } catch (err) {
-        console.error("Erreur chargement annonce cible", err);
+        console.error(err);
       }
     };
-
     fetchTargetShipment();
   }, [highlightId]);
 
-  // 2. Scroll automatique (sur matches OU targetShipment)
   useEffect(() => {
     if (highlightId && !loading) {
       const element = document.getElementById(`shipment-${highlightId}`);
@@ -114,18 +105,24 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         if (!trips) return;
 
         const matchingTrip = trips.find((trip) => {
+          // 1. Check Route
           const isSameRoute = trip.from_country === shipment.from_country && trip.to_country === shipment.to_country;
 
           if (!isSameRoute) return false;
 
-          const tripDate = new Date(trip.departure_date);
-          const earliestDate = new Date(shipment.earliest_date);
-          const latestDate = new Date(shipment.latest_date);
-          latestDate.setDate(latestDate.getDate() + 1);
+          // 2. Check Dates (CORRECTION STRICTE)
+          // On compare les chaînes de caractères directement (YYYY-MM-DD)
+          // C'est plus fiable pour éviter les problèmes de fuseaux horaires
+          const tripDate = trip.departure_date; // ex: "2025-12-18"
+          const earliest = shipment.earliest_date; // ex: "2025-12-14"
+          const latest = shipment.latest_date; // ex: "2025-12-17"
 
-          const isDateCompatible = tripDate >= earliestDate && tripDate <= latestDate;
+          // Le voyage doit être APRES ou EGAL au début ET AVANT ou EGAL à la fin
+          const isDateCompatible = tripDate >= earliest && tripDate <= latest;
+
           if (!isDateCompatible) return false;
 
+          // 3. Check Poids
           const isWeightCompatible = trip.max_weight_kg >= shipment.weight_kg;
 
           return isWeightCompatible;
@@ -178,12 +175,11 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   if (error) return <ErrorState onRetry={fetchCompatibleShipments} />;
 
-  // Vérifier si l'annonce cible est DÉJÀ dans les matches pour ne pas l'afficher deux fois
   const isTargetAlreadyInMatches = matches.some((m) => m.shipment.id === highlightId);
 
   return (
     <div className="space-y-6">
-      {/* SECTION SPÉCIALE : Annonce Ciblée (Si non compatible ou pas de voyage) */}
+      {/* Annonce Ciblée (Si non compatible) */}
       {targetShipment && !isTargetAlreadyInMatches && (
         <div
           id={`shipment-${targetShipment.id}`}
@@ -220,13 +216,20 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
               </Button>
             </div>
           </div>
-          <p className="text-xs text-blue-600/80 mt-2 text-center">
-            Vous n'avez pas encore de voyage correspondant à cette annonce. Créez-en un pour postuler !
-          </p>
+          {/* Message explicatif précis */}
+          <div className="text-xs text-blue-600/80 mt-2 text-center bg-blue-100/50 p-2 rounded">
+            <strong>Pourquoi cette annonce n'est pas compatible ?</strong>
+            <br />
+            Vérifiez vos dates (le colis doit partir entre le {format(
+              new Date(targetShipment.earliest_date),
+              "dd/MM",
+            )}{" "}
+            et le {format(new Date(targetShipment.latest_date), "dd/MM")}) et votre poids disponible (min{" "}
+            {targetShipment.weight_kg}kg).
+          </div>
         </div>
       )}
 
-      {/* Liste normale des matches */}
       {!hasTrips && !targetShipment ? (
         <EmptyState
           icon={Plane}
