@@ -11,7 +11,6 @@ import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
-import { ActivityBadge } from "@/components/UserProfileBadges";
 
 interface ShipmentRequest {
   id: string;
@@ -91,7 +90,6 @@ const Index = () => {
 
   useEffect(() => {
     const fetchShipmentRequests = async () => {
-      // First fetch shipment requests
       const { data } = await supabase
         .from("shipment_requests")
         .select("*")
@@ -100,16 +98,13 @@ const Index = () => {
         .limit(20);
 
       if (data) {
-        // Fetch sender display info using secure RPC function
         const senderIds = [...new Set(data.map((r) => r.sender_id))];
 
-        // Get sender info for each unique sender via the secure function
         const senderInfoPromises = senderIds.map(async (senderId) => {
           const { data: senderData } = await supabase.rpc("get_sender_display_info", { sender_uuid: senderId });
           return { senderId, info: senderData?.[0] || null };
         });
 
-        // Get sender request counts
         const countsPromises = senderIds.map(async (senderId) => {
           const { count } = await supabase
             .from("shipment_requests")
@@ -147,19 +142,16 @@ const Index = () => {
     setHasSearched(true);
     let filtered = shipmentRequests;
 
-    // Filtre par ville de départ (insensible à la casse, correspondance partielle)
     if (fromCity.trim()) {
       const searchFrom = fromCity.toLowerCase().trim();
       filtered = filtered.filter((req) => req.from_city.toLowerCase().includes(searchFrom));
     }
 
-    // Filtre par ville d'arrivée (insensible à la casse, correspondance partielle)
     if (toCity.trim()) {
       const searchTo = toCity.toLowerCase().trim();
       filtered = filtered.filter((req) => req.to_city.toLowerCase().includes(searchTo));
     }
 
-    // Filtre par date (doit être entre earliest_date et latest_date)
     if (searchDate) {
       const selectedDate = new Date(searchDate);
       filtered = filtered.filter((req) => {
@@ -191,7 +183,7 @@ const Index = () => {
                   <Button
                     variant="ghost"
                     onClick={() => navigate("/auth?role=sender")}
-                    className="text-foreground hover:bg-muted/50"
+                    className="text-foreground hover:bg-muted/50 hidden sm:inline-flex"
                   >
                     Devenir expéditeur
                   </Button>
@@ -209,7 +201,7 @@ const Index = () => {
       <section className="pt-16 pb-8 sm:pt-24 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center mb-10">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               La plateforme qui fait voyager tes colis avec les passagers de confiance.
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -220,20 +212,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Sticky Search Bar */}
+      {/* Sticky Search Bar CORRIGÉE (Responsive) */}
       <div className="relative md:sticky md:top-20 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 border-b border-border/30 shadow-sm mt-[-2rem] sm:mt-0">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-          <div className="bg-card rounded-full shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
+          <div className="bg-card rounded-3xl shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
             <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
               <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <CityAutocomplete placeholder="Ville de départ" value={fromCity} onChange={setFromCity} />
             </div>
-              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              <CityAutocomplete placeholder="Ville de départ" value={fromCity} onChange={setFromCity} />
-            </div>
 
-            <<div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
-              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" /
+            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
+              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <CityAutocomplete placeholder="Ville d'arrivée" value={toCity} onChange={setToCity} />
             </div>
 
@@ -243,11 +232,11 @@ const Index = () => {
                 type="date"
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground w-full"
               />
             </div>
 
-            <Button onClick={handleSearch} size="lg" className="rounded-full w-full sm:w-auto px-8">
+            <Button onClick={handleSearch} size="lg" className="rounded-full w-full sm:w-auto px-8 mt-2 sm:mt-0">
               <Search className="w-5 h-5" />
             </Button>
           </div>
@@ -297,7 +286,6 @@ const Index = () => {
                 </div>
 
                 <div className="p-6">
-                  {/* Bloc expéditeur */}
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/40">
                     <UserAvatar
                       fullName={request.profiles?.full_name || ""}
@@ -424,11 +412,12 @@ const Index = () => {
           shipment={selectedShipment}
           isAuthenticated={!!session}
           onSignUp={() => {
-            // ON SAUVEGARDE L'ID DU COLIS CIBLÉ AVANT DE PARTIR
+            // Redirection intelligente
             localStorage.setItem("targetShipmentId", selectedShipment.id);
             navigate("/auth?role=traveler");
           }}
           onLogin={() => {
+            // Redirection intelligente
             localStorage.setItem("targetShipmentId", selectedShipment.id);
             navigate("/auth");
           }}
