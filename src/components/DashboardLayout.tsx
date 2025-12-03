@@ -13,16 +13,37 @@ interface DashboardLayoutProps {
   role: "traveler" | "sender" | "admin";
   fullName: string;
   isAdmin?: boolean;
-  onLogout: () => void;
+  onLogout?: () => void; // Rendu optionnel car on gère la déco ici maintenant
 }
 
-export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onLogout }: DashboardLayoutProps) => {
+export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: DashboardLayoutProps) => {
   const firstName = fullName?.split(" ")[0] || "Utilisateur";
   const roleLabel = role === "traveler" ? "Voyageur" : role === "sender" ? "Expéditeur" : "Administrateur";
   const effectiveIsAdmin = isAdmin || role === "admin";
 
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
+
+  // --- LA CORRECTION EST ICI : FONCTION DE DÉCONNEXION ROBUSTE ---
+  const handleLogout = async () => {
+    try {
+      // 1. On prévient Supabase
+      await supabase.auth.signOut();
+
+      // 2. On vide brutalement la mémoire du navigateur
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 3. On force le rechargement de la page vers l'accueil
+      // (Cela évite que React garde des infos en cache)
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion", error);
+      // En cas d'erreur, on force quand même la sortie
+      window.location.href = "/";
+    }
+  };
+  // -------------------------------------------------------------
 
   useEffect(() => {
     if (location.pathname === "/messages") {
@@ -93,15 +114,17 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
         <DashboardSidebar
           role={role === "admin" ? "traveler" : role}
           isAdmin={effectiveIsAdmin}
-          onLogout={onLogout}
-          unreadCount={unreadCount} // On passe le compteur au menu Desktop
+          onLogout={handleLogout} // On utilise notre nouvelle fonction
+          unreadCount={unreadCount}
         />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
-          {/* Header Mobile Sticky */}
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
-            {/* CORRECTION ICI : On passe aussi le compteur au Header Mobile */}
-            <DashboardMobileHeader fullName={fullName} onLogout={onLogout} unreadCount={unreadCount} />
+            <DashboardMobileHeader
+              fullName={fullName}
+              onLogout={handleLogout} // Ici aussi
+              unreadCount={unreadCount}
+            />
           </div>
 
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
@@ -114,7 +137,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
             <Button
               variant="ghost"
               size="sm"
-              onClick={onLogout}
+              onClick={handleLogout} // Et ici aussi
               className="text-muted-foreground hover:text-destructive transition-colors"
             >
               <LogOut className="h-4 w-4 mr-2" />
