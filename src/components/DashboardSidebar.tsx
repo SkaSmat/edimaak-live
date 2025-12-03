@@ -17,13 +17,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { FeedbackButton } from "./FeedbackButton";
-import { Badge } from "@/components/ui/badge"; // Import du Badge
+import { Badge } from "@/components/ui/badge";
 
 interface DashboardSidebarProps {
   role: "traveler" | "sender" | "admin";
   isAdmin?: boolean;
   onLogout: () => void;
-  unreadCount?: number; // Nouveau prop pour le compteur
+  unreadCount?: number;
 }
 
 export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: DashboardSidebarProps) => {
@@ -43,14 +43,14 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/traveler" },
     { title: "Mes voyages", icon: Plane, path: "/dashboard/traveler/trips" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true }, // Marqueur pour le badge
+    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
   ];
 
   const senderNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/sender" },
     { title: "Mes demandes", icon: Package, path: "/dashboard/sender/shipments" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/sender/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true }, // Marqueur pour le badge
+    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
   ];
 
   const adminNavItems = [{ title: "Administration", icon: ShieldCheck, path: "/admin" }];
@@ -92,7 +92,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
                     isActive={isActive(item.path)}
                     tooltip={item.title}
                     className={cn(
-                      "transition-all duration-200 justify-between", // justify-between pour pousser le badge
+                      "transition-all duration-200 justify-between",
                       isActive(item.path) && "bg-primary/10 text-primary font-medium",
                     )}
                   >
@@ -100,7 +100,6 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </div>
-                    {/* Affichage du Badge si nécessaire */}
                     {item.hasBadge && unreadCount > 0 && !collapsed && (
                       <Badge
                         variant="destructive"
@@ -109,7 +108,6 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
                         {unreadCount}
                       </Badge>
                     )}
-                    {/* Petit point rouge si le menu est fermé (collapsed) */}
                     {item.hasBadge && unreadCount > 0 && collapsed && (
                       <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
                     )}
@@ -162,13 +160,31 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
   );
 };
 
-export const DashboardMobileHeader = ({ fullName, onLogout }: { fullName: string; onLogout: () => void }) => {
+// --- LE HEADER MOBILE CORRIGÉ EST ICI ---
+export const DashboardMobileHeader = ({
+  fullName,
+  onLogout,
+  unreadCount = 0,
+}: {
+  fullName: string;
+  onLogout: () => void;
+  unreadCount?: number;
+}) => {
   const navigate = useNavigate();
 
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-3">
-        <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
+        {/* Conteneur relatif pour positionner le point rouge */}
+        <div className="relative">
+          <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
+
+          {/* LE POINT ROUGE MAGIQUE : s'affiche si unreadCount > 0 */}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-background animate-pulse" />
+          )}
+        </div>
+
         <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
       </div>
 
