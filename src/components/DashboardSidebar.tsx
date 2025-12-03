@@ -177,16 +177,21 @@ export const DashboardMobileHeader = ({
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-3">
-        {/* On enveloppe le bouton dans une div relative pour positionner le point rouge par rapport à LUI */}
-        <div className="relative inline-flex items-center justify-center">
-          <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
+        {/* BOUTON MENU AVEC BADGE */}
+        <div className="relative flex items-center justify-center">
+          <SidebarTrigger className="h-10 w-10 border border-border/50 bg-background shadow-sm" />
 
-          {/* LE POINT ROUGE (Avec animation Radar pour être sûr qu'on le voit) */}
+          {/* LE POINT ROUGE (Positionné À L'INTÉRIEUR du cadre, impossible à couper) */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-3 w-3 z-50 pointer-events-none">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white"></span>
-            </span>
+            <div className="absolute top-0 right-0 z-50">
+              <span className="relative flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-white items-center justify-center">
+                  {/* Optionnel : Si tu veux afficher le chiffre, décommente la ligne suivante */}
+                  {/* <span className="text-[8px] text-white font-bold">{unreadCount}</span> */}
+                </span>
+              </span>
+            </div>
           )}
         </div>
 

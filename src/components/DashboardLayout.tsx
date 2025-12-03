@@ -122,7 +122,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
             <DashboardMobileHeader
               fullName={fullName}
-              onLogout={handleLogout} // Ici aussi
+              onLogout={onLogout} // Ici aussi
               unreadCount={unreadCount}
             />
           </div>
