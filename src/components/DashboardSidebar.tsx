@@ -85,35 +85,42 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item: any) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    onClick={() => handleNavigation(item.path)}
-                    isActive={isActive(item.path)}
-                    tooltip={item.title}
-                    className={cn(
-                      "transition-all duration-200 justify-between",
-                      isActive(item.path) && "bg-primary/10 text-primary font-medium",
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </div>
-                    {item.hasBadge && unreadCount > 0 && !collapsed && (
-                      <Badge
-                        variant="destructive"
-                        className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-                      >
-                        {unreadCount}
-                      </Badge>
-                    )}
-                    {item.hasBadge && unreadCount > 0 && collapsed && (
-                      <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background" />
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainNavItems.map((item: any) => {
+                const isMessagesLink = item.path === "/messages";
+                const showBadge = isMessagesLink && unreadCount > 0;
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation(item.path)}
+                      isActive={isActive(item.path)}
+                      tooltip={item.title}
+                      className={cn(
+                        "transition-all duration-200 justify-between group relative",
+                        isActive(item.path) && "bg-primary/10 text-primary font-medium",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </div>
+
+                      {showBadge && !collapsed && (
+                        <Badge
+                          variant="destructive"
+                          className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] animate-in zoom-in"
+                        >
+                          {unreadCount}
+                        </Badge>
+                      )}
+
+                      {showBadge && collapsed && (
+                        <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -160,7 +167,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
   );
 };
 
-// --- CORRECTION DU HEADER MOBILE (Bulle sur le bouton) ---
+// --- HEADER MOBILE ---
 export const DashboardMobileHeader = ({
   fullName,
   onLogout,
@@ -175,22 +182,28 @@ export const DashboardMobileHeader = ({
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-4">
-        {/* BOUTON MENU + BADGE ROUGE */}
-        <div className="relative inline-flex items-center justify-center">
+        {/* BOUTON MENU AVEC BADGE */}
+        {/* J'ai forcé la position relative pour que le badge 'absolute' reste collé au bouton */}
+        <div className="relative flex items-center justify-center">
           <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
 
-          {/* Le badge est maintenant positionné par rapport au BOUTON menu */}
+          {/* LE BADGE : Sortie du flux, calé en haut à droite du bouton */}
           {unreadCount > 0 && (
-            <div className="absolute -top-1 -right-1 z-50">
-              <span className="flex h-4 w-4 animate-bounce items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white shadow-sm ring-2 ring-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
+            <div className="absolute -top-1 -right-1 z-50 pointer-events-none">
+              <span className="relative flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-white items-center justify-center">
+                  {/* Petit chiffre si besoin */}
+                </span>
               </span>
             </div>
           )}
         </div>
 
-        {/* Le Logo (nettoyé du badge) */}
-        <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
+        {/* LOGO (Nettoyé, aucun badge ici) */}
+        <div onClick={() => navigate("/")}>
+          <LogoEdiM3ak iconSize="sm" />
+        </div>
       </div>
 
       <button
