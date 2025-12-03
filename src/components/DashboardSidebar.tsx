@@ -17,14 +17,16 @@ import {
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { FeedbackButton } from "./FeedbackButton";
+import { Badge } from "@/components/ui/badge"; // Import du Badge
 
 interface DashboardSidebarProps {
   role: "traveler" | "sender" | "admin";
   isAdmin?: boolean;
   onLogout: () => void;
+  unreadCount?: number; // Nouveau prop pour le compteur
 }
 
-export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarProps) => {
+export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { state, isMobile, setOpenMobile } = useSidebar();
@@ -41,14 +43,14 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/traveler" },
     { title: "Mes voyages", icon: Plane, path: "/dashboard/traveler/trips" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages" },
+    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true }, // Marqueur pour le badge
   ];
 
   const senderNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/sender" },
     { title: "Mes demandes", icon: Package, path: "/dashboard/sender/shipments" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/sender/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages" },
+    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true }, // Marqueur pour le badge
   ];
 
   const adminNavItems = [{ title: "Administration", icon: ShieldCheck, path: "/admin" }];
@@ -68,11 +70,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar
-      collapsible="icon"
-      /* CORRECTION ICI : on force le fond blanc (bg-background) et on le met au premier plan (z-50) */
-      className="border-r border-border/50 bg-background z-50 h-full"
-    >
+    <Sidebar collapsible="icon" className="border-r border-border/50 bg-background z-50 h-full">
       <SidebarHeader className="p-4 bg-background">
         <button
           onClick={() => handleNavigation("/")}
@@ -87,19 +85,34 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout }: DashboardSidebarPr
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {mainNavItems.map((item: any) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     onClick={() => handleNavigation(item.path)}
                     isActive={isActive(item.path)}
                     tooltip={item.title}
                     className={cn(
-                      "transition-all duration-200",
+                      "transition-all duration-200 justify-between", // justify-between pour pousser le badge
                       isActive(item.path) && "bg-primary/10 text-primary font-medium",
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
+                    <div className="flex items-center gap-2">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </div>
+                    {/* Affichage du Badge si nécessaire */}
+                    {item.hasBadge && unreadCount > 0 && !collapsed && (
+                      <Badge
+                        variant="destructive"
+                        className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
+                      >
+                        {unreadCount}
+                      </Badge>
+                    )}
+                    {/* Petit point rouge si le menu est fermé (collapsed) */}
+                    {item.hasBadge && unreadCount > 0 && collapsed && (
+                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -155,7 +168,6 @@ export const DashboardMobileHeader = ({ fullName, onLogout }: { fullName: string
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-3">
-        {/* On s'assure que le bouton trigger a aussi un fond pour ne pas être transparent */}
         <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
         <LogoEdiM3ak iconSize="sm" onClick={() => navigate("/")} />
       </div>
