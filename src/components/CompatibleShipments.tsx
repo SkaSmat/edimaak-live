@@ -7,6 +7,7 @@ import { MapPin, Calendar, Weight, Package, Search, Plane } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
+import { MapPin, Calendar, Weight, Package, Search, Plane, Clock } from "lucide-react";
 
 interface ShipmentRequest {
   id: string;
@@ -41,6 +42,8 @@ interface CompatibleShipmentsProps {
 
 const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const [matches, setMatches] = useState<CompatibleMatch[]>([]);
+  const [proposedIds, setProposedIds] = useState<string[]>([]);
+  const [proposedIds, setProposedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
@@ -141,8 +144,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       }
 
       toast.success("Proposition envoyée !");
-      // On retire l'élément de la liste locale pour éviter de re-cliquer
-      setMatches((prev) => prev.filter((m) => m.shipment.id !== shipmentId));
+      // On ajoute l'ID à la liste des "proposés" pour changer la couleur du bouton
+      setProposedIds((prev) => [...prev, shipmentId]);
     } catch (error: any) {
       console.error("Error creating match:", error);
       toast.error("Erreur lors de l'envoi de la proposition.");
@@ -216,8 +219,23 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
           {shipment.notes && <p className="text-sm text-muted-foreground mb-4 italic">"{shipment.notes}"</p>}
 
-          <Button className="w-full" onClick={() => handlePropose(shipment.id, matchingTrip.id)}>
-            Proposer mon voyage ({format(new Date(matchingTrip.departure_date), "d/MM")})
+          <Button
+            className={`w-full transition-all duration-300 ${
+              proposedIds.includes(shipment.id)
+                ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-600 opacity-90"
+                : ""
+            }`}
+            onClick={() => handlePropose(shipment.id, matchingTrip.id)}
+            disabled={proposedIds.includes(shipment.id)}
+          >
+            {proposedIds.includes(shipment.id) ? (
+              <>
+                <Clock className="w-4 h-4 mr-2 animate-pulse" />
+                En attente de réponse...
+              </>
+            ) : (
+              `Proposer mon voyage (${format(new Date(matchingTrip.departure_date), "d/MM")})`
+            )}
           </Button>
         </div>
       ))}
