@@ -224,17 +224,20 @@ const Index = () => {
       <div className="relative md:sticky md:top-20 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 border-b border-border/30 shadow-sm mt-[-2rem] sm:mt-0">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
           <div className="bg-card rounded-full shadow-lg border border-border/40 p-2 flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
+            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
+              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <CityAutocomplete placeholder="Ville de départ" value={fromCity} onChange={setFromCity} />
+            </div>
               <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <CityAutocomplete placeholder="Ville de départ" value={fromCity} onChange={setFromCity} />
             </div>
 
-            <div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0">
-              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+            <<div className="flex-1 flex items-center px-4 py-2 gap-2 border-r border-border/40 sm:border-r-0 bg-muted/30 rounded-full my-1 sm:my-0">
+              <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" /
               <CityAutocomplete placeholder="Ville d'arrivée" value={toCity} onChange={setToCity} />
             </div>
 
-            <div className="flex-1 flex items-center px-4 py-2 gap-2">
+            <div className="flex-1 flex items-center px-4 py-2 gap-2 bg-muted/30 rounded-full my-1 sm:my-0">
               <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <Input
                 type="date"
