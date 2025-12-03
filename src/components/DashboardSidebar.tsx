@@ -43,14 +43,14 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/traveler" },
     { title: "Mes voyages", icon: Plane, path: "/dashboard/traveler/trips" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
+    { title: "Messages", icon: MessageCircle, path: "/messages" },
   ];
 
   const senderNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/sender" },
     { title: "Mes demandes", icon: Package, path: "/dashboard/sender/shipments" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/sender/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
+    { title: "Messages", icon: MessageCircle, path: "/messages" },
   ];
 
   const adminNavItems = [{ title: "Administration", icon: ShieldCheck, path: "/admin" }];
@@ -85,35 +85,45 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item: any) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    onClick={() => handleNavigation(item.path)}
-                    isActive={isActive(item.path)}
-                    tooltip={item.title}
-                    className={cn(
-                      "transition-all duration-200 justify-between",
-                      isActive(item.path) && "bg-primary/10 text-primary font-medium",
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </div>
-                    {item.hasBadge && unreadCount > 0 && !collapsed && (
-                      <Badge
-                        variant="destructive"
-                        className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-                      >
-                        {unreadCount}
-                      </Badge>
-                    )}
-                    {item.hasBadge && unreadCount > 0 && collapsed && (
-                      <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background" />
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainNavItems.map((item: any) => {
+                // NOUVELLE MÉTHODE : On vérifie directement le chemin
+                const isMessagesLink = item.path === "/messages";
+                const showBadge = isMessagesLink && unreadCount > 0;
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation(item.path)}
+                      isActive={isActive(item.path)}
+                      tooltip={item.title}
+                      className={cn(
+                        "transition-all duration-200 justify-between group relative",
+                        isActive(item.path) && "bg-primary/10 text-primary font-medium",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </div>
+
+                      {/* BADGE POUR PC (Menu Ouvert) */}
+                      {showBadge && !collapsed && (
+                        <Badge
+                          variant="destructive"
+                          className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] animate-in zoom-in"
+                        >
+                          {unreadCount}
+                        </Badge>
+                      )}
+
+                      {/* POINT ROUGE POUR PC (Menu Fermé) */}
+                      {showBadge && collapsed && (
+                        <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -160,7 +170,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
   );
 };
 
-// --- CORRECTION DU HEADER MOBILE ---
+// --- HEADER MOBILE (BADGE ROUGE SUR LE LOGO) ---
 export const DashboardMobileHeader = ({
   fullName,
   onLogout,
@@ -173,20 +183,21 @@ export const DashboardMobileHeader = ({
   const navigate = useNavigate();
 
   return (
-    <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full transition-all duration-200">
-      <div className="flex items-center gap-3">
-        {/* Le bouton menu */}
+    <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
+      <div className="flex items-center gap-4">
+        {/* Bouton Menu */}
         <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
 
-        {/* Le Logo */}
-        <div className="flex items-center gap-2" onClick={() => navigate("/")}>
+        {/* Logo + Badge rouge très visible */}
+        <div className="relative flex items-center" onClick={() => navigate("/")}>
           <LogoEdiM3ak iconSize="sm" />
 
-          {/* LE NOUVEAU BADGE ROUGE (Visible et impossible à rater) */}
           {unreadCount > 0 && (
-            <span className="flex h-5 w-5 animate-in zoom-in duration-300 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+            <div className="absolute -top-1 -right-3 z-50">
+              <span className="flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            </div>
           )}
         </div>
       </div>
