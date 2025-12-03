@@ -19,14 +19,13 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
   const effectiveIsAdmin = isAdmin || role === "admin";
 
   return (
-    <SidebarProvider>
-      {/* Correction ici : On retire overflow-hidden du conteneur principal pour laisser le menu mobile "flotter" au-dessus */}
-      <div className="min-h-screen flex w-full bg-background relative">
+    <SidebarProvider defaultOpen={false}>
+      <div className="min-h-screen flex w-full bg-background">
         <DashboardSidebar role={role === "admin" ? "traveler" : role} isAdmin={effectiveIsAdmin} onLogout={onLogout} />
 
-        <SidebarInset className="flex-1 w-full flex flex-col">
-          {/* Header Mobile */}
-          <div className="md:hidden z-10 relative">
+        <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
+          {/* Header Mobile : On le met en sticky pour qu'il reste en haut, avec un z-index élevé */}
+          <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
             <DashboardMobileHeader fullName={fullName} onLogout={onLogout} />
           </div>
 
@@ -50,8 +49,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false, onL
           </header>
 
           {/* Main content */}
-          {/* On remet overflow-x-hidden ici pour le contenu principal uniquement */}
-          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+          <main className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>
           </main>
         </SidebarInset>
