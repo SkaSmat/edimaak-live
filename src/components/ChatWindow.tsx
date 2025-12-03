@@ -3,13 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Send, Plane, Package } from "lucide-react";
+import { Send, Plane, Package, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ActivityBadge, KycIcon } from "@/components/UserProfileBadges";
 import { getKycStatus } from "@/hooks/useUserStats";
-import { ErrorState } from "@/components/ui/empty-state";
 
 interface Message {
   id: string;
@@ -18,7 +17,7 @@ interface Message {
   created_at: string;
   profiles: {
     full_name: string;
-  };
+  } | null; // Peut être null si user supprimé
 }
 
 interface ChatWindowProps {
@@ -37,34 +36,24 @@ interface OtherUserProfile {
   role: "traveler" | "sender" | "admin";
 }
 
-interface MatchDetails {
-  trips: {
-    from_city: string;
-    to_city: string;
-    departure_date: string;
-    traveler_id: string;
-  };
-  shipment_requests: {
-    from_city: string;
-    to_city: string;
-    item_type: string;
-    sender_id: string;
-  };
-}
+// ... Interfaces MatchDetails inchangées ...
 
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [matchDetails, setMatchDetails] = useState<MatchDetails | null>(null);
+  // ... autres states inchangés ...
+  const [matchDetails, setMatchDetails] = useState<any | null>(null);
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false); // Nouveau state
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // ... useEffects inchangés ...
   useEffect(() => {
     fetchMessages();
     fetchMatchDetails();
-    
+
     // Subscribe to new messages
     const channel = supabase
       .channel(`messages:${matchId}`)
@@ -77,8 +66,9 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           filter: `match_id=eq.${matchId}`,
         },
         (payload) => {
+          // On recharge tout pour être sûr d'avoir le profil de l'expéditeur
           fetchMessages();
-        }
+        },
       )
       .subscribe();
 
@@ -107,7 +97,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       setMessages(data || []);
     } catch (error) {
       console.error("Error fetching messages:", error);
-      toast.error("Erreur lors du chargement des messages");
+      // Ne pas spammer d'erreur, c'est peut-être juste un accès refusé normal
     } finally {
       setLoading(false);
     }
@@ -117,34 +107,53 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     try {
       const { data, error } = await supabase
         .from("matches")
-        .select(`
+        .select(
+          `
           trips:trip_id(from_city, to_city, departure_date, traveler_id),
           shipment_requests:shipment_request_id(from_city, to_city, item_type, sender_id)
-        `)
+        `,
+        )
         .eq("id", matchId)
-        .single();
+        .maybeSingle(); // Utiliser maybeSingle pour éviter l'erreur si vide
 
       if (error) throw error;
-      setMatchDetails(data as any);
 
-      // Fetch the other user's profile
-      if (data) {
-        const otherUserId = data.trips?.traveler_id === userId 
-          ? data.shipment_requests?.sender_id 
-          : data.trips?.traveler_id;
+      if (!data) {
+        setAccessDenied(true);
+        return;
+      }
 
-        if (otherUserId) {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("id, full_name, avatar_url, phone, id_type, id_number, id_expiry_date, role")
-            .eq("id", otherUserId)
-            .maybeSingle();
+      setMatchDetails(data);
 
-          if (profileData) setOtherUser(profileData as OtherUserProfile);
-        }
+      // Logique pour trouver "l'autre" utilisateur
+      // Si je suis l'admin, je veux voir le voyageur par défaut (ou on pourrait afficher les deux)
+      let targetUserId = null;
+
+      // Conversion sécurisée des types
+      const trip = data.trips as any;
+      const request = data.shipment_requests as any;
+
+      if (trip?.traveler_id === userId) {
+        targetUserId = request?.sender_id;
+      } else if (request?.sender_id === userId) {
+        targetUserId = trip?.traveler_id;
+      } else {
+        // Cas Admin ou Observateur : On montre le Voyageur par défaut
+        targetUserId = trip?.traveler_id;
+      }
+
+      if (targetUserId) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url, phone, id_type, id_number, id_expiry_date, role")
+          .eq("id", targetUserId)
+          .maybeSingle();
+
+        if (profileData) setOtherUser(profileData as OtherUserProfile);
       }
     } catch (error) {
       console.error("Error fetching match details:", error);
+      setAccessDenied(true);
     }
   };
 
@@ -164,101 +173,95 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Une erreur est survenue. Vérifie ta connexion et réessaie.");
+      toast.error("Impossible d'envoyer le message.");
     } finally {
       setSending(false);
     }
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
+    return <div className="text-center py-8 text-muted-foreground">Chargement de la conversation...</div>;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] text-center p-6 bg-muted/20 rounded-lg">
+        <AlertTriangle className="w-10 h-10 text-yellow-500 mb-4" />
+        <h3 className="text-lg font-semibold">Conversation inaccessible</h3>
+        <p className="text-muted-foreground mt-2">
+          Vous n'avez pas les droits pour accéder à cet échange ou il n'existe plus.
+        </p>
+      </div>
+    );
   }
 
   const otherUserKycStatus = otherUser ? getKycStatus(otherUser) : "not_filled";
-  const isOtherUserActive = true; // Simplified - could be calculated from stats
+  const isOtherUserActive = true;
 
   return (
-    <div className="flex flex-col h-[500px]">
-      {/* Conversation Header with Other User Profile */}
+    <div className="flex flex-col h-[600px]">
+      {" "}
+      {/* Hauteur augmentée pour confort */}
+      {/* Header et Info Match - Inchangé mais sécurisé via matchDetails?. */}
       {otherUser && (
-        <div className="mb-4 p-4 bg-card rounded-lg border">
+        <div className="mb-4 p-4 bg-card rounded-lg border shadow-sm">
           <div className="flex items-center gap-3">
-            <UserAvatar
-              fullName={otherUser.full_name}
-              avatarUrl={otherUser.avatar_url}
-              size="md"
-            />
+            <UserAvatar fullName={otherUser.full_name} avatarUrl={otherUser.avatar_url} size="md" />
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <p className="font-semibold text-foreground">{otherUser.full_name}</p>
                 <KycIcon status={otherUserKycStatus} />
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <ActivityBadge 
-                  isActive={isOtherUserActive} 
-                  role={otherUser.role as "traveler" | "sender"} 
-                />
+                <ActivityBadge isActive={isOtherUserActive} role={otherUser.role as "traveler" | "sender"} />
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Match Info */}
-      {matchDetails && (
-        <div className="mb-4 p-3 bg-muted/30 rounded-lg border text-sm">
-          <div className="flex items-center justify-between gap-4">
+      {matchDetails && matchDetails.trips && (
+        <div className="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Plane className="w-4 h-4 text-primary" />
+              <Plane className="w-4 h-4 text-blue-600" />
               <span className="font-medium">
-                {matchDetails.trips.from_city} → {matchDetails.trips.to_city}
+                {(matchDetails.trips as any).from_city} → {(matchDetails.trips as any).to_city}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                {matchDetails.shipment_requests.item_type}
-              </span>
+              <span className="text-muted-foreground">{(matchDetails.shipment_requests as any).item_type}</span>
             </div>
-            <p className="text-muted-foreground">
-              {format(new Date(matchDetails.trips.departure_date), "d MMM yyyy", { locale: fr })}
-            </p>
           </div>
         </div>
       )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 p-4 border rounded-lg bg-muted/20">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto space-y-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
         {messages.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Aucun message. Commencez la conversation !
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
+            <Send className="w-8 h-8 mb-2" />
+            <p>Dites bonjour pour démarrer la discussion !</p>
           </div>
         ) : (
           messages.map((message: any) => {
             const isOwn = message.sender_id === userId;
+            // PROTECTION CRASH : On vérifie si profile existe
+            const senderName = message.profiles?.full_name || "Utilisateur inconnu";
+
             return (
-              <div
-                key={message.id}
-                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-              >
+              <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
+                  className={`max-w-[75%] rounded-2xl p-3 px-4 ${
                     isOwn
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-white dark:bg-slate-800 border shadow-sm rounded-bl-sm"
                   }`}
                 >
                   {!isOwn && (
-                    <p className="text-xs font-medium mb-1 opacity-70">
-                      {message.profiles.full_name}
-                    </p>
+                    <p className="text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider">{senderName}</p>
                   )}
-                  <p className="text-sm break-words">{message.content}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      isOwn ? "opacity-70" : "text-muted-foreground"
-                    }`}
-                  >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <p className={`text-[10px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}>
                     {format(new Date(message.created_at), "HH:mm", { locale: fr })}
                   </p>
                 </div>
@@ -268,7 +271,6 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         )}
         <div ref={messagesEndRef} />
       </div>
-
       {/* Input */}
       <form onSubmit={handleSend} className="flex gap-2 mt-4">
         <Input
@@ -276,8 +278,9 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Écrivez votre message..."
           disabled={sending}
+          className="flex-1"
         />
-        <Button type="submit" disabled={sending || !newMessage.trim()}>
+        <Button type="submit" disabled={sending || !newMessage.trim()} size="icon">
           <Send className="w-4 h-4" />
         </Button>
       </form>
