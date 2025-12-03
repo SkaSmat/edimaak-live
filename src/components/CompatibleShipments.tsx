@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MapPin, Calendar, Weight, Package, Search, Plane, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -39,11 +39,30 @@ interface CompatibleShipmentsProps {
 }
 
 const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
+  // 1. Pour gérer la redirection depuis la Landing Page
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("highlight");
+
   const [matches, setMatches] = useState<CompatibleMatch[]>([]);
-  const [proposedIds, setProposedIds] = useState<string[]>([]); // État pour gérer les boutons "En attente"
+  const [proposedIds, setProposedIds] = useState<string[]>([]); // Mémoire pour les boutons "En attente"
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
+
+  // 2. Effet pour scroller automatiquement vers le colis ciblé
+  useEffect(() => {
+    if (highlightId && matches.length > 0 && !loading) {
+      const element = document.getElementById(`shipment-${highlightId}`);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Petit effet visuel pour montrer quel colis a été sélectionné
+          element.classList.add("ring-2", "ring-primary", "ring-offset-2");
+          setTimeout(() => element.classList.remove("ring-2", "ring-primary", "ring-offset-2"), 3000);
+        }, 500);
+      }
+    }
+  }, [highlightId, matches, loading]);
 
   useEffect(() => {
     fetchCompatibleShipments();
@@ -53,7 +72,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
     setError(false);
     setLoading(true);
     try {
-      // 1. Récupérer mes voyages ouverts
+      // Récupérer mes voyages ouverts
       const { data: trips } = await supabase.from("trips").select("*").eq("traveler_id", userId).eq("status", "open");
 
       if (!trips || trips.length === 0) {
@@ -63,7 +82,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       }
       setHasTrips(true);
 
-      // 2. Récupérer les demandes
+      // Récupérer les demandes
       const { data: shipments, error } = await supabase
         .from("shipment_requests")
         .select("*, profiles:sender_id(full_name)")
@@ -71,7 +90,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
       if (error) throw error;
 
-      // 3. Algorithme de Matching corrigé
+      // Algorithme de Matching
       const foundMatches: CompatibleMatch[] = [];
 
       (shipments || []).forEach((shipment: any) => {
@@ -126,7 +145,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       if (error) {
         if (error.message.includes("duplicate") || error.code === "23505") {
           toast.error("Vous avez déjà proposé ce voyage");
-          // Si c'est déjà proposé, on le marque quand même visuellement
+          // On marque quand même le bouton visuellement
           setProposedIds((prev) => [...prev, shipmentId]);
         } else {
           throw error;
@@ -171,7 +190,10 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       {matches.map(({ shipment, matchingTrip }) => (
         <div
           key={shipment.id}
-          className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow relative overflow-hidden"
+          id={`shipment-${shipment.id}`} // L'ID indispensable pour le scroll !
+          className={`p-4 border rounded-lg bg-card hover:shadow-md transition-all duration-500 relative overflow-hidden ${
+            highlightId === shipment.id ? "shadow-lg scale-[1.01]" : ""
+          }`}
         >
           <div className="absolute top-0 right-0 bg-green-500/10 text-green-600 text-xs px-2 py-1 rounded-bl-lg font-medium">
             Compatible avec votre voyage du {format(new Date(matchingTrip.departure_date), "d MMM")}
@@ -212,7 +234,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           <Button
             className={`w-full transition-all duration-300 ${
               proposedIds.includes(shipment.id)
-                ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 opacity-90"
+                ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-600 opacity-90"
                 : ""
             }`}
             onClick={() => handlePropose(shipment.id, matchingTrip.id)}
