@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { MessageCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -36,6 +35,25 @@ interface ConversationListProps {
 const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: ConversationListProps) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unreadIds, setUnreadIds] = useState<string[]>([]); // État pour la liste des IDs non lus
+
+  // Fonction pour charger les IDs non lus
+  const loadUnreadStatus = () => {
+    const storage = localStorage.getItem("unreadMatches");
+    if (storage) {
+      setUnreadIds(JSON.parse(storage));
+    } else {
+      setUnreadIds([]);
+    }
+  };
+
+  // Écoute des événements de synchronisation
+  useEffect(() => {
+    loadUnreadStatus();
+    // Quand le Layout met à jour le storage (message reçu ou lu), on met à jour la liste
+    window.addEventListener("unread-change", loadUnreadStatus);
+    return () => window.removeEventListener("unread-change", loadUnreadStatus);
+  }, [userId]);
 
   useEffect(() => {
     fetchMatches();
@@ -46,11 +64,7 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
       const { data, error } = await supabase
         .from("matches")
         .select(
-          `
-          *,
-          trips:trip_id(from_city, to_city, traveler_id, profiles:traveler_id(full_name)),
-          shipment_requests:shipment_request_id(item_type, from_city, to_city, sender_id, profiles:sender_id(full_name))
-        `,
+          `*, trips:trip_id(from_city, to_city, traveler_id, profiles:traveler_id(full_name)), shipment_requests:shipment_request_id(item_type, from_city, to_city, sender_id, profiles:sender_id(full_name))`,
         )
         .in("status", ["accepted", "completed"])
         .order("created_at", { ascending: false });
@@ -71,16 +85,14 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-4 text-sm text-muted-foreground">Chargement...</div>;
-  }
+  if (loading) return <div className="text-center py-4 text-sm text-muted-foreground">Chargement...</div>;
 
   if (matches.length === 0) {
     return (
       <EmptyState
         icon={MessageCircle}
         title="Aucune conversation"
-        description="Tu n'as pas encore de conversation active."
+        description="Tu n'as pas encore de conversation active. Accepte un match pour commencer à discuter."
         className="py-8"
       />
     );
@@ -97,6 +109,7 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
         const route = match.trips ? `${match.trips.from_city} → ${match.trips.to_city}` : "Trajet inconnu";
 
         const isSelected = selectedMatchId === match.id;
+        const isUnread = unreadIds.includes(match.id); // VRAI SI LA CONVERSATION EST DANS LE STORAGE
 
         return (
           <button
@@ -104,34 +117,57 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
             onClick={() => onSelectMatch(match.id)}
             className={cn(
               "w-full text-left p-4 rounded-xl border transition-all duration-200 relative group flex items-center gap-3",
-              // LE STYLE ACTIF EST ICI : Fond orange clair + Bordure orange + Ombre
+              // Style si SELECTIONNÉ
               isSelected
                 ? "bg-orange-50 border-orange-500 shadow-md ring-1 ring-orange-200"
-                : "bg-card hover:bg-gray-50 border-transparent hover:border-gray-200 shadow-sm",
+                : // Style si NON LU
+                  isUnread
+                  ? "bg-red-50/70 border-red-200 shadow-sm font-semibold"
+                  : "bg-card hover:bg-gray-50 border-transparent hover:border-gray-200 shadow-sm",
             )}
           >
-            {/* Indicateur visuel "Pastille" si sélectionné */}
+            {/* INDICATEUR DE SÉLECTION (Barre orange à gauche) */}
             {isSelected && (
               <span className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-orange-500 rounded-r-full" />
+            )}
+
+            {/* PASTILLE ROUGE SI NON LU ET NON SELECTIONNÉ */}
+            {isUnread && !isSelected && (
+              <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse border-2 border-red-100" />
             )}
 
             <div
               className={cn(
                 "p-2.5 rounded-full transition-colors shrink-0",
-                isSelected ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500 group-hover:bg-white",
+                isSelected
+                  ? "bg-orange-100 text-orange-600"
+                  : isUnread
+                    ? "bg-red-100 text-red-600"
+                    : "bg-gray-100 text-gray-500 group-hover:bg-white",
               )}
             >
               <MessageCircle className="w-5 h-5" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={cn("font-semibold truncate", isSelected ? "text-orange-900" : "text-gray-900")}>
+              <p
+                className={cn(
+                  "font-semibold truncate",
+                  isSelected ? "text-orange-900" : isUnread ? "text-red-800" : "text-gray-900",
+                )}
+              >
                 {otherUser}
               </p>
-              <p className="text-xs text-muted-foreground truncate font-medium">{route}</p>
+              <p
+                className={cn(
+                  "text-xs truncate font-medium",
+                  isUnread ? "text-red-700 font-bold" : "text-muted-foreground",
+                )}
+              >
+                {route}
+              </p>
             </div>
 
-            {/* Petite flèche pour inciter au clic */}
             <ChevronRight
               className={cn(
                 "w-4 h-4 transition-transform",
