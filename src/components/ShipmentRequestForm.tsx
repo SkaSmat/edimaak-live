@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, Upload, X } from "lucide-react";
-// 1. On importe le composant pour uniformiser les villes
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 
 interface ShipmentRequestFormProps {
@@ -57,13 +56,11 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     setLoading(true);
 
     try {
-      // Validations de sécurité (Préservées)
       if (parseFloat(formData.weightKg) <= 0) throw new Error("Le poids doit être positif");
       if (formData.latestDate < formData.earliestDate) throw new Error("La date limite est avant la date de début");
 
       let imageUrl: string | null = null;
 
-      // Logique d'Upload (Préservée)
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${userId}-${Date.now()}.${fileExt}`;
@@ -78,16 +75,15 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         imageUrl = publicUrl;
       }
 
-      // Nettoyage des villes
       const cleanFromCity = formData.fromCity.trim();
       const cleanToCity = formData.toCity.trim();
 
       const { error } = await supabase.from("shipment_requests").insert({
         sender_id: userId,
         from_country: formData.fromCountry,
-        from_city: cleanFromCity, // Ville standardisée
+        from_city: cleanFromCity,
         to_country: formData.toCountry,
-        to_city: cleanToCity, // Ville standardisée
+        to_city: cleanToCity,
         earliest_date: formData.earliestDate,
         latest_date: formData.latestDate,
         weight_kg: parseFloat(formData.weightKg),
@@ -128,7 +124,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
         <div className="space-y-2">
           <Label>Ville d'origine *</Label>
-          {/* 2. REMPLACEMENT : Input texte -> CityAutocomplete */}
           <CityAutocomplete
             value={formData.fromCity}
             onChange={(val) => setFormData({ ...formData, fromCity: val })}
@@ -153,7 +148,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
         <div className="space-y-2">
           <Label>Ville de destination *</Label>
-          {/* 3. REMPLACEMENT : Input texte -> CityAutocomplete */}
           <CityAutocomplete
             value={formData.toCity}
             onChange={(val) => setFormData({ ...formData, toCity: val })}
@@ -161,7 +155,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           />
         </div>
 
-        {/* Dates (Code préservé) */}
         <div className="space-y-2">
           <Label>Dispo à partir du *</Label>
           <Input
@@ -184,7 +177,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           />
         </div>
 
-        {/* Poids & Type (Code préservé) */}
         <div className="space-y-2">
           <Label>Poids (kg) *</Label>
           <Input
@@ -198,18 +190,25 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           />
         </div>
 
+        {/* NOUVEAU : Liste déroulante des types d'objets */}
         <div className="space-y-2">
           <Label>Type d'objet *</Label>
-          <Input
+          <select
             value={formData.itemType}
             onChange={(e) => setFormData({ ...formData, itemType: e.target.value })}
+            className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
-            placeholder="Vêtements, documents..."
-          />
+          >
+            <option value="">Sélectionner...</option>
+            <option value="Documents">Documents</option>
+            <option value="Vêtements">Vêtements</option>
+            <option value="Médicaments">Médicaments</option>
+            <option value="Argent">Argent</option>
+            <option value="Autres">Autres</option>
+          </select>
         </div>
       </div>
 
-      {/* Image Upload (Code préservé) */}
       <div className="space-y-2">
         <Label>Image (optionnel)</Label>
         {imagePreview ? (
