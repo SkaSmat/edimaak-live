@@ -13,7 +13,6 @@ interface DashboardLayoutProps {
   role: "traveler" | "sender" | "admin";
   fullName: string;
   isAdmin?: boolean;
-  onLogout?: () => void; // Optionnel car géré en interne
 }
 
 export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: DashboardLayoutProps) => {
@@ -24,7 +23,13 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
 
-  // --- FONCTION DE DÉCONNEXION (Hard Logout) ---
+  // Fonction pour mettre à jour le compteur depuis le localStorage
+  const updateCountFromStorage = () => {
+    const storage = localStorage.getItem("unreadMatches");
+    const unreadList = storage ? JSON.parse(storage) : [];
+    setUnreadCount(unreadList.length);
+  };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -32,37 +37,52 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       sessionStorage.clear();
       window.location.href = "/";
     } catch (error) {
-      console.error("Erreur déco", error);
       window.location.href = "/";
     }
   };
 
-  // Reset compteur sur page messages
+  // 1. Initialisation et Écouteur d'événements interne
   useEffect(() => {
-    if (location.pathname === "/messages") {
-      setUnreadCount(0);
-    }
-  }, [location.pathname]);
+    updateCountFromStorage();
 
-  // Système de notification
+    // On écoute un événement personnalisé pour savoir quand le compteur change (depuis Messages.tsx)
+    window.addEventListener("unread-change", updateCountFromStorage);
+
+    return () => {
+      window.removeEventListener("unread-change", updateCountFromStorage);
+    };
+  }, []);
+
+  // 2. Système de notification Realtime
   useEffect(() => {
     const setupRealtimeListener = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
+
       const currentUserId = session.user.id;
 
       const channel = supabase
         .channel("global_messages")
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
           const newMessage = payload.new as any;
-          if (newMessage.sender_id !== currentUserId) {
-            if (window.location.pathname !== "/messages") {
-              setUnreadCount((prev) => prev + 1);
-            }
 
-            // Son + Vibration
+          if (newMessage.sender_id !== currentUserId) {
+            // --- SAUVEGARDE DANS LOCALSTORAGE ---
+            const storage = localStorage.getItem("unreadMatches");
+            const currentUnread = storage ? JSON.parse(storage) : [];
+
+            // Si l'ID n'est pas déjà dans la liste, on l'ajoute
+            if (!currentUnread.includes(newMessage.match_id)) {
+              const newList = [...currentUnread, newMessage.match_id];
+              localStorage.setItem("unreadMatches", JSON.stringify(newList));
+
+              // On prévient tout le monde que ça a changé
+              window.dispatchEvent(new Event("unread-change"));
+            }
+            // ------------------------------------
+
             try {
               const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
               audio.volume = 0.5;
@@ -89,6 +109,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
         supabase.removeChannel(channel);
       };
     };
+
     setupRealtimeListener();
   }, []);
 
@@ -98,21 +119,15 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
         <DashboardSidebar
           role={role === "admin" ? "traveler" : role}
           isAdmin={effectiveIsAdmin}
-          onLogout={handleLogout} // Utilise la fonction interne
+          onLogout={handleLogout}
           unreadCount={unreadCount}
         />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
-          {/* Header Mobile */}
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
-            <DashboardMobileHeader
-              fullName={fullName}
-              onLogout={handleLogout} // Utilise la fonction interne
-              unreadCount={unreadCount}
-            />
+            <DashboardMobileHeader fullName={fullName} onLogout={handleLogout} unreadCount={unreadCount} />
           </div>
 
-          {/* Desktop Header */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">Bonjour, {firstName}</h1>
@@ -123,7 +138,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleLogout} // Utilise la fonction interne
+              onClick={handleLogout}
               className="text-muted-foreground hover:text-destructive transition-colors"
             >
               <LogOut className="h-4 w-4 mr-2" />
