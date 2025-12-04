@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Ajout de useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,31 +8,46 @@ import ConversationList from "@/components/ConversationList";
 import ChatWindow from "@/components/ChatWindow";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { toast } from "sonner";
 
 const Messages = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // Hook essentiel pour écouter l'URL
+  const location = useLocation();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Initialisation Auth
+  // NOUVELLE FONCTION : Marquer comme lu avec signal de rafraîchissement
+  const markAsRead = (matchId: string) => {
+    const storage = localStorage.getItem("unreadMatches");
+    if (storage) {
+      let unreadList = JSON.parse(storage);
+
+      // On vérifie si l'ID est bien présent avant de modifier
+      if (unreadList.includes(matchId)) {
+        unreadList = unreadList.filter((id: string) => id !== matchId);
+        localStorage.setItem("unreadMatches", JSON.stringify(unreadList));
+
+        // LIGNE DE CODE CRITIQUE : Force la mise à jour globale
+        window.dispatchEvent(new Event("unread-change"));
+      }
+    }
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
 
-  // 2. Écouteur de changement d'URL (C'est la correction !)
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const matchIdFromUrl = urlParams.get("matchId");
 
-    if (matchIdFromUrl && matchIdFromUrl !== selectedMatchId) {
-      console.log("URL a changé, nouvelle sélection :", matchIdFromUrl);
+    if (matchIdFromUrl) {
       setSelectedMatchId(matchIdFromUrl);
+      // On marque comme lu immédiatement dès l'arrivée sur la conversation via URL
+      markAsRead(matchIdFromUrl);
     }
-  }, [location.search]); // Se déclenche à chaque fois que l'URL change
+  }, [location.search]);
 
   const checkAuth = async () => {
     try {
@@ -62,6 +77,7 @@ const Messages = () => {
   };
 
   const handleLogout = async () => {
+    // ... Déconnexion ...
     await supabase.auth.signOut();
     localStorage.clear();
     window.location.href = "/";
@@ -70,30 +86,24 @@ const Messages = () => {
   const handleBack = () => {
     if (selectedMatchId) {
       setSelectedMatchId(null);
-      // On retire le paramètre de l'URL proprement
       navigate("/messages");
     } else {
       navigate(-1);
     }
   };
 
-  // Handler pour quand on clique manuellement sur une conversation
+  // MISE À JOUR : Appel à markAsRead qui contient maintenant le signal de rafraîchissement
   const handleSelectMatch = (id: string) => {
     setSelectedMatchId(id);
-    // On met à jour l'URL pour que ce soit cohérent (et partageable)
     navigate(`/messages?matchId=${id}`);
+    markAsRead(id); // <--- Ligne qui déclenche la mise à jour globale
   };
 
   if (loading) return null;
   if (!user || !profile) return null;
 
   return (
-    <DashboardLayout
-      role={profile.role}
-      fullName={profile.full_name}
-      isAdmin={profile.role === "admin"}
-      onLogout={handleLogout}
-    >
+    <DashboardLayout role={profile.role} fullName={profile.full_name} isAdmin={profile.role === "admin"}>
       <div className="h-[calc(100vh-8rem)] flex flex-col">
         <div className="md:hidden flex items-center justify-between mb-4">
           {selectedMatchId && (
@@ -113,11 +123,7 @@ const Messages = () => {
               <CardTitle className="text-lg">Conversations</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0">
-              <ConversationList
-                userId={user.id}
-                onSelectMatch={handleSelectMatch} // Utilise notre nouveau handler
-                selectedMatchId={selectedMatchId}
-              />
+              <ConversationList userId={user.id} onSelectMatch={handleSelectMatch} selectedMatchId={selectedMatchId} />
             </CardContent>
           </Card>
 
