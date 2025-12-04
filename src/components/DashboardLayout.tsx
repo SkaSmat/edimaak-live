@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle } from "lucide-react";
+import { LogOut, MessageCircle, Handshake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -21,30 +21,22 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const roleLabel = role === "traveler" ? "Voyageur" : role === "sender" ? "Expéditeur" : "Administrateur";
   const effectiveIsAdmin = isAdmin || role === "admin";
 
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0); // Messages
+  const [pendingMatchCount, setPendingMatchCount] = useState(0); // NOUVEAU : Matchs
   const location = useLocation();
 
-  // Fonction pour charger et mettre à jour le compteur depuis le localStorage
-  const updateCountFromStorage = () => {
-    const storage = localStorage.getItem("unreadMatches");
-    const unreadList = storage ? JSON.parse(storage) : [];
-    setUnreadCount(unreadList.length);
+  // --- GESTION COMPTEURS LOCALSTORAGE ---
+  const updateCountsFromStorage = () => {
+    // Messages
+    const msgStorage = localStorage.getItem("unreadMatches");
+    const msgList = msgStorage ? JSON.parse(msgStorage) : [];
+    setUnreadCount(msgList.length);
+
+    // Matchs (NOUVEAU)
+    const matchStorage = localStorage.getItem("newMatches");
+    const matchList = matchStorage ? JSON.parse(matchStorage) : [];
+    setPendingMatchCount(matchList.length);
   };
-
-  // 1. Initialisation et Écouteur d'événements interne pour la synchronisation
-  useEffect(() => {
-    // Charge le compteur immédiatement au montage
-    updateCountFromStorage();
-
-    // Écouteur pour mettre à jour le compteur quand une autre conversation est lue
-    window.addEventListener("unread-change", updateCountFromStorage);
-
-    return () => {
-      window.removeEventListener("unread-change", updateCountFromStorage);
-    };
-  }, []);
-
-  // Le reste de la logique (déconnexion, Realtime) reste inchangé...
 
   const handleInternalLogout = async () => {
     try {
@@ -53,12 +45,24 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       sessionStorage.clear();
       window.location.href = "/";
     } catch (error) {
-      console.error("Erreur déco", error);
       window.location.href = "/";
     }
   };
 
-  // Système de notification (Realtime)
+  useEffect(() => {
+    updateCountsFromStorage();
+
+    // On écoute les deux types d'événements
+    window.addEventListener("unread-change", updateCountsFromStorage); // Pour les messages
+    window.addEventListener("match-change", updateCountsFromStorage); // Pour les matchs
+
+    return () => {
+      window.removeEventListener("unread-change", updateCountsFromStorage);
+      window.removeEventListener("match-change", updateCountsFromStorage);
+    };
+  }, []);
+
+  // --- SYSTÈME DE NOTIFICATION REALTIME ---
   useEffect(() => {
     const setupRealtimeListener = async () => {
       const {
@@ -67,43 +71,42 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       if (!session) return;
       const currentUserId = session.user.id;
 
+      // Canal unique pour tout écouter
       const channel = supabase
-        .channel("global_messages")
+        .channel("global_notifications")
+
+        // 1. Écoute des MESSAGES (Inchangé)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
           const newMessage = payload.new as any;
           if (newMessage.sender_id !== currentUserId) {
-            // --- MISE À JOUR PERSISTANTE ---
             const storage = localStorage.getItem("unreadMatches");
             const currentUnread = storage ? JSON.parse(storage) : [];
-
             if (!currentUnread.includes(newMessage.match_id)) {
-              const newList = [...currentUnread, newMessage.match_id];
-              localStorage.setItem("unreadMatches", JSON.stringify(newList));
-
-              // On notifie les autres composants de mettre à jour le compteur
+              localStorage.setItem("unreadMatches", JSON.stringify([...currentUnread, newMessage.match_id]));
               window.dispatchEvent(new Event("unread-change"));
             }
-            // ------------------------------------
+            triggerNotification("Nouveau message !", "Vous avez reçu un message.");
+          }
+        })
 
-            // Le reste des toasts/sons
-            try {
-              const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
-              audio.volume = 0.5;
-              audio.play().catch(() => {});
-              if (typeof navigator !== "undefined" && navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
-              }
-            } catch (e) {}
+        // 2. Écoute des MATCHS (NOUVEAU)
+        // On écoute les INSERT (nouvelles propositions)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "matches" }, (payload) => {
+          const newMatch = payload.new as any;
 
-            toast.message("Nouveau message !", {
-              description: newMessage.content.substring(0, 40) + "...",
-              icon: <MessageCircle className="w-5 h-5 text-primary" />,
-              duration: 5000,
-              action: {
-                label: "Voir",
-                onClick: () => (window.location.href = `/messages?matchId=${newMessage.match_id}`),
-              },
-            });
+          // Si le statut est 'pending', c'est une nouvelle proposition
+          if (newMatch.status === "pending") {
+            // Sauvegarde dans localStorage
+            const storage = localStorage.getItem("newMatches");
+            const currentMatches = storage ? JSON.parse(storage) : [];
+
+            if (!currentMatches.includes(newMatch.id)) {
+              localStorage.setItem("newMatches", JSON.stringify([...currentMatches, newMatch.id]));
+              window.dispatchEvent(new Event("match-change"));
+
+              // Notification spécifique
+              triggerNotification("Nouvelle proposition !", "Un voyageur propose de prendre votre colis !", "match");
+            }
           }
         })
         .subscribe();
@@ -112,10 +115,30 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
         supabase.removeChannel(channel);
       };
     };
+
     setupRealtimeListener();
   }, []);
 
-  // Réinitialisation du compteur quand on va sur la page Messages (inutile de le faire ici, on le fait dans Messages.tsx)
+  // Helper pour son + toast
+  const triggerNotification = (title: string, desc: string, type: "message" | "match" = "message") => {
+    try {
+      const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+      if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    } catch (e) {}
+
+    toast.message(title, {
+      description: desc,
+      icon:
+        type === "message" ? (
+          <MessageCircle className="w-5 h-5 text-primary" />
+        ) : (
+          <Handshake className="w-5 h-5 text-green-500" />
+        ),
+      duration: 5000,
+    });
+  };
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -125,11 +148,16 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
           isAdmin={effectiveIsAdmin}
           onLogout={handleInternalLogout}
           unreadCount={unreadCount}
+          pendingMatchCount={pendingMatchCount} // On passe le nouveau compteur
         />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
           <div className="md:hidden sticky top-0 z-30 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
-            <DashboardMobileHeader fullName={fullName} onLogout={handleInternalLogout} unreadCount={unreadCount} />
+            <DashboardMobileHeader
+              fullName={fullName}
+              onLogout={handleInternalLogout}
+              unreadCount={unreadCount + pendingMatchCount} // Somme des notifs pour le mobile
+            />
           </div>
 
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
