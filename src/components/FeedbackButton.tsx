@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-// CORRECTION ICI : Ajout de Loader2
 import { MessageSquareWarning, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,8 +18,8 @@ interface FeedbackButtonProps {
   collapsed?: boolean;
 }
 
-// URL à remplacer par votre formulaire Tally, Google Forms, etc.
-const FEEDBACK_FORM_URL = "https://tally.so/r/feedback";
+// ✅ TON EMAIL EST ICI
+const ADMIN_EMAIL = "10poubelle0@gmail.com";
 
 export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: FeedbackButtonProps) => {
   const [open, setOpen] = useState(false);
@@ -35,17 +34,18 @@ export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: Feedb
 
     setIsSending(true);
 
-    // Simuler un petit délai pour l'UX (puisque window.open est instantané)
+    // Simulation UX
     setTimeout(() => {
-      // Encode the message for URL
-      const encodedMessage = encodeURIComponent(message);
+      // Préparation du mail
+      const subject = encodeURIComponent("Feedback / Signalement EDIM3AK");
+      const body = encodeURIComponent(message);
 
-      // Ouvre l'URL externe avec le message pré-rempli
-      window.open(`${FEEDBACK_FORM_URL}?feedback=${encodedMessage}`, "_blank");
+      // Ouvre le client mail de l'utilisateur vers TON adresse
+      window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
 
-      toast.success("Merci pour ton retour ! Le formulaire a été ouvert.");
+      toast.success("Merci ! Ton application mail va s'ouvrir pour envoyer le message.");
 
-      // Nettoyage de l'état
+      // Reset
       setMessage("");
       setOpen(false);
       setIsSending(false);
@@ -115,9 +115,7 @@ const FeedbackModal = ({ message, setMessage, onSubmit, isSending }: FeedbackMod
           rows={5}
           className="resize-none"
         />
-        <p className="text-xs text-muted-foreground">
-          Ton avis sera soumis à l'équipe de support. Merci de prendre le temps de nous aider !
-        </p>
+        <p className="text-xs text-muted-foreground">Ton avis nous sera envoyé directement par email.</p>
       </div>
 
       <DialogFooter className="justify-end">
@@ -129,7 +127,7 @@ const FeedbackModal = ({ message, setMessage, onSubmit, isSending }: FeedbackMod
           ) : (
             <>
               <Send className="h-4 w-4 mr-2" />
-              Envoyer
+              Envoyer par email
             </>
           )}
         </Button>
