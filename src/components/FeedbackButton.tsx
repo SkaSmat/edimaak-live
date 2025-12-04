@@ -10,7 +10,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquareWarning, Send } from "lucide-react"; // Changement de ExternalLink à Send
+// CORRECTION ICI : Ajout de Loader2
+import { MessageSquareWarning, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface FeedbackButtonProps {
@@ -34,18 +35,21 @@ export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: Feedb
 
     setIsSending(true);
 
-    // Encode the message for URL
-    const encodedMessage = encodeURIComponent(message);
+    // Simuler un petit délai pour l'UX (puisque window.open est instantané)
+    setTimeout(() => {
+      // Encode the message for URL
+      const encodedMessage = encodeURIComponent(message);
 
-    // Ouvre l'URL externe avec le message pré-rempli
-    window.open(`${FEEDBACK_FORM_URL}?feedback=${encodedMessage}`, "_blank");
+      // Ouvre l'URL externe avec le message pré-rempli
+      window.open(`${FEEDBACK_FORM_URL}?feedback=${encodedMessage}`, "_blank");
 
-    toast.success("Merci pour ton retour ! Le formulaire a été soumis via l'outil de support.");
+      toast.success("Merci pour ton retour ! Le formulaire a été ouvert.");
 
-    // Nettoyage de l'état
-    setMessage("");
-    setOpen(false);
-    setIsSending(false);
+      // Nettoyage de l'état
+      setMessage("");
+      setOpen(false);
+      setIsSending(false);
+    }, 800);
   };
 
   const commonProps = {
@@ -72,7 +76,6 @@ export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: Feedb
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {/* CORRECTION STYLE : On passe en ghost pour un style plus propre dans la sidebar */}
         <Button
           variant="ghost"
           className="flex items-center justify-start gap-3 w-full p-3 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
@@ -117,7 +120,6 @@ const FeedbackModal = ({ message, setMessage, onSubmit, isSending }: FeedbackMod
         </p>
       </div>
 
-      {/* CORRECTION FINALE : Retrait du bouton "Ouvrir le formulaire" et envoi direct */}
       <DialogFooter className="justify-end">
         <Button onClick={onSubmit} disabled={!message.trim() || isSending}>
           {isSending ? (
