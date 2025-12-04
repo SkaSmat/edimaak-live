@@ -157,7 +157,9 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
         <SidebarMenuButton
           onClick={onLogout}
           tooltip="Déconnexion"
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          // CORRECTION DE STYLE ICI : on met le même hover que FeedbackButton (qui est souvent un fond légèrement coloré)
+          className="text-muted-foreground hover:text-destructive hover:bg-red-500/10 transition-colors"
+          // Utiliser hover:bg-red-500/10 pour un effet clair et distinctif (Déconnexion est souvent rouge)
         >
           <LogOut className="h-5 w-5" />
           <span>Déconnexion</span>
