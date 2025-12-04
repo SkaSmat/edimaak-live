@@ -55,10 +55,10 @@ interface MessagePayload {
 // ============================================================================
 const playNotificationSound = (): void => {
   try {
-    const audio = new Audio("/notification.mp3");
+    const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3"); // Lien audio corrigé (plus fiable)
     audio.volume = 0.5;
     audio.play().catch((err) => {
-      console.warn("Impossible de jouer le son:", err);
+      // Ignorer silencieusement si l'utilisateur n'a pas encore interagi avec la page
     });
   } catch (error) {
     console.warn("Audio non supporté:", error);
@@ -111,7 +111,6 @@ const useRealtimeNotifications = (userId: string | undefined) => {
 
   useEffect(() => {
     if (!userId) {
-      // Nettoyer si pas d'utilisateur
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -119,12 +118,10 @@ const useRealtimeNotifications = (userId: string | undefined) => {
       return;
     }
 
-    // Nettoyer l'ancien canal s'il existe
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
 
-    // Créer un nouveau canal avec un nom unique
     channelRef.current = supabase
       .channel(`notifications_${userId}_${Date.now()}`)
       .on(
@@ -137,17 +134,12 @@ const useRealtimeNotifications = (userId: string | undefined) => {
         (payload) => {
           const newMessage = payload.new as MessagePayload;
 
-          // Ignorer nos propres messages
           if (newMessage.sender_id === userId) return;
 
-          // Incrémenter le compteur
           setUnreadCount((prev) => prev + 1);
-
-          // Effets sonores et visuels
           playNotificationSound();
           triggerVibration();
 
-          // Notification toast
           toast.message("Nouveau message !", {
             description: truncateText(newMessage.content, 40),
             icon: <MessageCircle className="w-5 h-5 text-primary" />,
@@ -160,12 +152,12 @@ const useRealtimeNotifications = (userId: string | undefined) => {
         },
       )
       .subscribe((status) => {
-        if (status === "SUBSCRIPTION_ERROR") {
+        // CORRECTION ICI : "CHANNEL_ERROR" est le bon type attendu par TypeScript
+        if (status === "CHANNEL_ERROR") {
           console.error("Erreur de souscription au canal de notifications");
         }
       });
 
-    // Cleanup
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
@@ -190,7 +182,6 @@ const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Récupérer la session initiale
     const initializeAuth = async () => {
       try {
         const {
@@ -214,7 +205,6 @@ const useAuth = () => {
 
     initializeAuth();
 
-    // Écouter les changements d'authentification
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -279,20 +269,18 @@ const Index = () => {
   const { session, userRole, isLoading: authLoading } = useAuth();
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
-  // États de recherche
   const [fromCity, setFromCity] = useState("");
   const [toCity, setToCity] = useState("");
   const [searchDate, setSearchDate] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  // États de données
   const [shipmentRequests, setShipmentRequests] = useState<ShipmentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
 
   // ============================================================================
-  // CHARGEMENT DES DONNÉES (OPTIMISÉ)
+  // CHARGEMENT DES DONNÉES
   // ============================================================================
   useEffect(() => {
     fetchShipmentRequests();
@@ -303,7 +291,6 @@ const Index = () => {
     setError(null);
 
     try {
-      // Requête optimisée avec jointure directe
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
         .select(
@@ -323,7 +310,6 @@ const Index = () => {
       if (fetchError) throw fetchError;
 
       if (data) {
-        // Récupérer les compteurs d'annonces par expéditeur
         const senderIds = [...new Set(data.map((r) => r.sender_id))];
 
         if (senderIds.length > 0) {
@@ -336,7 +322,6 @@ const Index = () => {
             console.warn("Erreur lors du comptage des annonces:", countError);
           }
 
-          // Compter les annonces par expéditeur
           const countMap: Record<string, number> = (counts || []).reduce(
             (acc, item) => {
               acc[item.sender_id] = (acc[item.sender_id] || 0) + 1;
@@ -345,7 +330,6 @@ const Index = () => {
             {} as Record<string, number>,
           );
 
-          // Enrichir les données
           const enrichedData: ShipmentRequest[] = data.map((r) => ({
             ...r,
             sender_request_count: countMap[r.sender_id] || 0,
@@ -366,7 +350,7 @@ const Index = () => {
   };
 
   // ============================================================================
-  // LOGIQUE DE RECHERCHE (OPTIMISÉE)
+  // LOGIQUE DE RECHERCHE
   // ============================================================================
   const filteredRequests = useMemo(() => {
     if (!isSearching) return shipmentRequests;
@@ -387,7 +371,6 @@ const Index = () => {
     setIsSearching(!!hasFilters);
   }, [fromCity, toCity, searchDate]);
 
-  // Déclencher la recherche automatiquement
   useEffect(() => {
     handleSearch();
   }, [handleSearch]);
@@ -401,17 +384,16 @@ const Index = () => {
 
   const handleSignUp = useCallback(() => {
     if (selectedShipment) {
-      navigate("/auth?role=traveler", {
-        state: { targetShipmentId: selectedShipment.id },
-      });
+      // Sauvegarde explicite en plus de l'état
+      localStorage.setItem("targetShipmentId", selectedShipment.id);
+      navigate("/auth?role=traveler");
     }
   }, [selectedShipment, navigate]);
 
   const handleLogin = useCallback(() => {
     if (selectedShipment) {
-      navigate("/auth", {
-        state: { targetShipmentId: selectedShipment.id },
-      });
+      localStorage.setItem("targetShipmentId", selectedShipment.id);
+      navigate("/auth");
     }
   }, [selectedShipment, navigate]);
 
