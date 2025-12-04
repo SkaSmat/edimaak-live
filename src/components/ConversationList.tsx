@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -80,29 +80,22 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
       <EmptyState
         icon={MessageCircle}
         title="Aucune conversation"
-        description="Tu n'as pas encore de conversation active. Accepte un match pour commencer à discuter."
+        description="Tu n'as pas encore de conversation active."
         className="py-8"
       />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-2">
       {matches.map((match) => {
         const isUserTraveler = match.trips?.traveler_id === userId;
         const otherUser = isUserTraveler
           ? match.shipment_requests?.profiles?.full_name || "Utilisateur"
           : match.trips?.profiles?.full_name || "Utilisateur";
 
-        const route = match.trips
-          ? `${match.trips.from_city} → ${match.trips.to_city}`
-          : match.shipment_requests
-            ? `${match.shipment_requests.from_city} → ${match.shipment_requests.to_city}`
-            : "Trajet inconnu";
+        const route = match.trips ? `${match.trips.from_city} → ${match.trips.to_city}` : "Trajet inconnu";
 
-        const itemType = match.shipment_requests?.item_type || "";
-
-        // On vérifie si c'est la conversation active
         const isSelected = selectedMatchId === match.id;
 
         return (
@@ -110,41 +103,41 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
             key={match.id}
             onClick={() => onSelectMatch(match.id)}
             className={cn(
-              "w-full text-left p-3 rounded-xl border transition-all duration-200 relative group",
-              // Style conditionnel pour la sélection
+              "w-full text-left p-4 rounded-xl border transition-all duration-200 relative group flex items-center gap-3",
+              // LE STYLE ACTIF EST ICI : Fond orange clair + Bordure orange + Ombre
               isSelected
-                ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20"
-                : "bg-card hover:bg-accent/50 border-border",
+                ? "bg-orange-50 border-orange-500 shadow-md ring-1 ring-orange-200"
+                : "bg-card hover:bg-gray-50 border-transparent hover:border-gray-200 shadow-sm",
             )}
           >
-            {/* Indicateur visuel (Pastille) si sélectionné */}
+            {/* Indicateur visuel "Pastille" si sélectionné */}
             {isSelected && (
-              <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-              </span>
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-orange-500 rounded-r-full" />
             )}
 
-            <div className="flex items-start gap-3">
-              <div
-                className={cn(
-                  "p-2 rounded-full transition-colors",
-                  isSelected
-                    ? "bg-background text-primary"
-                    : "bg-muted text-muted-foreground group-hover:bg-background",
-                )}
-              >
-                <MessageCircle className="w-5 h-5" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className={cn("font-medium truncate", isSelected ? "text-primary" : "text-foreground")}>
-                  {otherUser}
-                </p>
-                <p className="text-sm text-muted-foreground truncate">{route}</p>
-                {itemType && <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{itemType}</p>}
-              </div>
+            <div
+              className={cn(
+                "p-2.5 rounded-full transition-colors shrink-0",
+                isSelected ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500 group-hover:bg-white",
+              )}
+            >
+              <MessageCircle className="w-5 h-5" />
             </div>
+
+            <div className="flex-1 min-w-0">
+              <p className={cn("font-semibold truncate", isSelected ? "text-orange-900" : "text-gray-900")}>
+                {otherUser}
+              </p>
+              <p className="text-xs text-muted-foreground truncate font-medium">{route}</p>
+            </div>
+
+            {/* Petite flèche pour inciter au clic */}
+            <ChevronRight
+              className={cn(
+                "w-4 h-4 transition-transform",
+                isSelected ? "text-orange-500" : "text-gray-300 group-hover:text-gray-400 group-hover:translate-x-1",
+              )}
+            />
           </button>
         );
       })}
