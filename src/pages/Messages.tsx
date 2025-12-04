@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Ajout de useLocation
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,25 +7,32 @@ import { MessageSquare, ArrowLeft } from "lucide-react";
 import ConversationList from "@/components/ConversationList";
 import ChatWindow from "@/components/ChatWindow";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DashboardLayout } from "@/components/DashboardLayout"; // Retour du Layout
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { toast } from "sonner";
 
 const Messages = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // Hook essentiel pour écouter l'URL
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null); // Nécessaire pour le Layout
+  const [profile, setProfile] = useState<any>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 1. Initialisation Auth
   useEffect(() => {
     checkAuth();
+  }, []);
 
-    const urlParams = new URLSearchParams(window.location.search);
+  // 2. Écouteur de changement d'URL (C'est la correction !)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
     const matchIdFromUrl = urlParams.get("matchId");
-    if (matchIdFromUrl) {
+
+    if (matchIdFromUrl && matchIdFromUrl !== selectedMatchId) {
+      console.log("URL a changé, nouvelle sélection :", matchIdFromUrl);
       setSelectedMatchId(matchIdFromUrl);
     }
-  }, []);
+  }, [location.search]); // Se déclenche à chaque fois que l'URL change
 
   const checkAuth = async () => {
     try {
@@ -38,7 +45,6 @@ const Messages = () => {
       }
       setUser(session.user);
 
-      // On doit récupérer le profil pour le DashboardLayout (Nom + Rôle)
       const { data: profileData, error } = await supabase
         .from("profiles")
         .select("*")
@@ -62,14 +68,20 @@ const Messages = () => {
   };
 
   const handleBack = () => {
-    // Si on a un match sélectionné, on revient à la liste (sur mobile)
     if (selectedMatchId) {
       setSelectedMatchId(null);
-      // On nettoie l'URL pour ne pas y revenir en rafraîchissant
-      window.history.pushState({}, "", "/messages");
+      // On retire le paramètre de l'URL proprement
+      navigate("/messages");
     } else {
       navigate(-1);
     }
+  };
+
+  // Handler pour quand on clique manuellement sur une conversation
+  const handleSelectMatch = (id: string) => {
+    setSelectedMatchId(id);
+    // On met à jour l'URL pour que ce soit cohérent (et partageable)
+    navigate(`/messages?matchId=${id}`);
   };
 
   if (loading) return null;
@@ -83,7 +95,6 @@ const Messages = () => {
       onLogout={handleLogout}
     >
       <div className="h-[calc(100vh-8rem)] flex flex-col">
-        {/* En-tête Mobile spécifique pour la navigation dans les messages */}
         <div className="md:hidden flex items-center justify-between mb-4">
           {selectedMatchId && (
             <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2">
@@ -95,7 +106,6 @@ const Messages = () => {
         </div>
 
         <div className="flex-1 grid md:grid-cols-3 gap-6 h-full min-h-0">
-          {/* Liste des conversations (Cachée sur mobile si une conversation est ouverte) */}
           <Card
             className={`md:col-span-1 flex flex-col h-full border-0 shadow-none md:border md:shadow-sm ${selectedMatchId ? "hidden md:flex" : "flex"}`}
           >
@@ -105,13 +115,12 @@ const Messages = () => {
             <CardContent className="flex-1 overflow-hidden p-0">
               <ConversationList
                 userId={user.id}
-                onSelectMatch={(id) => setSelectedMatchId(id)}
+                onSelectMatch={handleSelectMatch} // Utilise notre nouveau handler
                 selectedMatchId={selectedMatchId}
               />
             </CardContent>
           </Card>
 
-          {/* Fenêtre de Chat (Cachée sur mobile si aucune conversation sélectionnée) */}
           <Card
             className={`md:col-span-2 flex flex-col h-full border-0 shadow-none md:border md:shadow-sm ${!selectedMatchId ? "hidden md:flex" : "flex"}`}
           >
