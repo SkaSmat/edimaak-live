@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquareWarning, ExternalLink } from "lucide-react";
+import { MessageSquareWarning, Send } from "lucide-react"; // Changement de ExternalLink à Send
 import { toast } from "sonner";
 
 interface FeedbackButtonProps {
@@ -18,11 +18,13 @@ interface FeedbackButtonProps {
   collapsed?: boolean;
 }
 
-const FEEDBACK_FORM_URL = "https://tally.so/r/feedback"; // URL à remplacer par votre formulaire
+// URL à remplacer par votre formulaire Tally, Google Forms, etc.
+const FEEDBACK_FORM_URL = "https://tally.so/r/feedback";
 
 export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: FeedbackButtonProps) => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const handleSubmit = () => {
     if (!message.trim()) {
@@ -30,61 +32,56 @@ export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: Feedb
       return;
     }
 
+    setIsSending(true);
+
     // Encode the message for URL
     const encodedMessage = encodeURIComponent(message);
-    
-    // Open external form with prefilled message
-    // For Tally: https://tally.so/r/FORM_ID?feedback=MESSAGE
-    // For Google Forms: https://docs.google.com/forms/d/e/FORM_ID/viewform?entry.FIELD_ID=MESSAGE
+
+    // Ouvre l'URL externe avec le message pré-rempli
     window.open(`${FEEDBACK_FORM_URL}?feedback=${encodedMessage}`, "_blank");
-    
-    toast.success("Merci pour ton retour ! Le formulaire s'ouvre dans un nouvel onglet.");
+
+    toast.success("Merci pour ton retour ! Le formulaire a été soumis via l'outil de support.");
+
+    // Nettoyage de l'état
     setMessage("");
     setOpen(false);
+    setIsSending(false);
   };
 
-  const handleOpenForm = () => {
-    window.open(FEEDBACK_FORM_URL, "_blank");
-    setOpen(false);
+  const commonProps = {
+    message: message,
+    setMessage: setMessage,
+    onSubmit: handleSubmit,
+    isSending: isSending,
   };
 
   if (variant === "floating") {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button
-            size="icon"
-            className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50"
-          >
+          <Button size="icon" className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50">
             <MessageSquareWarning className="h-5 w-5" />
           </Button>
         </DialogTrigger>
-        <FeedbackModal
-          message={message}
-          setMessage={setMessage}
-          onSubmit={handleSubmit}
-          onOpenForm={handleOpenForm}
-        />
+        <FeedbackModal {...commonProps} />
       </Dialog>
     );
   }
 
+  // Version Sidebar
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button
-          className="flex items-center gap-3 w-full p-3 rounded-lg text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+        {/* CORRECTION STYLE : On passe en ghost pour un style plus propre dans la sidebar */}
+        <Button
+          variant="ghost"
+          className="flex items-center justify-start gap-3 w-full p-3 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <MessageSquareWarning className="h-5 w-5 shrink-0" />
           {!collapsed && <span className="text-sm">Donner un avis</span>}
-        </button>
+        </Button>
       </DialogTrigger>
-      <FeedbackModal
-        message={message}
-        setMessage={setMessage}
-        onSubmit={handleSubmit}
-        onOpenForm={handleOpenForm}
-      />
+      <FeedbackModal {...commonProps} />
     </Dialog>
   );
 };
@@ -93,10 +90,10 @@ interface FeedbackModalProps {
   message: string;
   setMessage: (value: string) => void;
   onSubmit: () => void;
-  onOpenForm: () => void;
+  isSending: boolean;
 }
 
-const FeedbackModal = ({ message, setMessage, onSubmit, onOpenForm }: FeedbackModalProps) => {
+const FeedbackModal = ({ message, setMessage, onSubmit, isSending }: FeedbackModalProps) => {
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
@@ -104,9 +101,7 @@ const FeedbackModal = ({ message, setMessage, onSubmit, onOpenForm }: FeedbackMo
           <MessageSquareWarning className="h-5 w-5 text-primary" />
           Donner un avis / Signaler un problème
         </DialogTitle>
-        <DialogDescription>
-          Aide-nous à améliorer EDIM3AK en partageant ton retour d'expérience.
-        </DialogDescription>
+        <DialogDescription>Aide-nous à améliorer EDIM3AK en partageant ton retour d'expérience.</DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 py-4">
@@ -118,17 +113,23 @@ const FeedbackModal = ({ message, setMessage, onSubmit, onOpenForm }: FeedbackMo
           className="resize-none"
         />
         <p className="text-xs text-muted-foreground">
-          Ton avis est précieux pour nous. Merci de prendre le temps de nous aider !
+          Ton avis sera soumis à l'équipe de support. Merci de prendre le temps de nous aider !
         </p>
       </div>
 
-      <DialogFooter className="flex-col sm:flex-row gap-2">
-        <Button variant="outline" onClick={onOpenForm} className="gap-2">
-          <ExternalLink className="h-4 w-4" />
-          Ouvrir le formulaire
-        </Button>
-        <Button onClick={onSubmit}>
-          Envoyer
+      {/* CORRECTION FINALE : Retrait du bouton "Ouvrir le formulaire" et envoi direct */}
+      <DialogFooter className="justify-end">
+        <Button onClick={onSubmit} disabled={!message.trim() || isSending}>
+          {isSending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Envoi...
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4 mr-2" />
+              Envoyer
+            </>
+          )}
         </Button>
       </DialogFooter>
     </DialogContent>
