@@ -3,7 +3,18 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { MapPin, Calendar, Weight, Package, Search, Plane, Clock, PlusCircle } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  Weight,
+  Package,
+  Search,
+  Plane,
+  Clock,
+  PlusCircle,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
@@ -45,24 +56,24 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
   const [matches, setMatches] = useState<CompatibleMatch[]>([]);
   const [targetShipment, setTargetShipment] = useState<ShipmentRequest | null>(null);
-  const [pendingShipmentIds, setPendingShipmentIds] = useState<string[]>([]);
+
+  // NOUVEAU : On stocke le statut exact pour chaque colis (ex: 'pending', 'accepted', 'rejected')
+  const [matchStatuses, setMatchStatuses] = useState<Record<string, string>>({});
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
 
-  // --- CORRECTIF : RÉCUPÉRATION DE SECOURS ---
-  // Si l'URL est vide, on vérifie si un ID traîne dans la mémoire locale
+  // --- RÉCUPÉRATION DE SECOURS (Si URL vide mais localStorage plein) ---
   useEffect(() => {
     if (!highlightId) {
       const storedId = localStorage.getItem("targetShipmentId");
       if (storedId) {
-        // On consomme l'ID (on le supprime pour ne pas boucler) et on recharge avec l'URL correcte
         localStorage.removeItem("targetShipmentId");
         navigate(`/dashboard/traveler?highlight=${storedId}`, { replace: true });
       }
     }
   }, [highlightId, navigate]);
-  // --------------------------------------------
 
   useEffect(() => {
     fetchData();
@@ -70,25 +81,36 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
   const fetchData = async () => {
     setLoading(true);
-    await Promise.all([fetchCompatibleShipments(), fetchPendingMatches()]);
+    await Promise.all([
+      fetchCompatibleShipments(),
+      fetchMatchStatuses(), // On récupère les statuts
+    ]);
     setLoading(false);
   };
 
-  const fetchPendingMatches = async () => {
+  // NOUVELLE FONCTION : Récupère les statuts des matchs existants
+  const fetchMatchStatuses = async () => {
     try {
       const { data: userTrips } = await supabase.from("trips").select("id").eq("traveler_id", userId);
       if (!userTrips || userTrips.length === 0) return;
+
       const userTripIds = userTrips.map((trip) => trip.id);
-      const { data: pendingMatchesData } = await supabase
+
+      const { data: matchesData } = await supabase
         .from("matches")
-        .select("shipment_request_id")
-        .in("trip_id", userTripIds)
-        .eq("status", "pending");
-      if (pendingMatchesData) {
-        setPendingShipmentIds(pendingMatchesData.map((match) => match.shipment_request_id));
+        .select("shipment_request_id, status") // On prend aussi le statut
+        .in("trip_id", userTripIds);
+
+      if (matchesData) {
+        // On transforme le tableau en objet pour un accès rapide : { 'id_colis': 'accepted', ... }
+        const statuses: Record<string, string> = {};
+        matchesData.forEach((match) => {
+          statuses[match.shipment_request_id] = match.status;
+        });
+        setMatchStatuses(statuses);
       }
     } catch (error) {
-      console.error("Error pending matches:", error);
+      console.error("Error fetching match statuses:", error);
     }
   };
 
@@ -113,7 +135,6 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         if (!trips) return;
 
         const matchingTrip = trips.find((trip) => {
-          // Comparaison Route
           const isSameFromCountry = normalize(trip.from_country) === normalize(shipment.from_country);
           const isSameToCountry = normalize(trip.to_country) === normalize(shipment.to_country);
           const tripFromCity = normalize(trip.from_city);
@@ -125,13 +146,11 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
           if (!(isSameFromCountry && isSameToCountry && isSameFromCity && isSameToCity)) return false;
 
-          // Comparaison Dates (String ISO)
           const tripDate = trip.departure_date;
           const earliest = shipment.earliest_date;
           const latest = shipment.latest_date;
           if (!(tripDate >= earliest && tripDate <= latest)) return false;
 
-          // Comparaison Poids
           if (trip.max_weight_kg < shipment.weight_kg) return false;
 
           return true;
@@ -157,8 +176,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   };
 
   const handlePropose = async (shipmentId: string, tripId: string) => {
-    if (pendingShipmentIds.includes(shipmentId)) {
-      toast.error("Proposition déjà envoyée !");
+    // Si déjà un statut, on ne fait rien
+    if (matchStatuses[shipmentId]) {
       return;
     }
 
@@ -172,13 +191,15 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       if (error) {
         if (error.message.includes("duplicate") || error.code === "23505") {
           toast.error("Déjà proposé");
-          setPendingShipmentIds((prev) => [...prev, shipmentId]);
+          // On force l'affichage en pending si erreur de duplicata
+          setMatchStatuses((prev) => ({ ...prev, [shipmentId]: "pending" }));
         } else throw error;
         return;
       }
 
       toast.success("Proposition envoyée !");
-      setPendingShipmentIds((prev) => [...prev, shipmentId]);
+      // Mise à jour immédiate de l'état local
+      setMatchStatuses((prev) => ({ ...prev, [shipmentId]: "pending" }));
     } catch (error) {
       toast.error("Erreur lors de l'envoi.");
     }
@@ -222,9 +243,51 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const isTargetAlreadyInMatches = matches.some((m) => m.shipment.id === highlightId);
   const shipmentsToDisplay = matches;
 
+  // --- FONCTION POUR LE STYLE DU BOUTON ---
+  const getButtonContent = (status: string | undefined, date: string) => {
+    switch (status) {
+      case "accepted":
+        return (
+          <>
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Demande acceptée !
+          </>
+        );
+      case "rejected":
+        return (
+          <>
+            <XCircle className="w-4 h-4 mr-2" />
+            Demande refusée
+          </>
+        );
+      case "pending":
+        return (
+          <>
+            <Clock className="w-4 h-4 mr-2 animate-pulse" />
+            En attente de réponse...
+          </>
+        );
+      default:
+        return `Proposer mon voyage (${format(new Date(date), "d/MM")})`;
+    }
+  };
+
+  const getButtonStyle = (status: string | undefined) => {
+    switch (status) {
+      case "accepted":
+        return "bg-green-600 hover:bg-green-700 text-white border-green-600 opacity-100 cursor-default";
+      case "rejected":
+        return "bg-red-100 hover:bg-red-200 text-red-700 border-red-200 opacity-90 cursor-default";
+      case "pending":
+        return "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 opacity-90 cursor-default";
+      default:
+        return "bg-primary hover:bg-primary/90 text-primary-foreground";
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* SECTION ANNONCE CIBLÉE (Si non compatible ou pas de voyage) */}
+      {/* SECTION ANNONCE CIBLÉE */}
       {targetShipment && !isTargetAlreadyInMatches && (
         <div
           id={`shipment-${targetShipment.id}`}
@@ -261,9 +324,11 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
               </Button>
             </div>
           </div>
-          <p className="text-xs text-blue-600/80 mt-2 text-center">
-            Vous n'avez pas encore de voyage compatible avec cette annonce. Créez-en un pour postuler !
-          </p>
+          <div className="text-xs text-blue-600/80 mt-2 text-center bg-blue-100/50 p-2 rounded">
+            <strong>Pourquoi cette annonce n'est pas compatible ?</strong>
+            <br />
+            Vérifiez vos dates et votre poids disponible.
+          </div>
         </div>
       )}
 
@@ -283,7 +348,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       ) : (
         <div className="space-y-4">
           {shipmentsToDisplay.map(({ shipment, matchingTrip }) => {
-            const isPending = pendingShipmentIds.includes(shipment.id);
+            const currentStatus = matchStatuses[shipment.id]; // On récupère le statut (undefined, pending, accepted, rejected)
 
             return (
               <div
@@ -330,22 +395,11 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                 )}
 
                 <Button
-                  className={`w-full transition-all duration-300 ${
-                    isPending
-                      ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 opacity-90"
-                      : "bg-primary hover:bg-primary/90"
-                  }`}
+                  className={`w-full transition-all duration-300 ${getButtonStyle(currentStatus)}`}
                   onClick={() => handlePropose(shipment.id, matchingTrip.id)}
-                  disabled={isPending}
+                  disabled={!!currentStatus} // Désactivé si un statut existe déjà
                 >
-                  {isPending ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-pulse" />
-                      En attente de réponse...
-                    </>
-                  ) : (
-                    `Proposer mon voyage (${format(new Date(matchingTrip.departure_date), "d/MM")})`
-                  )}
+                  {getButtonContent(currentStatus, matchingTrip.departure_date)}
                 </Button>
               </div>
             );
