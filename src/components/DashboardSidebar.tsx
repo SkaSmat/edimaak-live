@@ -23,10 +23,17 @@ interface DashboardSidebarProps {
   role: "traveler" | "sender" | "admin";
   isAdmin?: boolean;
   onLogout: () => void;
-  unreadCount?: number;
+  unreadCount?: number; // Messages
+  pendingMatchCount?: number; // NOUVEAU : Matchs
 }
 
-export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: DashboardSidebarProps) => {
+export const DashboardSidebar = ({
+  role,
+  isAdmin,
+  onLogout,
+  unreadCount = 0,
+  pendingMatchCount = 0,
+}: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { state, isMobile, setOpenMobile } = useSidebar();
@@ -42,15 +49,15 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
   const travelerNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/traveler" },
     { title: "Mes voyages", icon: Plane, path: "/dashboard/traveler/trips" },
-    { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
+    { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" }, // Potentiellement aussi pour traveler plus tard
+    { title: "Messages", icon: MessageCircle, path: "/messages" },
   ];
 
   const senderNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/sender" },
     { title: "Mes demandes", icon: Package, path: "/dashboard/sender/shipments" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/sender/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
+    { title: "Messages", icon: MessageCircle, path: "/messages" },
   ];
 
   const adminNavItems = [{ title: "Administration", icon: ShieldCheck, path: "/admin" }];
@@ -87,7 +94,14 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
             <SidebarMenu>
               {mainNavItems.map((item: any) => {
                 const isMessagesLink = item.path === "/messages";
-                const showBadge = isMessagesLink && unreadCount > 0;
+                const isMatchesLink = item.path.includes("/matches");
+
+                // Calcul du badge selon le type de lien
+                let badgeCount = 0;
+                if (isMessagesLink) badgeCount = unreadCount;
+                if (isMatchesLink) badgeCount = pendingMatchCount;
+
+                const showBadge = badgeCount > 0;
 
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -110,7 +124,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
                           variant="destructive"
                           className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] animate-in zoom-in"
                         >
-                          {unreadCount}
+                          {badgeCount}
                         </Badge>
                       )}
 
@@ -157,9 +171,7 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
         <SidebarMenuButton
           onClick={onLogout}
           tooltip="Déconnexion"
-          // CORRECTION DE STYLE ICI : on met le même hover que FeedbackButton (qui est souvent un fond légèrement coloré)
           className="text-muted-foreground hover:text-destructive hover:bg-red-500/10 transition-colors"
-          // Utiliser hover:bg-red-500/10 pour un effet clair et distinctif (Déconnexion est souvent rouge)
         >
           <LogOut className="h-5 w-5" />
           <span>Déconnexion</span>
@@ -169,7 +181,6 @@ export const DashboardSidebar = ({ role, isAdmin, onLogout, unreadCount = 0 }: D
   );
 };
 
-// --- HEADER MOBILE ---
 export const DashboardMobileHeader = ({
   fullName,
   onLogout,
@@ -184,30 +195,23 @@ export const DashboardMobileHeader = ({
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-4">
-        {/* BOUTON MENU AVEC BADGE */}
-        {/* J'ai forcé la position relative pour que le badge 'absolute' reste collé au bouton */}
         <div className="relative flex items-center justify-center">
           <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
-
-          {/* LE BADGE : Sortie du flux, calé en haut à droite du bouton */}
           {unreadCount > 0 && (
             <div className="absolute -top-1 -right-1 z-50 pointer-events-none">
               <span className="relative flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-white items-center justify-center">
-                  {/* Petit chiffre si besoin */}
+                  {/* <span className="text-[8px] text-white">{unreadCount}</span> */}
                 </span>
               </span>
             </div>
           )}
         </div>
-
-        {/* LOGO (Nettoyé, aucun badge ici) */}
         <div onClick={() => navigate("/")}>
           <LogoEdiM3ak iconSize="sm" />
         </div>
       </div>
-
       <button
         onClick={onLogout}
         className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-full hover:bg-muted/50"
