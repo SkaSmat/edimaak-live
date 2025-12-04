@@ -43,8 +43,6 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
 
   const fetchMatches = async () => {
     try {
-      // RLS already filters to matches user is involved in
-      // We fetch all matches with accepted/completed status
       const { data, error } = await supabase
         .from("matches")
         .select(
@@ -59,7 +57,6 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
 
       if (error) throw error;
 
-      // Filter client-side to only include matches where user is traveler or sender
       const filteredMatches = (data || []).filter((match: any) => {
         const isTraveler = match.trips?.traveler_id === userId;
         const isSender = match.shipment_requests?.sender_id === userId;
@@ -96,34 +93,57 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
         const otherUser = isUserTraveler
           ? match.shipment_requests?.profiles?.full_name || "Utilisateur"
           : match.trips?.profiles?.full_name || "Utilisateur";
+
         const route = match.trips
           ? `${match.trips.from_city} → ${match.trips.to_city}`
           : match.shipment_requests
             ? `${match.shipment_requests.from_city} → ${match.shipment_requests.to_city}`
             : "Trajet inconnu";
+
         const itemType = match.shipment_requests?.item_type || "";
+
+        // On vérifie si c'est la conversation active
+        const isSelected = selectedMatchId === match.id;
 
         return (
           <button
             key={match.id}
             onClick={() => onSelectMatch(match.id)}
             className={cn(
-              "w-full text-left p-3 rounded-lg border transition-colors hover:bg-accent/50",
-              selectedMatchId === match.id ? "bg-accent/50 border-primary" : "bg-card",
+              "w-full text-left p-3 rounded-xl border transition-all duration-200 relative group",
+              // Style conditionnel pour la sélection
+              isSelected
+                ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20"
+                : "bg-card hover:bg-accent/50 border-border",
             )}
           >
+            {/* Indicateur visuel (Pastille) si sélectionné */}
+            {isSelected && (
+              <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+              </span>
+            )}
+
             <div className="flex items-start gap-3">
-              <MessageCircle className="w-5 h-5 text-primary mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{otherUser}</p>
-                <p className="text-sm text-muted-foreground truncate">{route}</p>
-                {itemType && <p className="text-xs text-muted-foreground/70 truncate">{itemType}</p>}
+              <div
+                className={cn(
+                  "p-2 rounded-full transition-colors",
+                  isSelected
+                    ? "bg-background text-primary"
+                    : "bg-muted text-muted-foreground group-hover:bg-background",
+                )}
+              >
+                <MessageCircle className="w-5 h-5" />
               </div>
-              {match.status === "accepted" && (
-                <Badge variant="outline" className="text-xs flex-shrink-0">
-                  Actif
-                </Badge>
-              )}
+
+              <div className="flex-1 min-w-0">
+                <p className={cn("font-medium truncate", isSelected ? "text-primary" : "text-foreground")}>
+                  {otherUser}
+                </p>
+                <p className="text-sm text-muted-foreground truncate">{route}</p>
+                {itemType && <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{itemType}</p>}
+              </div>
             </div>
           </button>
         );
