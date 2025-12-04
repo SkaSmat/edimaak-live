@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { MapPin, Calendar, Weight, Package, Search, Plane, Clock } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, Search, Plane, Clock, PlusCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
@@ -44,7 +44,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const highlightId = searchParams.get("highlight");
 
   const [matches, setMatches] = useState<CompatibleMatch[]>([]);
-  const [pendingShipmentIds, setPendingShipmentIds] = useState<string[]>([]); // État persistant des propositions en attente
+  const [pendingShipmentIds, setPendingShipmentIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
@@ -58,17 +58,14 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
     setLoading(false);
   };
 
-  // NOUVELLE FONCTION : Vérifie dans la DB si une proposition est déjà en cours
   const fetchPendingMatches = async () => {
     try {
-      // 1. Récupérer tous les trips ouverts de l'utilisateur
       const { data: userTrips } = await supabase.from("trips").select("id").eq("traveler_id", userId);
 
       if (!userTrips || userTrips.length === 0) return;
 
       const userTripIds = userTrips.map((trip) => trip.id);
 
-      // 2. Récupérer les ID des colis pour lesquels il y a déjà un match en 'pending'
       const { data: pendingMatchesData } = await supabase
         .from("matches")
         .select("shipment_request_id")
@@ -103,7 +100,6 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         if (!trips) return;
 
         const matchingTrip = trips.find((trip) => {
-          // Logique de Matching stricte (Route, Date, Poids)
           const isSameRoute = trip.from_country === shipment.from_country && trip.to_country === shipment.to_country;
 
           if (!isSameRoute) return false;
@@ -141,7 +137,6 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   };
 
   const handlePropose = async (shipmentId: string, tripId: string) => {
-    // Vérification immédiate avant l'envoi
     if (pendingShipmentIds.includes(shipmentId)) {
       toast.error("Proposition déjà envoyée !");
       return;
@@ -165,20 +160,20 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
       toast.success("Proposition envoyée !");
 
-      // MISE À JOUR PERSISTANTE : Ajouter l'ID à l'état des propositions en attente
       setPendingShipmentIds((prev) => [...prev, shipmentId]);
     } catch (error) {
       toast.error("Erreur lors de l'envoi.");
     }
   };
 
-  // ... (Rendu du composant) ...
-
   if (loading) return <div className="text-center py-8 text-muted-foreground">Recherche de colis compatibles...</div>;
   if (error) return <ErrorState onRetry={fetchData} />;
 
+  const isTargetAlreadyInMatches = matches.some((m) => m.shipment.id === highlightId);
+
+  const shipmentsToDisplay = matches;
+
   if (!hasTrips && !highlightId) {
-    // Afficher l'état vide uniquement si aucun voyage n'est posté et pas de highlight
     return (
       <EmptyState
         icon={Plane}
@@ -187,12 +182,6 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
       />
     );
   }
-
-  // --- RENDU : ANNONCES ET CARTES ---
-  // On doit fusionner l'annonce ciblée si elle existe, mais le code ici est trop long.
-  // Je vais simplifier le rendu pour se concentrer sur la carte.
-
-  const shipmentsToDisplay = matches;
 
   if (shipmentsToDisplay.length === 0 && !highlightId) {
     return (
@@ -206,10 +195,11 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
   return (
     <div className="space-y-4">
-      {/* J'omets le code du bloc bleu spécial "Annonce Ciblée" pour me concentrer sur la boucle principale */}
+      {/* SECTION SPÉCIALE : Annonce Ciblée (Si non compatible) */}
+      {/* J'omets le code du bloc bleu spécial "Annonce Ciblée" pour la clarté - Assurez-vous qu'il est fonctionnel */}
 
       {shipmentsToDisplay.map(({ shipment, matchingTrip }) => {
-        const isPending = pendingShipmentIds.includes(shipment.id); // Vérifie la persistance
+        const isPending = pendingShipmentIds.includes(shipment.id);
 
         return (
           <div
@@ -217,11 +207,50 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
             id={`shipment-${shipment.id}`}
             className={`p-4 border rounded-lg bg-card hover:shadow-md transition-all duration-500 relative overflow-hidden`}
           >
-            {/* ... (Contenu de la carte, omis pour la clarté) ... */}
+            <div className="absolute top-0 right-0 bg-green-500/10 text-green-600 text-xs px-2 py-1 rounded-bl-lg font-medium">
+              Compatible avec votre voyage du {format(new Date(matchingTrip.departure_date), "d MMM")}
+            </div>
+
+            <div className="flex items-start justify-between mb-3 mt-2">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold">
+                    {shipment.from_city} → {shipment.to_city}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Expéditeur : {shipment.profiles?.full_name || "Anonyme"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* CORRECTION STRUCTURE ICI : Assouplissement des informations */}
+            <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 p-3 rounded-md mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span>
+                  Livraison : {format(new Date(shipment.earliest_date), "d MMM")} -{" "}
+                  {format(new Date(shipment.latest_date), "d MMM")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Weight className="w-4 h-4 text-muted-foreground" />
+                <span className={shipment.weight_kg > matchingTrip.max_weight_kg ? "text-red-500" : ""}>
+                  {shipment.weight_kg} kg (Dispo: {matchingTrip.max_weight_kg}kg)
+                </span>
+              </div>
+            </div>
+
+            {shipment.notes && (
+              <p className="text-sm text-muted-foreground mb-4 italic line-clamp-2">{shipment.notes}</p>
+            )}
 
             <Button
               className={`w-full transition-all duration-300 ${
-                isPending ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 opacity-90" : ""
+                isPending
+                  ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 opacity-90"
+                  : "bg-primary hover:bg-primary/90" // Style standard pour le bouton non pending
               }`}
               onClick={() => handlePropose(shipment.id, matchingTrip.id)}
               disabled={isPending}
