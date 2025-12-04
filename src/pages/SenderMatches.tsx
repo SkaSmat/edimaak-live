@@ -18,6 +18,10 @@ const SenderMatches = () => {
 
   useEffect(() => {
     checkAuth();
+
+    // NOUVEAU : On marque les matchs comme "vus" dès qu'on arrive sur la page
+    localStorage.removeItem("newMatches");
+    window.dispatchEvent(new Event("match-change"));
   }, []);
 
   const checkAuth = async () => {
@@ -55,7 +59,6 @@ const SenderMatches = () => {
         `,
         )
         .eq("shipment_requests.sender_id", userId)
-        // CORRECTION : On inclut aussi les 'pending' pour voir les nouvelles propositions
         .in("status", ["pending", "accepted", "completed"])
         .order("created_at", { ascending: false });
 
@@ -77,7 +80,6 @@ const SenderMatches = () => {
 
       toast.success(newStatus === "accepted" ? "Proposition acceptée !" : "Proposition refusée");
 
-      // Mise à jour locale
       if (newStatus === "rejected") {
         setMatches(matches.filter((m) => m.id !== matchId));
       } else {
@@ -89,31 +91,18 @@ const SenderMatches = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-    toast.success("Déconnexion réussie");
-  };
-
   const handleOpenChat = (matchId: string) => {
     navigate(`/messages?matchId=${matchId}`);
   };
 
   if (!user || !profile) return null;
 
-  // On sépare les matchs en attente des matchs acceptés
   const pendingMatches = matches.filter((m) => m.status === "pending");
   const activeMatches = matches.filter((m) => m.status === "accepted" || m.status === "completed");
 
   return (
-    <DashboardLayout
-      role="sender"
-      fullName={profile.full_name}
-      isAdmin={profile.role === "admin"}
-      onLogout={handleLogout}
-    >
+    <DashboardLayout role="sender" fullName={profile.full_name} isAdmin={profile.role === "admin"}>
       <div className="space-y-8">
-        {/* SECTION 1 : NOUVELLES PROPOSITIONS */}
         {pendingMatches.length > 0 && (
           <section className="bg-orange-50/50 border border-orange-100 rounded-2xl p-6">
             <div className="mb-4">
@@ -164,7 +153,6 @@ const SenderMatches = () => {
           </section>
         )}
 
-        {/* SECTION 2 : MATCHS ACTIFS */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-foreground">Mes matches acceptés</h2>
