@@ -1,109 +1,183 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Plus } from "lucide-react";
-import ShipmentRequestForm from "@/components/ShipmentRequestForm";
-import ShipmentRequestList from "@/components/ShipmentRequestList";
-import MatchProposals from "@/components/MatchProposals";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import SenderShipments from "./SenderShipments";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Package, Handshake, User, Plus, ChevronRight, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const SenderDashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [showRequestForm, setShowRequestForm] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const [stats, setStats] = useState({
+    activeRequests: 0,
+    acceptedMatches: 0,
+  });
 
   useEffect(() => {
-    checkAuth();
+    checkAuthAndFetchStats();
   }, []);
 
-  const checkAuth = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
+  const checkAuthAndFetchStats = async () => {
+    try {
+      // 1. Vérif Auth et Profil
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileError || profileData?.role !== "sender") {
+        toast.error("Accès non autorisé ou erreur de profil");
+        navigate("/");
+        return;
+      }
+      setProfile(profileData);
+
+      // 2. Calcul des stats (KPIs)
+      const userId = session.user.id;
+
+      // Count 1 : Demandes actives (status = 'open')
+      const { count: openCount, error: openError } = await supabase
+        .from("shipment_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("sender_id", userId)
+        .eq("status", "open");
+
+      if (openError) throw openError;
+
+      // Count 2 : Matches acceptés
+      const { data: myShipmentIds } = await supabase.from("shipment_requests").select("id").eq("sender_id", userId);
+
+      let acceptedCount = 0;
+      if (myShipmentIds && myShipmentIds.length > 0) {
+        const ids = myShipmentIds.map((s) => s.id);
+        const { count, error: matchError } = await supabase
+          .from("matches")
+          .select("*", { count: "exact", head: true })
+          .in("shipment_request_id", ids)
+          .eq("status", "accepted");
+
+        if (!matchError && count !== null) acceptedCount = count;
+      }
+
+      setStats({
+        activeRequests: openCount || 0,
+        acceptedMatches: acceptedCount || 0,
+      });
+    } catch (error) {
+      console.error("Erreur lors du chargement du dashboard:", error);
+      toast.error("Erreur de chargement des données.");
+    } finally {
+      setLoading(false);
     }
-
-    setUser(session.user);
-
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-
-    if (profileData?.role !== "sender") {
-      navigate("/auth");
-      toast.error("Accès non autorisé");
-      return;
-    }
-
-    setProfile(profileData);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-    toast.success("Déconnexion réussie");
-  };
-
-  const handleRequestCreated = () => {
-    setShowRequestForm(false);
-    setRefreshKey((prev) => prev + 1);
-    toast.success("Demande créée avec succès !");
-  };
-
-  if (!user || !profile) return null;
+  if (loading) {
+    return (
+      <DashboardLayout role="sender" fullName="Chargement...">
+        <div className="flex justify-center items-center h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
-    <DashboardLayout
-      role="sender"
-      fullName={profile.full_name}
-      onLogout={handleLogout}
-    >
-      <div className="space-y-6">
-        {/* Section: Mes demandes d'expédition */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <DashboardLayout role="sender" fullName={profile?.full_name}>
+      <div className="space-y-8">
+        {/* --- CARTES RÉSUMÉ --- */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Carte 1 : Mes demandes d'expédition */}
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between relative overflow-hidden">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              {/* MODIFICATION ICI : Changement du titre */}
+              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Mes demandes d'expédition</h3>
+              <Package className="w-4 h-4 text-primary" />
+            </div>
+            <div className="text-2xl font-bold">{stats.activeRequests}</div>
+            <div className="mt-4 flex items-center justify-between">
+              <Button
+                onClick={() => navigate("/dashboard/sender/shipments")}
+                variant="link"
+                className="p-0 h-auto text-primary text-sm flex items-center gap-1"
+              >
+                Gérer <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate("/dashboard/sender/shipments#new")}
+                className="gap-1 rounded-full h-8 px-3"
+              >
+                <Plus className="w-4 h-4" /> Nouvelle
+              </Button>
+            </div>
+          </div>
+
+          {/* Carte 2 : Matches acceptés */}
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Matches acceptés</h3>
+              <Handshake className="w-4 h-4 text-green-600" />
+            </div>
+            <div className="text-2xl font-bold">{stats.acceptedMatches}</div>
+            <div className="mt-4">
+              <Button
+                onClick={() => navigate("/dashboard/sender/matches")}
+                variant="link"
+                className="p-0 h-auto text-primary text-sm flex items-center gap-1"
+              >
+                Voir mes contacts <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Carte 3 : Profil */}
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Mon Profil</h3>
+              <User className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="text-sm font-medium mt-2">
+              Statut :{" "}
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Expéditeur vérifié</span>
+            </div>
+            <div className="mt-4">
+              <Button
+                onClick={() => navigate("/profile")}
+                variant="link"
+                className="p-0 h-auto text-primary text-sm flex items-center gap-1"
+              >
+                Voir mon profil <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* --- SECTION LISTE --- */}
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-foreground">Mes demandes d'expédition</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Gérez vos demandes et acceptez les propositions
-              </p>
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Package className="w-5 h-5" /> Détails des demandes
+              </h2>
+              <p className="text-sm text-muted-foreground">Gérez vos demandes en cours et suivez les propositions.</p>
             </div>
-            <Button 
-              onClick={() => setShowRequestForm(!showRequestForm)}
-              className="shrink-0"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle demande
-            </Button>
           </div>
 
-          {showRequestForm && (
-            <div className="mb-6 p-4 bg-muted/50 rounded-xl border">
-              <ShipmentRequestForm userId={user.id} onSuccess={handleRequestCreated} />
-            </div>
-          )}
-
-          <ShipmentRequestList key={refreshKey} userId={user.id} />
-        </section>
-
-        {/* Section: Propositions de voyageurs */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-foreground">Propositions de voyageurs</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Voyageurs intéressés par vos demandes
-            </p>
-          </div>
-          <MatchProposals userId={user.id} />
-        </section>
+          <SenderShipments />
+        </div>
       </div>
     </DashboardLayout>
   );
