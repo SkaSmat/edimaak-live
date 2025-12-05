@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle, Handshake } from "lucide-react";
+import { LogOut, MessageCircle, RefreshCw, Handshake } from "lucide-react"; // Ajout de RefreshCw
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -21,45 +21,36 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const roleLabel = role === "traveler" ? "Voyageur" : role === "sender" ? "Expéditeur" : "Administrateur";
   const effectiveIsAdmin = isAdmin || role === "admin";
 
-  const [unreadCount, setUnreadCount] = useState(0); // Messages
-  const [pendingMatchCount, setPendingMatchCount] = useState(0); // NOUVEAU : Matchs
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingMatchCount, setPendingMatchCount] = useState(0);
   const location = useLocation();
 
-  // --- GESTION COMPTEURS ---
-  const updateCountsFromStorage = () => {
-    // Messages
-    const msgStorage = localStorage.getItem("unreadMatches");
-    const msgList = msgStorage ? JSON.parse(msgStorage) : [];
-    setUnreadCount(msgList.length);
-  };
-
-  // Fetch pending matches count from database
-  const fetchPendingMatchCount = async () => {
+  // --- FONCTION : CHANGER DE RÔLE (Intégrée ici pour le Header) ---
+  const switchRole = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const newRole = role === "traveler" ? "sender" : "traveler";
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      // Get user's shipment IDs first
-      const { data: shipments } = await supabase
-        .from("shipment_requests")
-        .select("id")
-        .eq("sender_id", session.user.id);
-
-      if (shipments && shipments.length > 0) {
-        const shipmentIds = shipments.map(s => s.id);
-        const { count } = await supabase
-          .from("matches")
-          .select("*", { count: "exact", head: true })
-          .in("shipment_request_id", shipmentIds)
-          .eq("status", "pending");
-        
-        setPendingMatchCount(count || 0);
+      if (!session) {
+        toast.error("Session expirée");
+        return;
       }
+
+      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", session.user.id);
+
+      if (error) throw error;
+
+      toast.success(`Mode ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} activé !`);
+      window.location.href = newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
     } catch (error) {
-      console.error("Error fetching pending match count:", error);
+      console.error(error);
+      toast.error("Impossible de changer de mode");
     }
   };
 
+  // --- LOGOUT ---
   const handleInternalLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -71,21 +62,26 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
     }
   };
 
+  const updateCountsFromStorage = () => {
+    const msgStorage = localStorage.getItem("unreadMatches");
+    const msgList = msgStorage ? JSON.parse(msgStorage) : [];
+    setUnreadCount(msgList.length);
+
+    const matchStorage = localStorage.getItem("newMatches");
+    const matchList = matchStorage ? JSON.parse(matchStorage) : [];
+    setPendingMatchCount(matchList.length);
+  };
+
   useEffect(() => {
     updateCountsFromStorage();
-    fetchPendingMatchCount();
-
-    // On écoute les événements
     window.addEventListener("unread-change", updateCountsFromStorage);
-    window.addEventListener("match-change", fetchPendingMatchCount);
-
+    window.addEventListener("match-change", updateCountsFromStorage);
     return () => {
       window.removeEventListener("unread-change", updateCountsFromStorage);
-      window.removeEventListener("match-change", fetchPendingMatchCount);
+      window.removeEventListener("match-change", updateCountsFromStorage);
     };
   }, []);
 
-  // --- SYSTÈME DE NOTIFICATION REALTIME ---
   useEffect(() => {
     const setupRealtimeListener = async () => {
       const {
@@ -94,11 +90,8 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       if (!session) return;
       const currentUserId = session.user.id;
 
-      // Canal unique pour tout écouter
       const channel = supabase
         .channel("global_notifications")
-
-        // 1. Écoute des MESSAGES (Inchangé)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
           const newMessage = payload.new as any;
           if (newMessage.sender_id !== currentUserId) {
@@ -111,23 +104,14 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
             triggerNotification("Nouveau message !", "Vous avez reçu un message.");
           }
         })
-
-        // 2. Écoute des MATCHS (NOUVEAU)
-        // On écoute les INSERT (nouvelles propositions)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "matches" }, (payload) => {
           const newMatch = payload.new as any;
-
-          // Si le statut est 'pending', c'est une nouvelle proposition
           if (newMatch.status === "pending") {
-            // Sauvegarde dans localStorage
             const storage = localStorage.getItem("newMatches");
             const currentMatches = storage ? JSON.parse(storage) : [];
-
             if (!currentMatches.includes(newMatch.id)) {
               localStorage.setItem("newMatches", JSON.stringify([...currentMatches, newMatch.id]));
               window.dispatchEvent(new Event("match-change"));
-
-              // Notification spécifique
               triggerNotification("Nouvelle proposition !", "Un voyageur propose de prendre votre colis !", "match");
             }
           }
@@ -138,11 +122,9 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
         supabase.removeChannel(channel);
       };
     };
-
     setupRealtimeListener();
   }, []);
 
-  // Helper pour son + toast
   const triggerNotification = (title: string, desc: string, type: "message" | "match" = "message") => {
     try {
       const audio = new Audio("https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3");
@@ -171,7 +153,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
           isAdmin={effectiveIsAdmin}
           onLogout={handleInternalLogout}
           unreadCount={unreadCount}
-          pendingMatchCount={pendingMatchCount} // On passe le nouveau compteur
+          pendingMatchCount={pendingMatchCount}
         />
 
         <SidebarInset className="flex-1 w-full flex flex-col min-h-screen overflow-x-hidden">
@@ -179,10 +161,11 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
             <DashboardMobileHeader
               fullName={fullName}
               onLogout={handleInternalLogout}
-              unreadCount={unreadCount + pendingMatchCount} // Somme des notifs pour le mobile
+              unreadCount={unreadCount + pendingMatchCount}
             />
           </div>
 
+          {/* --- HEADER DESKTOP MODIFIÉ --- */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">Bonjour, {firstName}</h1>
@@ -190,15 +173,31 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
                 {roleLabel}
               </Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleInternalLogout}
-              className="text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
-            </Button>
+
+            <div className="flex items-center gap-3">
+              {/* BOUTON CHANGER DE MODE */}
+              {role !== "admin" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={switchRole}
+                  className="gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Passer en mode {role === "traveler" ? "Expéditeur" : "Voyageur"}
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleInternalLogout}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Déconnexion
+              </Button>
+            </div>
           </header>
 
           <main className="flex-1 p-4 md:p-6 lg:p-8">
