@@ -15,7 +15,6 @@ import {
   Bell,
   MessageCircle,
   ArrowRightLeft,
-  ArrowDownUp,
   ChevronDown,
 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
@@ -53,6 +52,7 @@ interface ShipmentRequest {
   sender_request_count?: number;
 }
 
+// Liste des pays disponibles
 const COUNTRIES = ["Algérie", "France", "Canada", "Espagne", "Royaume-Uni"];
 
 const Index = () => {
@@ -62,6 +62,7 @@ const Index = () => {
   const { session, userRole, isLoading: authLoading } = useAuth();
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
+  // NOUVEAU : Gestion des pays indépendants
   const [fromCountry, setFromCountry] = useState("France");
   const [toCountry, setToCountry] = useState("Algérie");
 
@@ -79,19 +80,23 @@ const Index = () => {
   const currentSearchDate = searchParams.get("date") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
-  // --- LOGIQUE PAYS ---
+  // --- LOGIQUE INTELLIGENTE DES PAYS ---
+  // Si on change le départ et qu'il devient égal à l'arrivée, on change l'arrivée
   useEffect(() => {
     if (fromCountry === toCountry) {
       const otherCountry = COUNTRIES.find((c) => c !== fromCountry) || "Algérie";
       setToCountry(otherCountry);
-      setLocalToCity("");
+      setLocalToCity(""); // Reset ville car pays a changé
     }
   }, [fromCountry]);
 
+  // Fonction d'inversion complète (Pays + Ville)
   const toggleDirection = () => {
     const tempCountry = fromCountry;
+    // On utilise les setters fonctionnels pour éviter les conflits
     setFromCountry(toCountry);
     setToCountry(tempCountry);
+
     const tempCity = localFromCity;
     setLocalFromCity(localToCity);
     setLocalToCity(tempCity);
@@ -132,6 +137,7 @@ const Index = () => {
             .from("shipment_requests")
             .select("sender_id")
             .in("sender_id", senderIds);
+
           const countMap: Record<string, number> = (counts || []).reduce(
             (acc, item) => {
               acc[item.sender_id] = (acc[item.sender_id] || 0) + 1;
@@ -139,7 +145,11 @@ const Index = () => {
             },
             {} as Record<string, number>,
           );
-          const enrichedData = data.map((r) => ({ ...r, sender_request_count: countMap[r.sender_id] || 0 }));
+
+          const enrichedData = data.map((r) => ({
+            ...r,
+            sender_request_count: countMap[r.sender_id] || 0,
+          }));
           setShipmentRequests(enrichedData);
         } else {
           setShipmentRequests(data);
@@ -165,14 +175,18 @@ const Index = () => {
 
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation finale de sécurité
     if (fromCountry === toCountry) {
       toast.error("Le départ et l'arrivée ne peuvent pas être identiques.");
       return;
     }
+
     const newParams: Record<string, string> = {};
     if (localFromCity.trim()) newParams.from = localFromCity.trim();
     if (localToCity.trim()) newParams.to = localToCity.trim();
     if (localSearchDate) newParams.date = localSearchDate;
+
     setSearchParams(newParams);
 
     if (Object.keys(newParams).length > 0) {
@@ -202,12 +216,10 @@ const Index = () => {
   }, [selectedShipment, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 overflow-x-hidden">
-      {/* HEADER */}
+    <div className="min-h-screen bg-gray-50/50">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 max-w-7xl h-16 sm:h-20 flex items-center justify-between">
           <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
-
           <div className="flex items-center gap-2 sm:gap-4">
             {authLoading ? (
               <div className="h-10 w-32 bg-gray-200 rounded-full animate-pulse" />
@@ -238,28 +250,27 @@ const Index = () => {
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="pt-8 pb-6 sm:pt-24 sm:pb-12 px-4">
-        <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-6 sm:mb-12">
+      <section className="pt-12 pb-8 sm:pt-24 sm:pb-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+          <div className="text-center mb-8 sm:mb-12">
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 sm:mb-6 leading-tight tracking-tight">
               Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
             <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs.
+              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs France ⇄ Algérie et
+              International.
             </p>
           </div>
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE (RESPONSIVE FIX) */}
-      <form onSubmit={handleSearchClick} className="relative z-40 px-4 w-full">
+      {/* BARRE DE RECHERCHE OPTIMISÉE */}
+      <form onSubmit={handleSearchClick} className="relative z-40 px-4">
         <div className="container mx-auto max-w-4xl">
-          {/* DESIGN : Flex-col sur mobile (vertical), Flex-row sur desktop (horizontal) */}
-          <div className="bg-white rounded-3xl md:rounded-full shadow-xl border border-gray-200 flex flex-col md:flex-row items-stretch p-2 gap-2 md:gap-0 md:divide-x divide-gray-100">
-            {/* 1. DÉPART */}
-            <div className="flex-1 relative group px-4 py-2 md:py-2.5 hover:bg-gray-50 rounded-2xl md:rounded-full transition-colors cursor-pointer">
-              <div className="flex items-center gap-1 mb-0.5">
+          <div className="bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 flex flex-col md:flex-row items-center p-2 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+            {/* BLOC DÉPART */}
+            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex flex-col justify-center">
+              <div className="flex items-center gap-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Départ</span>
                 <div className="relative">
                   <select
@@ -268,15 +279,10 @@ const Index = () => {
                       setFromCountry(e.target.value);
                       setLocalFromCity("");
                     }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary"
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors"
                   >
                     {COUNTRIES.map((c) => (
-                      <option
-                        key={c}
-                        value={c}
-                        disabled={c === toCountry}
-                        className={c === toCountry ? "text-gray-300" : ""}
-                      >
+                      <option key={c} value={c}>
                         {c}
                       </option>
                     ))}
@@ -284,46 +290,34 @@ const Index = () => {
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <CityAutocomplete
-                placeholder={`Ville`}
-                value={localFromCity}
-                onChange={setLocalFromCity}
-                limitToCountry={fromCountry}
-                className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
-              />
+              <div className="w-full mt-0.5">
+                <CityAutocomplete
+                  placeholder={`Ville de ${fromCountry}`}
+                  value={localFromCity}
+                  onChange={setLocalFromCity}
+                  limitToCountry={fromCountry}
+                  className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
+                />
+              </div>
             </div>
 
-            {/* 2. BOUTON INVERSION (Mobile : Entre les deux / Desktop : Absolu) */}
-
-            {/* Mobile Only Switcher */}
-            <div className="md:hidden flex justify-center -my-3 z-10 relative">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={toggleDirection}
-                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm"
-              >
-                <ArrowDownUp className="w-3.5 h-3.5 text-gray-600" />
-              </Button>
-            </div>
-
-            {/* Desktop Only Switcher */}
+            {/* BOUTON INVERSION (Visible Desktop) */}
             <div className="hidden md:flex absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={toggleDirection}
-                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform"
+                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform hover:bg-gray-50"
+                title="Inverser le sens"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
               </Button>
             </div>
 
-            {/* 3. ARRIVÉE */}
-            <div className="flex-1 relative group px-4 py-2 md:py-2.5 hover:bg-gray-50 rounded-2xl md:rounded-full transition-colors cursor-pointer md:pl-8">
-              <div className="flex items-center gap-1 mb-0.5">
+            {/* BLOC ARRIVÉE */}
+            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8 flex flex-col justify-center">
+              <div className="flex items-center gap-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Arrivée</span>
                 <div className="relative">
                   <select
@@ -332,7 +326,7 @@ const Index = () => {
                       setToCountry(e.target.value);
                       setLocalToCity("");
                     }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary"
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors"
                   >
                     {COUNTRIES.map((c) => (
                       <option
@@ -348,19 +342,21 @@ const Index = () => {
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <CityAutocomplete
-                placeholder={`Ville`}
-                value={localToCity}
-                onChange={setLocalToCity}
-                limitToCountry={toCountry}
-                className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
-              />
+              <div className="w-full mt-0.5">
+                <CityAutocomplete
+                  placeholder={`Ville de ${toCountry}`}
+                  value={localToCity}
+                  onChange={setLocalToCity}
+                  limitToCountry={toCountry}
+                  className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
+                />
+              </div>
             </div>
 
-            {/* 4. DATE */}
-            <div className="flex-[0.8] relative group px-4 py-2 md:py-2.5 hover:bg-gray-50 rounded-2xl md:rounded-full transition-colors cursor-pointer">
+            {/* BLOC DATE */}
+            <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex flex-col justify-center">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block mb-0.5">
-                Date
+                Quand ?
               </label>
               <Input
                 type="date"
@@ -370,22 +366,35 @@ const Index = () => {
               />
             </div>
 
-            {/* 5. BOUTON RECHERCHE */}
-            <div className="p-1 md:pl-2 md:pr-1 w-full md:w-auto mt-2 md:mt-0">
+            {/* BOUTON RECHERCHE */}
+            <div className="pl-2 pr-1 w-full md:w-auto p-2">
               <Button
                 type="submit"
                 size="lg"
-                className="w-full md:w-auto rounded-xl md:rounded-full h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
+                className="w-full md:w-auto rounded-full h-12 md:h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
               >
                 <Search className="w-5 h-5 mr-2 sm:mr-0" />
                 <span className="md:hidden">Rechercher</span>
               </Button>
             </div>
           </div>
+
+          {/* Bouton mobile inversion */}
+          <div className="md:hidden flex justify-center mt-4 mb-4 relative z-50">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={toggleDirection}
+              className="rounded-full h-8 px-4 bg-white text-xs border-gray-200 shadow-sm gap-2"
+            >
+              <ArrowRightLeft className="w-3 h-3" /> Inverser sens
+            </Button>
+          </div>
         </div>
       </form>
 
-      {/* CONTENU PRINCIPAL */}
+      {/* Reste du contenu (inchangé) */}
       <main className="container mx-auto px-4 max-w-7xl pb-20 pt-12" id="results-section">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
