@@ -24,7 +24,6 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
 import { toast } from "sonner";
-// Imports des modules que nous avons créés ensemble
 import { useAuth, UserRole } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
@@ -52,16 +51,19 @@ interface ShipmentRequest {
   sender_request_count?: number;
 }
 
+const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Hooks personnalisés (Authentification & Notifications)
   const { session, userRole, isLoading: authLoading } = useAuth();
-  // Le système de notification est bien branché ici
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
-  const [direction, setDirection] = useState<"fr-dz" | "dz-fr">("fr-dz");
+  // Nouveaux states pour les pays
+  const [fromCountry, setFromCountry] = useState("France");
+  const [toCountry, setToCountry] = useState("Algérie");
+
   const [localFromCity, setLocalFromCity] = useState(searchParams.get("from") || "");
   const [localToCity, setLocalToCity] = useState(searchParams.get("to") || "");
   const [localSearchDate, setLocalSearchDate] = useState(searchParams.get("date") || "");
@@ -76,10 +78,12 @@ const Index = () => {
   const currentSearchDate = searchParams.get("date") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
+  // Inversion intelligente
   const toggleDirection = () => {
-    setDirection((prev) => (prev === "fr-dz" ? "dz-fr" : "fr-dz"));
-    setLocalFromCity("");
-    setLocalToCity("");
+    setFromCountry(toCountry);
+    setToCountry(fromCountry);
+    setLocalFromCity(localToCity);
+    setLocalToCity(localFromCity);
   };
 
   const getDashboardPath = (userRole: UserRole): string => {
@@ -155,11 +159,14 @@ const Index = () => {
 
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
+    if (fromCountry === toCountry && localFromCity === localToCity) {
+      toast.error("Le départ et l'arrivée ne peuvent pas être identiques.");
+      return;
+    }
     const newParams: Record<string, string> = {};
     if (localFromCity.trim()) newParams.from = localFromCity.trim();
     if (localToCity.trim()) newParams.to = localToCity.trim();
     if (localSearchDate) newParams.date = localSearchDate;
-
     setSearchParams(newParams);
 
     if (Object.keys(newParams).length > 0) {
@@ -190,18 +197,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      {/* HEADER */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 max-w-7xl h-16 sm:h-20 flex items-center justify-between">
           <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
-
           <div className="flex items-center gap-2 sm:gap-4">
             {authLoading ? (
               <div className="h-10 w-32 bg-gray-200 rounded-full animate-pulse" />
             ) : session ? (
               <Button onClick={handleDashboardClick} className="rounded-full font-medium relative overflow-visible">
                 Mon Dashboard
-                {/* Badge Rouge de Notification (Préservé) */}
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
                     {unreadCount > 9 ? "9+" : unreadCount}
@@ -226,7 +230,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* HERO SECTION */}
       <section className="pt-12 pb-8 sm:pt-24 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center mb-8 sm:mb-12">
@@ -234,34 +237,43 @@ const Index = () => {
               Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
             <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs France ⇄ Algérie.
+              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs.
             </p>
           </div>
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE "STYLE AIRBNB" - DESIGN INTÉGRÉ */}
       <form onSubmit={handleSearchClick} className="relative z-40 px-4">
         <div className="container mx-auto max-w-4xl">
-          {/* Conteneur principal "Pilule" avec ombre portée */}
           <div className="bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 flex flex-col md:flex-row items-center p-2 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
             {/* Champ Départ */}
             <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
-                Départ ({direction === "fr-dz" ? "France" : "Algérie"})
-              </label>
+              <select
+                value={fromCountry}
+                onChange={(e) => {
+                  setFromCountry(e.target.value);
+                  setLocalFromCity("");
+                }}
+                className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    Départ ({c})
+                  </option>
+                ))}
+              </select>
               <div className="w-full">
                 <CityAutocomplete
-                  placeholder="Ex: Paris"
+                  placeholder={`Ville de ${fromCountry}`}
                   value={localFromCity}
                   onChange={setLocalFromCity}
-                  limitToCountry={direction === "fr-dz" ? "France" : "Algérie"}
+                  limitToCountry={fromCountry}
                   className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
                 />
               </div>
             </div>
 
-            {/* Bouton Inversion (Absolu au centre sur Desktop) */}
+            {/* Bouton Inversion */}
             <div className="hidden md:flex absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <Button
                 type="button"
@@ -277,21 +289,31 @@ const Index = () => {
 
             {/* Champ Arrivée */}
             <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
-                Arrivée ({direction === "fr-dz" ? "Algérie" : "France"})
-              </label>
+              <select
+                value={toCountry}
+                onChange={(e) => {
+                  setToCountry(e.target.value);
+                  setLocalToCity("");
+                }}
+                className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    Arrivée ({c})
+                  </option>
+                ))}
+              </select>
               <div className="w-full">
                 <CityAutocomplete
-                  placeholder="Ex: Alger"
+                  placeholder={`Ville de ${toCountry}`}
                   value={localToCity}
                   onChange={setLocalToCity}
-                  limitToCountry={direction === "fr-dz" ? "Algérie" : "France"}
+                  limitToCountry={toCountry}
                   className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
                 />
               </div>
             </div>
 
-            {/* Champ Date */}
             <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
                 Départ
@@ -304,21 +326,17 @@ const Index = () => {
               />
             </div>
 
-            {/* Bouton Recherche INTÉGRÉ À DROITE */}
             <div className="pl-2 pr-1 w-full md:w-auto">
               <Button
                 type="submit"
                 size="lg"
-                // ICI : Changement de couleur (Orange) pour coller à la marque
                 className="w-full md:w-auto rounded-full h-12 md:h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-5 h-5 mr-2 sm:mr-0" />
                 <span className="md:hidden">Rechercher</span>
               </Button>
             </div>
           </div>
-
-          {/* Petit bouton mobile pour inverser si besoin */}
           <div className="md:hidden flex justify-center mt-4 mb-4 relative z-50">
             <Button
               type="button"
@@ -333,15 +351,12 @@ const Index = () => {
         </div>
       </form>
 
-      {/* CONTENU PRINCIPAL */}
       <main className="container mx-auto px-4 max-w-7xl pb-20 pt-12" id="results-section">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
             {isSearching ? `Résultats (${filteredRequests.length})` : "Dernières annonces"}
           </h2>
         </div>
-
-        {/* État de chargement */}
         {isLoading && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (
@@ -349,8 +364,6 @@ const Index = () => {
             ))}
           </div>
         )}
-
-        {/* État vide */}
         {!isLoading && filteredRequests.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-3xl border border-dashed border-gray-200 text-center">
             <div className="bg-primary/10 p-4 rounded-full mb-4">
@@ -367,8 +380,6 @@ const Index = () => {
             </Button>
           </div>
         )}
-
-        {/* Grille */}
         {!isLoading && filteredRequests.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredRequests.map((request) => (
@@ -390,7 +401,6 @@ const Index = () => {
                     {request.weight_kg} kg
                   </div>
                 </div>
-
                 <div className="p-4 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -403,7 +413,6 @@ const Index = () => {
                       </div>
                     )}
                   </div>
-
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4 text-gray-400" />
@@ -412,12 +421,7 @@ const Index = () => {
                         {format(new Date(request.latest_date), "dd MMM")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Package className="w-4 h-4 text-gray-400" />
-                      <span className="truncate">{request.item_type}</span>
-                    </div>
                   </div>
-
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
                     <UserAvatar
                       fullName={request.profiles?.full_name || ""}
@@ -436,13 +440,11 @@ const Index = () => {
           </div>
         )}
       </main>
-
       <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-gray-400">
           © 2025 EDIM3AK. La plateforme de confiance.
         </div>
       </footer>
-
       {selectedShipment && (
         <ShipmentDetailModal
           isOpen={!!selectedShipment}
