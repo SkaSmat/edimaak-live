@@ -35,9 +35,11 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
     setLoading(true);
 
     try {
-      if (formData.fromCountry === formData.toCountry && formData.fromCity === formData.toCity) {
-        throw new Error("La ville de départ et d'arrivée ne peuvent pas être identiques.");
+      // 1. Validation STRICTE des pays
+      if (formData.fromCountry === formData.toCountry) {
+        throw new Error("Le pays de départ et d'arrivée doivent être différents (Transport international uniquement).");
       }
+
       if (formData.arrivalDate && formData.arrivalDate < formData.departureDate) {
         throw new Error("La date d'arrivée ne peut pas être avant la date de départ");
       }
@@ -93,7 +95,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
             <CityAutocomplete
               value={formData.fromCity}
               onChange={(val) => setFormData({ ...formData, fromCity: val })}
-              limitToCountry={formData.fromCountry}
+              limitToCountry={formData.fromCountry as any}
               placeholder={`Ville de départ`}
             />
           </div>
@@ -130,7 +132,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
             <CityAutocomplete
               value={formData.toCity}
               onChange={(val) => setFormData({ ...formData, toCity: val })}
-              limitToCountry={formData.toCountry}
+              limitToCountry={formData.toCountry as any}
               placeholder={`Ville d'arrivée`}
             />
           </div>
