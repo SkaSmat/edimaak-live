@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import MatchProposals from "@/components/MatchProposals";
+import SenderShipments from "./SenderShipments";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Package, Handshake, User, Plus, ChevronRight, Loader2 } from "lucide-react";
@@ -23,7 +23,6 @@ const SenderDashboard = () => {
 
   const checkAuthAndFetchStats = async () => {
     try {
-      // 1. Vérif Auth et Profil
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -32,6 +31,7 @@ const SenderDashboard = () => {
         return;
       }
 
+      // 1. Vérification du Rôle Actuel
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -39,34 +39,42 @@ const SenderDashboard = () => {
         .single();
 
       if (profileError || profileData?.role !== "sender") {
-        toast.error("Accès non autorisé ou erreur de profil");
+        // Si l'utilisateur est en mode "Traveler", on le redirige ou on bloque
+        // Ici, on redirige vers le bon dashboard pour éviter la confusion
+        if (profileData?.role === "traveler") {
+          navigate("/dashboard/traveler");
+          return;
+        }
         navigate("/");
         return;
       }
       setProfile(profileData);
 
-      // 2. Calcul des stats (KPIs)
       const userId = session.user.id;
 
-      // Count 1 : Demandes actives (status = 'open')
+      // 2. Calcul STRICT des stats EXPÉDITEUR
+
+      // A. Mes demandes d'expédition (Celles que J'AI créées en tant qu'expéditeur)
       const { count: openCount, error: openError } = await supabase
         .from("shipment_requests")
         .select("*", { count: "exact", head: true })
-        .eq("sender_id", userId)
+        .eq("sender_id", userId) // STRICT : Seulement mes colis
         .eq("status", "open");
 
       if (openError) throw openError;
 
-      // Count 2 : Matches acceptés
-      const { data: myShipmentIds } = await supabase.from("shipment_requests").select("id").eq("sender_id", userId);
+      // B. Mes Matches en tant qu'Expéditeur
+      // On cherche les matchs liés à MES shipment_requests
+      const { data: myShipmentIds } = await supabase.from("shipment_requests").select("id").eq("sender_id", userId); // STRICT : Seulement mes colis
 
       let acceptedCount = 0;
       if (myShipmentIds && myShipmentIds.length > 0) {
         const ids = myShipmentIds.map((s) => s.id);
+
         const { count, error: matchError } = await supabase
           .from("matches")
           .select("*", { count: "exact", head: true })
-          .in("shipment_request_id", ids)
+          .in("shipment_request_id", ids) // On filtre par ID de COLIS (pas de voyage)
           .eq("status", "accepted");
 
         if (!matchError && count !== null) acceptedCount = count;
@@ -77,8 +85,7 @@ const SenderDashboard = () => {
         acceptedMatches: acceptedCount || 0,
       });
     } catch (error) {
-      console.error("Erreur lors du chargement du dashboard:", error);
-      toast.error("Erreur de chargement des données.");
+      console.error("Erreur dashboard:", error);
     } finally {
       setLoading(false);
     }
@@ -97,12 +104,9 @@ const SenderDashboard = () => {
   return (
     <DashboardLayout role="sender" fullName={profile?.full_name}>
       <div className="space-y-8">
-        {/* --- CARTES RÉSUMÉ --- */}
         <div className="grid gap-4 md:grid-cols-3">
-          {/* Carte 1 : Mes demandes d'expédition */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between relative overflow-hidden">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              {/* MODIFICATION ICI : Changement du titre */}
               <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Mes demandes d'expédition</h3>
               <Package className="w-4 h-4 text-primary" />
             </div>
@@ -125,7 +129,6 @@ const SenderDashboard = () => {
             </div>
           </div>
 
-          {/* Carte 2 : Matches acceptés */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Matches acceptés</h3>
@@ -143,7 +146,6 @@ const SenderDashboard = () => {
             </div>
           </div>
 
-          {/* Carte 3 : Profil */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Mon Profil</h3>
@@ -165,9 +167,8 @@ const SenderDashboard = () => {
           </div>
         </div>
 
-        {/* --- SECTION PROPOSITIONS --- */}
         <div className="pt-4">
-          {profile?.id && <MatchProposals userId={profile.id} />}
+          <SenderShipments embedded={true} />
         </div>
       </div>
     </DashboardLayout>
