@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Upload, X, ArrowRightLeft } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 
 interface ShipmentRequestFormProps {
@@ -19,9 +19,9 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    fromCountry: "France" as "France" | "Algérie",
+    fromCountry: "France",
     fromCity: "",
-    toCountry: "Algérie" as "France" | "Algérie",
+    toCountry: "Algérie",
     toCity: "",
     earliestDate: "",
     latestDate: "",
@@ -32,14 +32,19 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
   const today = new Date().toISOString().split("T")[0];
 
+  // LOGIQUE DE PAYS
   const handleCountryChange = (type: "from" | "to", value: string) => {
     if (type === "from") {
-      const newFrom = value as "France" | "Algérie";
-      const newTo = newFrom === "France" ? "Algérie" : "France";
+      const newFrom = value;
+      // Si départ n'est pas Algérie, arrivée doit être Algérie
+      const newTo =
+        newFrom !== "Algérie" ? "Algérie" : formData.toCountry === "Algérie" ? "France" : formData.toCountry;
       setFormData((prev) => ({ ...prev, fromCountry: newFrom, toCountry: newTo, fromCity: "", toCity: "" }));
     } else {
-      const newTo = value as "France" | "Algérie";
-      const newFrom = newTo === "France" ? "Algérie" : "France";
+      const newTo = value;
+      // Si arrivée n'est pas Algérie, départ doit être Algérie
+      const newFrom =
+        newTo !== "Algérie" ? "Algérie" : formData.fromCountry === "Algérie" ? "France" : formData.fromCountry;
       setFormData((prev) => ({ ...prev, toCountry: newTo, fromCountry: newFrom, fromCity: "", toCity: "" }));
     }
   };
@@ -70,7 +75,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     try {
       if (parseFloat(formData.weightKg) <= 0) throw new Error("Le poids doit être positif");
       if (formData.latestDate < formData.earliestDate) throw new Error("La date limite est avant la date de début");
-      if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
 
       let imageUrl: string | null = null;
       if (imageFile) {
@@ -121,8 +125,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
           >
-            <option value="France">France</option>
-            <option value="Algérie">Algérie</option>
+            <option value="Algérie">🇩🇿 Algérie</option>
+            <option disabled>──────────</option>
+            <option value="France">🇫🇷 France</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="Espagne">🇪🇸 Espagne</option>
+            <option value="Royaume-Uni">🇬🇧 Royaume-Uni</option>
           </select>
         </div>
 
@@ -131,16 +139,26 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <CityAutocomplete
             value={formData.fromCity}
             onChange={(val) => setFormData({ ...formData, fromCity: val })}
-            limitToCountry={formData.fromCountry}
+            limitToCountry={formData.fromCountry as any}
             placeholder={`Départ (${formData.fromCountry})`}
           />
         </div>
 
         <div className="space-y-2">
           <Label>Pays de destination *</Label>
-          <div className="w-full px-3 py-2 border border-input rounded-md bg-muted text-muted-foreground h-10 flex items-center">
-            {formData.toCountry}
-          </div>
+          <select
+            value={formData.toCountry}
+            onChange={(e) => handleCountryChange("to", e.target.value)}
+            className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
+            required
+          >
+            <option value="Algérie">🇩🇿 Algérie</option>
+            <option disabled>──────────</option>
+            <option value="France">🇫🇷 France</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="Espagne">🇪🇸 Espagne</option>
+            <option value="Royaume-Uni">🇬🇧 Royaume-Uni</option>
+          </select>
         </div>
 
         <div className="space-y-2">
@@ -148,11 +166,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <CityAutocomplete
             value={formData.toCity}
             onChange={(val) => setFormData({ ...formData, toCity: val })}
-            limitToCountry={formData.toCountry}
+            limitToCountry={formData.toCountry as any}
             placeholder={`Arrivée (${formData.toCountry})`}
           />
         </div>
 
+        {/* Dates, Poids, Type (inchangé) */}
         <div className="space-y-2">
           <Label>Dispo à partir du *</Label>
           <Input
@@ -206,6 +225,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         </div>
       </div>
 
+      {/* Image et Notes (inchangé) */}
       <div className="space-y-2">
         <Label>Image (optionnel)</Label>
         {imagePreview ? (
@@ -218,7 +238,8 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
               className="absolute top-2 right-2"
               onClick={removeImage}
             >
-              <X className="w-4 h-4" />
+              {" "}
+              <X className="w-4 h-4" />{" "}
             </Button>
           </div>
         ) : (
