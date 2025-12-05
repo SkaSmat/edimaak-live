@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -19,6 +19,7 @@ interface ShipmentRequest {
   item_type: string;
   notes: string | null;
   image_url: string | null;
+  sender_id: string;
   profiles?: {
     full_name: string;
     avatar_url: string | null;
@@ -32,6 +33,7 @@ interface ShipmentDetailModalProps {
   isAuthenticated: boolean;
   onSignUp: () => void;
   onLogin: () => void;
+  onViewProfile?: (userId: string) => void;
 }
 
 export const ShipmentDetailModal = ({
@@ -41,6 +43,7 @@ export const ShipmentDetailModal = ({
   isAuthenticated,
   onSignUp,
   onLogin,
+  onViewProfile,
 }: ShipmentDetailModalProps) => {
   if (!shipment) return null;
 
@@ -49,6 +52,12 @@ export const ShipmentDetailModal = ({
     // On sauvegarde l'ID du colis pour le retrouver après la connexion
     localStorage.setItem("targetShipmentId", shipment.id);
     action();
+  };
+
+  const handleProfileClick = () => {
+    if (isAuthenticated && onViewProfile && shipment.sender_id) {
+      onViewProfile(shipment.sender_id);
+    }
   };
 
   return (
@@ -77,7 +86,14 @@ export const ShipmentDetailModal = ({
 
         <div className="p-6 space-y-6">
           {/* Info Expéditeur */}
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+          <button
+            type="button"
+            onClick={handleProfileClick}
+            disabled={!isAuthenticated}
+            className={`w-full flex items-center justify-between p-4 bg-muted/30 rounded-lg text-left transition-colors ${
+              isAuthenticated ? "hover:bg-muted/50 cursor-pointer" : ""
+            }`}
+          >
             <div className="flex items-center gap-3">
               <UserAvatar fullName={shipment.profiles?.full_name || ""} avatarUrl={shipment.profiles?.avatar_url} />
               <div>
@@ -85,12 +101,17 @@ export const ShipmentDetailModal = ({
                 <p className="text-sm text-muted-foreground">Expéditeur</p>
               </div>
             </div>
-            {isAuthenticated && (
-              <Badge variant="outline" className="text-muted-foreground">
-                Vérifié
-              </Badge>
-            )}
-          </div>
+            <div className="flex items-center gap-2">
+              {isAuthenticated && (
+                <>
+                  <Badge variant="outline" className="text-muted-foreground">
+                    Vérifié
+                  </Badge>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </>
+              )}
+            </div>
+          </button>
 
           {/* Détails du colis */}
           <div className="grid grid-cols-2 gap-4">
