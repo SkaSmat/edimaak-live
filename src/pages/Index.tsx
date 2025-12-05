@@ -15,7 +15,7 @@ import {
   Bell,
   MessageCircle,
   ArrowRightLeft,
-} from "lucide-react"; // Ajout ArrowRightLeft
+} from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -24,12 +24,11 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, UserRole } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
 import { SkeletonCard } from "@/components/SkeletonCard";
 
-// Types
 interface ShipmentRequest {
   id: string;
   from_city: string;
@@ -59,9 +58,7 @@ const Index = () => {
   const { session, userRole, isLoading: authLoading } = useAuth();
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
-  // --- NOUVEAU : GESTION DU SENS ---
   const [direction, setDirection] = useState<"fr-dz" | "dz-fr">("fr-dz");
-
   const [localFromCity, setLocalFromCity] = useState(searchParams.get("from") || "");
   const [localToCity, setLocalToCity] = useState(searchParams.get("to") || "");
   const [localSearchDate, setLocalSearchDate] = useState(searchParams.get("date") || "");
@@ -76,24 +73,17 @@ const Index = () => {
   const currentSearchDate = searchParams.get("date") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
-  // --- FONCTION POUR INVERSER LE SENS ---
   const toggleDirection = () => {
     setDirection((prev) => (prev === "fr-dz" ? "dz-fr" : "fr-dz"));
-    // On vide les champs villes car elles ne correspondent plus au pays
     setLocalFromCity("");
     setLocalToCity("");
   };
 
-  const getDashboardPath = (role: string | null): string => {
-    if (role === "sender") return "/dashboard/sender";
-    if (role === "admin") return "/admin";
+  const getDashboardPath = (userRole: UserRole): string => {
+    if (userRole === "sender") return "/dashboard/sender";
+    if (userRole === "admin") return "/admin";
     return "/dashboard/traveler";
   };
-
-  const handleDashboardClick = useCallback(() => {
-    resetUnreadCount();
-    navigate(getDashboardPath(userRole));
-  }, [userRole, navigate, resetUnreadCount]);
 
   useEffect(() => {
     fetchShipmentRequests();
@@ -102,7 +92,6 @@ const Index = () => {
   const fetchShipmentRequests = async () => {
     setIsLoading(true);
     setError(null);
-
     try {
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
@@ -115,7 +104,6 @@ const Index = () => {
 
       if (data) {
         const senderIds = [...new Set(data.map((r) => r.sender_id))];
-
         if (senderIds.length > 0) {
           const { data: counts } = await supabase
             .from("shipment_requests")
@@ -130,11 +118,10 @@ const Index = () => {
             {} as Record<string, number>,
           );
 
-          const enrichedData: ShipmentRequest[] = data.map((r) => ({
+          const enrichedData = data.map((r) => ({
             ...r,
             sender_request_count: countMap[r.sender_id] || 0,
           }));
-
           setShipmentRequests(enrichedData);
         } else {
           setShipmentRequests(data);
@@ -193,6 +180,11 @@ const Index = () => {
     }
   }, [selectedShipment, navigate]);
 
+  const handleDashboardClick = useCallback(() => {
+    resetUnreadCount();
+    navigate(getDashboardPath(userRole));
+  }, [userRole, navigate, resetUnreadCount]);
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* HEADER */}
@@ -233,103 +225,115 @@ const Index = () => {
       {/* HERO SECTION */}
       <section className="pt-12 pb-8 sm:pt-24 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="text-center mb-8 sm:mb-10">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6 leading-tight">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 sm:mb-6 leading-tight tracking-tight">
               Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
-            <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto">
               La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs France ⇄ Algérie.
             </p>
           </div>
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE INTELLIGENTE */}
-      <form onSubmit={handleSearchClick}>
-        <div className="relative md:sticky md:top-20 z-40 py-4 sm:py-6 mt-[-1rem]">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-            <div className="bg-white dark:bg-card rounded-3xl shadow-xl border border-border/40 p-3 sm:p-2 flex flex-col sm:flex-row gap-3 items-center">
-              {/* DÉPART */}
-              <div className="flex-1 w-full flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
-                <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-                <div className="w-full">
-                  <CityAutocomplete
-                    placeholder={direction === "fr-dz" ? "Départ (France)" : "Départ (Algérie)"}
-                    value={localFromCity}
-                    onChange={setLocalFromCity}
-                    limitToCountry={direction === "fr-dz" ? "France" : "Algérie"} // Restriction stricte
-                  />
-                </div>
-              </div>
-
-              {/* BOUTON INVERSION */}
-              <div className="shrink-0 flex items-center justify-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleDirection}
-                  className="rounded-full hover:bg-gray-100 h-8 w-8 text-primary"
-                  title="Inverser le sens du voyage"
-                >
-                  <ArrowRightLeft className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* ARRIVÉE */}
-              <div className="flex-1 w-full flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
-                <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-                <div className="w-full">
-                  <CityAutocomplete
-                    placeholder={direction === "fr-dz" ? "Arrivée (Algérie)" : "Arrivée (France)"}
-                    value={localToCity}
-                    onChange={setLocalToCity}
-                    limitToCountry={direction === "fr-dz" ? "Algérie" : "France"} // Restriction stricte
-                  />
-                </div>
-              </div>
-
-              <div className="w-px h-8 bg-gray-200 my-auto hidden sm:block" />
-
-              <div className="flex-1 w-full flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
-                <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
-                <Input
-                  type="date"
-                  value={localSearchDate}
-                  onChange={(e) => setLocalSearchDate(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground w-full p-0 h-auto cursor-pointer"
+      {/* BARRE DE RECHERCHE "AIRBNB STYLE" */}
+      <form onSubmit={handleSearchClick} className="relative z-40 px-4">
+        <div className="container mx-auto max-w-4xl">
+          {/* Conteneur principal avec ombre portée et arrondis */}
+          <div className="bg-white rounded-[32px] shadow-xl border border-gray-100 flex flex-col md:flex-row items-center p-2 gap-1 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+            {/* Champ Départ */}
+            <div className="flex-1 w-full md:w-auto relative group px-6 py-3 hover:bg-gray-50 rounded-[24px] transition-colors cursor-pointer">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-800 block mb-1">
+                Départ ({direction === "fr-dz" ? "France" : "Algérie"})
+              </label>
+              <div className="w-full">
+                <CityAutocomplete
+                  placeholder="Ex: Paris"
+                  value={localFromCity}
+                  onChange={setLocalFromCity}
+                  limitToCountry={direction === "fr-dz" ? "France" : "Algérie"}
+                  className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
                 />
               </div>
+            </div>
 
+            {/* Bouton Inversion (Absolu au centre sur Desktop) */}
+            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={toggleDirection}
+                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform"
+                title="Inverser le sens"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
+              </Button>
+            </div>
+
+            {/* Champ Arrivée */}
+            <div className="flex-1 w-full md:w-auto relative group px-6 py-3 hover:bg-gray-50 rounded-[24px] transition-colors cursor-pointer md:pl-8">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-800 block mb-1">
+                Arrivée ({direction === "fr-dz" ? "Algérie" : "France"})
+              </label>
+              <div className="w-full">
+                <CityAutocomplete
+                  placeholder="Ex: Alger"
+                  value={localToCity}
+                  onChange={setLocalToCity}
+                  limitToCountry={direction === "fr-dz" ? "Algérie" : "France"}
+                  className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
+                />
+              </div>
+            </div>
+
+            {/* Champ Date */}
+            <div className="flex-[0.8] w-full md:w-auto relative group px-6 py-3 hover:bg-gray-50 rounded-[24px] transition-colors cursor-pointer">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-800 block mb-1">
+                Date de départ
+              </label>
+              <Input
+                type="date"
+                value={localSearchDate}
+                onChange={(e) => setLocalSearchDate(e.target.value)}
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm font-medium text-gray-700 w-full p-0 h-auto cursor-pointer"
+              />
+            </div>
+
+            {/* Bouton Recherche */}
+            <div className="p-2 w-full md:w-auto">
               <Button
                 type="submit"
                 size="lg"
-                className="rounded-xl sm:rounded-full w-full sm:w-auto px-8 h-12 sm:h-auto font-semibold shadow-lg shadow-primary/20 shrink-0"
+                className="w-full md:w-auto rounded-full h-12 md:h-12 px-6 bg-primary hover:bg-primary/90 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
               >
-                <Search className="w-5 h-5 mr-2 sm:mr-0" />
-                <span className="sm:hidden">Rechercher</span>
+                <Search className="w-5 h-5" />
+                <span className="md:hidden">Rechercher</span>
               </Button>
             </div>
+          </div>
+
+          {/* Petit bouton mobile pour inverser si besoin */}
+          <div className="md:hidden flex justify-center -mt-4 mb-4 relative z-50">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={toggleDirection}
+              className="rounded-full h-8 px-4 bg-white text-xs border-gray-200 shadow-sm gap-2"
+            >
+              <ArrowRightLeft className="w-3 h-3" /> Inverser sens
+            </Button>
           </div>
         </div>
       </form>
 
-      {/* CONTENU PRINCIPAL (Cartes...) */}
-      <main className="container mx-auto px-4 max-w-7xl pb-20 pt-8" id="results-section">
-        <div className="mb-8">
-          {isSearching ? (
-            <h2 className="text-2xl font-bold text-gray-900">
-              Résultats de recherche
-              <span className="text-muted-foreground font-normal text-lg ml-2">
-                ({filteredRequests.length} annonce{filteredRequests.length > 1 ? "s" : ""})
-              </span>
-            </h2>
-          ) : (
-            <>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dernières annonces</h2>
-              <p className="text-gray-500">Trouvez un colis à transporter et rentabilisez votre voyage.</p>
-            </>
-          )}
+      {/* CONTENU PRINCIPAL */}
+      <main className="container mx-auto px-4 max-w-7xl pb-20 pt-12" id="results-section">
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isSearching ? `Résultats (${filteredRequests.length})` : "Dernières annonces"}
+          </h2>
         </div>
 
         {/* État de chargement */}
@@ -403,10 +407,6 @@ const Index = () => {
                         {format(new Date(request.latest_date), "dd MMM")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Package className="w-4 h-4 text-gray-400" />
-                      <span className="truncate">{request.item_type}</span>
-                    </div>
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
@@ -428,12 +428,14 @@ const Index = () => {
         )}
       </main>
 
+      {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-gray-400">
           © 2025 EDIM3AK. La plateforme de confiance.
         </div>
       </footer>
 
+      {/* Modal Détail */}
       {selectedShipment && (
         <ShipmentDetailModal
           isOpen={!!selectedShipment}
