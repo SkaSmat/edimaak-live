@@ -159,14 +159,15 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    const trimmedMessage = newMessage.trim().slice(0, 2000);
+    if (!trimmedMessage) return;
 
     setSending(true);
     try {
       const { error } = await supabase.from("messages").insert({
         match_id: matchId,
         sender_id: userId,
-        content: newMessage.trim(),
+        content: trimmedMessage,
       });
 
       if (error) throw error;
@@ -280,9 +281,10 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       <form onSubmit={handleSend} className="flex gap-2 mt-3 sm:mt-4">
         <Input
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          onChange={(e) => setNewMessage(e.target.value.slice(0, 2000))}
           placeholder="Écrivez votre message..."
           disabled={sending}
+          maxLength={2000}
           className="flex-1 text-sm h-9 sm:h-10"
         />
         <Button type="submit" disabled={sending || !newMessage.trim()} size="icon" className="h-9 w-9 sm:h-10 sm:w-10">

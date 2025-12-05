@@ -247,11 +247,13 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         )}
       </div>
       <div className="space-y-2">
-        <Label>Notes</Label>
+        <Label>Notes <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span></Label>
         <Textarea
           value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })}
+          maxLength={1000}
           rows={3}
+          placeholder="Décrivez votre colis, précautions particulières..."
         />
       </div>
       <Button type="submit" disabled={loading} className="w-full">

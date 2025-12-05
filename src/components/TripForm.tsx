@@ -207,10 +207,11 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
       </div>
 
       <div className="space-y-2 pt-2">
-        <Label>Notes (optionnel)</Label>
+        <Label>Notes (optionnel) <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span></Label>
         <Textarea
           value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })}
+          maxLength={1000}
           placeholder="Ex: Je pars de Orly, je peux prendre des objets fragiles..."
           rows={2}
         />
