@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle, RefreshCw, Handshake } from "lucide-react"; // Ajout de RefreshCw
+import { LogOut, MessageCircle, RefreshCw, Handshake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -25,7 +25,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const [pendingMatchCount, setPendingMatchCount] = useState(0);
   const location = useLocation();
 
-  // --- FONCTION : CHANGER DE RÔLE (Intégrée ici pour le Header) ---
+  // --- FONCTION SWITCH ROLE (CORRIGÉE) ---
   const switchRole = async () => {
     try {
       const newRole = role === "traveler" ? "sender" : "traveler";
@@ -34,31 +34,29 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       } = await supabase.auth.getSession();
 
       if (!session) {
-        // Juste une notification, pas de redirection brutale
-        toast.error("Votre session a expiré. Veuillez rafraîchir la page.");
+        toast.error("Session expirée");
         return;
       }
 
-      // Tentative de mise à jour
+      // On tente la mise à jour
       const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", session.user.id);
 
       if (error) {
-        console.error("Erreur switch:", error);
-        toast.error("Impossible de changer de mode pour l'instant.");
+        console.error("Erreur RLS:", error);
+        toast.error("Erreur de droits. Demandez à l'admin d'activer la policy SQL.");
         return;
       }
 
-      toast.success(`Bienvenue dans l'espace ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} !`);
+      toast.success(`Vous êtes passé en mode ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} !`);
 
-      // Rechargement vers le bon dashboard
+      // On recharge la page vers le bon dashboard
       window.location.href = newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
     } catch (error) {
       console.error(error);
-      toast.error("Une erreur inattendue est survenue.");
+      toast.error("Impossible de changer de mode");
     }
   };
 
-  // --- LOGOUT ---
   const handleInternalLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -173,7 +171,6 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
             />
           </div>
 
-          {/* --- HEADER DESKTOP MODIFIÉ --- */}
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">Bonjour, {firstName}</h1>
@@ -183,16 +180,18 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
             </div>
 
             <div className="flex items-center gap-3">
-              {/* BOUTON CHANGER DE MODE */}
+              {/* BOUTON CHANGER DE MODE (Bien visible et à gauche de déconnexion) */}
               {role !== "admin" && (
                 <Button
+                  // Style 'default' (rempli) ou 'outline' avec couleur forte pour être visible
                   variant="outline"
                   size="sm"
                   onClick={switchRole}
-                  className="gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                  className="gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+                  title={`Cliquez pour passer au mode ${role === "traveler" ? "Expéditeur" : "Voyageur"}`}
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Passer en mode {role === "traveler" ? "Expéditeur" : "Voyageur"}
+                  Passer au mode {role === "traveler" ? "Expéditeur" : "Voyageur"}
                 </Button>
               )}
 
@@ -201,6 +200,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
                 size="sm"
                 onClick={handleInternalLogout}
                 className="text-muted-foreground hover:text-destructive transition-colors"
+                title="Se déconnecter"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Déconnexion
