@@ -93,39 +93,39 @@ const MyMatches = ({ userId }: MyMatchesProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {matches.map((match: any) => (
         <div
           key={match.id}
-          className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
+          className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
         >
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-accent" />
-              <div>
-                <h3 className="font-semibold">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-accent flex-shrink-0" />
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm sm:text-base truncate">
                   {match.shipment_requests.from_city} → {match.shipment_requests.to_city}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   Avec {match.shipment_requests.profiles.full_name}
                 </p>
               </div>
             </div>
-            <Badge variant="default">
+            <Badge variant="default" className="text-xs self-end sm:self-auto">
               {match.status === "accepted" ? "Actif" : "Complété"}
             </Badge>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-            <Calendar className="w-4 h-4" />
-            <span>
-              Départ: {format(new Date(match.trips.departure_date), "d MMMM yyyy", { locale: fr })}
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="truncate">
+              Départ: {format(new Date(match.trips.departure_date), "d MMM yyyy", { locale: fr })}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm mb-4">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs sm:text-sm mb-3 sm:mb-4">
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+            <span className="text-muted-foreground truncate">
               Votre voyage: {match.trips.from_city} → {match.trips.to_city}
             </span>
           </div>
@@ -133,9 +133,9 @@ const MyMatches = ({ userId }: MyMatchesProps) => {
           <Button
             size="sm"
             onClick={() => handleOpenChat(match.id)}
-            className="w-full"
+            className="w-full text-xs sm:text-sm h-8 sm:h-9"
           >
-            <MessageSquare className="w-4 h-4 mr-2" />
+            <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
             Discuter
           </Button>
         </div>

@@ -179,19 +179,17 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
               </Badge>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* BOUTON CHANGER DE MODE (Bien visible et à gauche de déconnexion) */}
+            <div className="flex items-center gap-2 lg:gap-3">
               {role !== "admin" && (
                 <Button
-                  // Style 'default' (rempli) ou 'outline' avec couleur forte pour être visible
                   variant="outline"
                   size="sm"
                   onClick={switchRole}
-                  className="gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+                  className="gap-1.5 lg:gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm text-xs lg:text-sm px-2 lg:px-4"
                   title={`Cliquez pour passer au mode ${role === "traveler" ? "Expéditeur" : "Voyageur"}`}
                 >
-                  <RefreshCw className="h-4 w-4" />
-                  Passer au mode {role === "traveler" ? "Expéditeur" : "Voyageur"}
+                  <RefreshCw className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+                  <span className="hidden lg:inline">Passer au mode</span> {role === "traveler" ? "Expéditeur" : "Voyageur"}
                 </Button>
               )}
 
@@ -199,17 +197,17 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
                 variant="ghost"
                 size="sm"
                 onClick={handleInternalLogout}
-                className="text-muted-foreground hover:text-destructive transition-colors"
+                className="text-muted-foreground hover:text-destructive transition-colors text-xs lg:text-sm"
                 title="Se déconnecter"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Déconnexion
+                <LogOut className="h-4 w-4 lg:mr-2" />
+                <span className="hidden lg:inline">Déconnexion</span>
               </Button>
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+            <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">{children}</div>
           </main>
         </SidebarInset>
       </div>

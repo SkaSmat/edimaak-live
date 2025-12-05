@@ -104,23 +104,23 @@ const Messages = () => {
 
   return (
     <DashboardLayout role={profile.role} fullName={profile.full_name} isAdmin={profile.role === "admin"}>
-      <div className="h-[calc(100vh-8rem)] flex flex-col">
-        <div className="md:hidden flex items-center justify-between mb-4">
+      <div className="h-[calc(100vh-10rem)] sm:h-[calc(100vh-8rem)] flex flex-col">
+        <div className="md:hidden flex items-center justify-between mb-3 sm:mb-4">
           {selectedMatchId && (
-            <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour aux discussions
+            <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2 text-xs sm:text-sm">
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              Retour
             </Button>
           )}
-          {!selectedMatchId && <h1 className="text-xl font-bold">Messagerie</h1>}
+          {!selectedMatchId && <h1 className="text-lg sm:text-xl font-bold">Messagerie</h1>}
         </div>
 
-        <div className="flex-1 grid md:grid-cols-3 gap-6 h-full min-h-0">
+        <div className="flex-1 grid md:grid-cols-3 gap-3 sm:gap-6 h-full min-h-0">
           <Card
             className={`md:col-span-1 flex flex-col h-full border-0 shadow-none md:border md:shadow-sm ${selectedMatchId ? "hidden md:flex" : "flex"}`}
           >
-            <CardHeader className="py-3 px-4 border-b hidden md:block">
-              <CardTitle className="text-lg">Conversations</CardTitle>
+            <CardHeader className="py-2 sm:py-3 px-3 sm:px-4 border-b hidden md:block">
+              <CardTitle className="text-base sm:text-lg">Conversations</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0">
               <ConversationList userId={user.id} onSelectMatch={handleSelectMatch} selectedMatchId={selectedMatchId} />
@@ -130,14 +130,14 @@ const Messages = () => {
           <Card
             className={`md:col-span-2 flex flex-col h-full border-0 shadow-none md:border md:shadow-sm ${!selectedMatchId ? "hidden md:flex" : "flex"}`}
           >
-            <CardHeader className="py-3 px-4 border-b hidden md:block">
-              <CardTitle className="text-lg">
+            <CardHeader className="py-2 sm:py-3 px-3 sm:px-4 border-b hidden md:block">
+              <CardTitle className="text-base sm:text-lg">
                 {selectedMatchId ? "Discussion" : "Sélectionnez une conversation"}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-background md:bg-card">
               {selectedMatchId ? (
-                <div className="flex-1 p-0 md:p-4 overflow-hidden h-full">
+                <div className="flex-1 p-0 md:p-3 lg:p-4 overflow-hidden h-full">
                   <ChatWindow matchId={selectedMatchId} userId={user.id} />
                 </div>
               ) : (
@@ -145,7 +145,7 @@ const Messages = () => {
                   icon={MessageSquare}
                   title="Aucune conversation sélectionnée"
                   description="Sélectionne une conversation dans la liste à gauche pour commencer à discuter."
-                  className="py-8 h-full flex flex-col justify-center"
+                  className="py-6 sm:py-8 h-full flex flex-col justify-center"
                 />
               )}
             </CardContent>
