@@ -105,7 +105,6 @@ const Profile = () => {
     setLastName(profileData.last_name || "");
     setCountryOfResidence(profileData.country_of_residence || "");
 
-    // Fetch private info
     const { data: privateData } = await supabase
       .from("private_info")
       .select("*")
@@ -115,9 +114,7 @@ const Profile = () => {
     if (privateData) {
       setPrivateInfo(privateData as PrivateInfoData);
 
-      // Découpage du numéro si présent
       if (privateData.phone) {
-        // On essaie de deviner l'indicatif
         const foundCode = COUNTRY_CODES.find((c) => privateData.phone!.startsWith(c.code));
         if (foundCode) {
           setPhoneCode(foundCode.code);
@@ -140,7 +137,6 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    // On laisse le Layout gérer mais au cas où
     await supabase.auth.signOut();
     localStorage.clear();
     window.location.href = "/";
@@ -251,7 +247,7 @@ const Profile = () => {
   }
 
   return (
-    <DashboardLayout role={profile.role as "traveler" | "sender"} fullName={profile.full_name} onLogout={handleLogout}>
+    <DashboardLayout role={profile.role} fullName={profile.full_name} onLogout={handleLogout}>
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Mon profil</h1>
 
@@ -273,7 +269,8 @@ const Profile = () => {
               </div>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <ActivityBadge isActive={isActive} role={profile.role} />
+                {/* LA CORRECTION EST ICI : On force le type pour éviter l'erreur TS */}
+                <ActivityBadge isActive={isActive} role={profile.role as "traveler" | "sender"} />
                 <KycBadge status={kycStatus} />
               </div>
             </div>
