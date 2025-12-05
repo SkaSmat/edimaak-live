@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,14 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
   const today = new Date().toISOString().split("T")[0];
 
+  // LOGIQUE ANTI-DOUBLON
+  useEffect(() => {
+    if (formData.fromCountry === formData.toCountry) {
+      const otherCountry = COUNTRIES.find((c) => c !== formData.fromCountry) || "Algérie";
+      setFormData((prev) => ({ ...prev, toCountry: otherCountry, toCity: "" }));
+    }
+  }, [formData.fromCountry]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -58,13 +66,9 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     setLoading(true);
 
     try {
-      // 1. Validation STRICTE des pays
-      if (formData.fromCountry === formData.toCountry) {
-        throw new Error("Le pays de départ et d'arrivée doivent être différents (Transport international uniquement).");
-      }
-
       if (parseFloat(formData.weightKg) <= 0) throw new Error("Le poids doit être positif");
       if (formData.latestDate < formData.earliestDate) throw new Error("La date limite est avant la date de début");
+      if (formData.fromCountry === formData.toCountry) throw new Error("Départ et arrivée identiques.");
       if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
 
       let imageUrl: string | null = null;
@@ -116,7 +120,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
             required
           >
             {COUNTRIES.map((c) => (
-              <option key={c} value={c}>
+              <option
+                key={c}
+                value={c}
+                disabled={c === formData.toCountry}
+                className={c === formData.toCountry ? "text-gray-300" : ""}
+              >
                 {c}
               </option>
             ))}
@@ -142,7 +151,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
             required
           >
             {COUNTRIES.map((c) => (
-              <option key={c} value={c}>
+              <option
+                key={c}
+                value={c}
+                disabled={c === formData.fromCountry}
+                className={c === formData.fromCountry ? "text-gray-300" : ""}
+              >
                 {c}
               </option>
             ))}
