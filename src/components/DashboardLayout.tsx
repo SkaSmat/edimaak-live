@@ -168,6 +168,8 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
               fullName={fullName}
               onLogout={handleInternalLogout}
               unreadCount={unreadCount + pendingMatchCount}
+              role={role}
+              onSwitchRole={switchRole}
             />
           </div>
 
