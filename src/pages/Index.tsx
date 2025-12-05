@@ -51,6 +51,7 @@ interface ShipmentRequest {
   sender_request_count?: number;
 }
 
+// Liste des pays disponibles
 const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
 
 const Index = () => {
@@ -60,7 +61,7 @@ const Index = () => {
   const { session, userRole, isLoading: authLoading } = useAuth();
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
-  // Nouveaux states pour les pays
+  // NOUVEAU : Gestion des pays indépendants
   const [fromCountry, setFromCountry] = useState("France");
   const [toCountry, setToCountry] = useState("Algérie");
 
@@ -78,12 +79,17 @@ const Index = () => {
   const currentSearchDate = searchParams.get("date") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
-  // Inversion intelligente
+  // Fonction d'inversion complète (Pays + Ville)
   const toggleDirection = () => {
+    // On inverse les pays
+    const tempCountry = fromCountry;
     setFromCountry(toCountry);
-    setToCountry(fromCountry);
+    setToCountry(tempCountry);
+
+    // On inverse aussi les villes saisies
+    const tempCity = localFromCity;
     setLocalFromCity(localToCity);
-    setLocalToCity(localFromCity);
+    setLocalToCity(tempCity);
   };
 
   const getDashboardPath = (userRole: UserRole): string => {
@@ -149,6 +155,7 @@ const Index = () => {
 
   const filteredRequests = useMemo(() => {
     let filtered = shipmentRequests;
+    // Note : On filtre principalement sur la ville car c'est ce qui est le plus précis
     if (currentFromCity)
       filtered = filtered.filter((req) => req.from_city.toLowerCase().includes(currentFromCity.toLowerCase().trim()));
     if (currentToCity)
@@ -159,14 +166,18 @@ const Index = () => {
 
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
-    if (fromCountry === toCountry && localFromCity === localToCity) {
+
+    // Petite validation
+    if (fromCountry === toCountry && localFromCity === localToCity && localFromCity !== "") {
       toast.error("Le départ et l'arrivée ne peuvent pas être identiques.");
       return;
     }
+
     const newParams: Record<string, string> = {};
     if (localFromCity.trim()) newParams.from = localFromCity.trim();
     if (localToCity.trim()) newParams.to = localToCity.trim();
     if (localSearchDate) newParams.date = localSearchDate;
+
     setSearchParams(newParams);
 
     if (Object.keys(newParams).length > 0) {
@@ -200,6 +211,7 @@ const Index = () => {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 max-w-7xl h-16 sm:h-20 flex items-center justify-between">
           <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
+
           <div className="flex items-center gap-2 sm:gap-4">
             {authLoading ? (
               <div className="h-10 w-32 bg-gray-200 rounded-full animate-pulse" />
@@ -243,30 +255,35 @@ const Index = () => {
         </div>
       </section>
 
+      {/* BARRE DE RECHERCHE "STYLE AIRBNB" - DESIGN FINAL */}
       <form onSubmit={handleSearchClick} className="relative z-40 px-4">
         <div className="container mx-auto max-w-4xl">
           <div className="bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 flex flex-col md:flex-row items-center p-2 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-            {/* Champ Départ */}
+            {/* Champ Départ (Pays sélectionnable) */}
             <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-              <select
-                value={fromCountry}
-                onChange={(e) => {
-                  setFromCountry(e.target.value);
-                  setLocalFromCity("");
-                }}
-                className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    Départ ({c})
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800">Départ</span>
+                <select
+                  value={fromCountry}
+                  onChange={(e) => {
+                    setFromCountry(e.target.value);
+                    setLocalFromCity("");
+                  }}
+                  className="text-[10px] font-bold text-primary uppercase tracking-wider bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:underline"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>
+                      ({c})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="w-full">
                 <CityAutocomplete
-                  placeholder={`Ville de ${fromCountry}`}
+                  placeholder={`Ville de départ`}
                   value={localFromCity}
                   onChange={setLocalFromCity}
+                  // On passe le pays sélectionné pour filtrer la liste
                   limitToCountry={fromCountry}
                   className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
                 />
@@ -287,25 +304,28 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Champ Arrivée */}
+            {/* Champ Arrivée (Pays sélectionnable) */}
             <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8">
-              <select
-                value={toCountry}
-                onChange={(e) => {
-                  setToCountry(e.target.value);
-                  setLocalToCity("");
-                }}
-                className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    Arrivée ({c})
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800">Arrivée</span>
+                <select
+                  value={toCountry}
+                  onChange={(e) => {
+                    setToCountry(e.target.value);
+                    setLocalToCity("");
+                  }}
+                  className="text-[10px] font-bold text-primary uppercase tracking-wider bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:underline"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>
+                      ({c})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="w-full">
                 <CityAutocomplete
-                  placeholder={`Ville de ${toCountry}`}
+                  placeholder={`Ville d'arrivée`}
                   value={localToCity}
                   onChange={setLocalToCity}
                   limitToCountry={toCountry}
@@ -314,9 +334,10 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Champ Date */}
             <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
-                Départ
+                Date de départ
               </label>
               <Input
                 type="date"
@@ -326,6 +347,7 @@ const Index = () => {
               />
             </div>
 
+            {/* Bouton Recherche */}
             <div className="pl-2 pr-1 w-full md:w-auto">
               <Button
                 type="submit"
@@ -337,6 +359,7 @@ const Index = () => {
               </Button>
             </div>
           </div>
+
           <div className="md:hidden flex justify-center mt-4 mb-4 relative z-50">
             <Button
               type="button"
@@ -357,6 +380,7 @@ const Index = () => {
             {isSearching ? `Résultats (${filteredRequests.length})` : "Dernières annonces"}
           </h2>
         </div>
+
         {isLoading && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (
@@ -364,6 +388,7 @@ const Index = () => {
             ))}
           </div>
         )}
+
         {!isLoading && filteredRequests.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-3xl border border-dashed border-gray-200 text-center">
             <div className="bg-primary/10 p-4 rounded-full mb-4">
@@ -380,6 +405,7 @@ const Index = () => {
             </Button>
           </div>
         )}
+
         {!isLoading && filteredRequests.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredRequests.map((request) => (
@@ -401,6 +427,7 @@ const Index = () => {
                     {request.weight_kg} kg
                   </div>
                 </div>
+
                 <div className="p-4 flex flex-col flex-1">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -413,6 +440,7 @@ const Index = () => {
                       </div>
                     )}
                   </div>
+
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4 text-gray-400" />
@@ -422,6 +450,7 @@ const Index = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
                     <UserAvatar
                       fullName={request.profiles?.full_name || ""}
@@ -440,11 +469,13 @@ const Index = () => {
           </div>
         )}
       </main>
+
       <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-gray-400">
           © 2025 EDIM3AK. La plateforme de confiance.
         </div>
       </footer>
+
       {selectedShipment && (
         <ShipmentDetailModal
           isOpen={!!selectedShipment}
