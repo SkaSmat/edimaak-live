@@ -217,17 +217,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
+      {/* HEADER OPTIMISÉ */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="container mx-auto px-4 max-w-7xl h-16 sm:h-20 flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 max-w-7xl h-14 sm:h-16 md:h-20 flex items-center justify-between">
           <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
             {authLoading ? (
-              <div className="h-10 w-32 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-8 sm:h-10 w-24 sm:w-32 bg-gray-200 rounded-full animate-pulse" />
             ) : session ? (
-              <Button onClick={handleDashboardClick} className="rounded-full font-medium relative overflow-visible">
-                Mon Dashboard
+              <Button
+                onClick={handleDashboardClick}
+                size="sm"
+                className="rounded-full font-medium relative overflow-visible text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-10"
+              >
+                <span className="hidden sm:inline">Mon Dashboard</span>
+                <span className="sm:hidden">Dashboard</span>
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[9px] sm:text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -237,12 +243,18 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/auth?role=sender")}
-                  className="hidden sm:inline-flex text-gray-600"
+                  size="sm"
+                  className="hidden md:inline-flex text-gray-600 text-xs sm:text-sm"
                 >
                   Devenir expéditeur
                 </Button>
-                <Button onClick={() => navigate("/auth")} className="rounded-full px-6 shadow-sm">
-                  Se connecter
+                <Button
+                  onClick={() => navigate("/auth")}
+                  size="sm"
+                  className="rounded-full px-3 sm:px-6 shadow-sm text-xs sm:text-sm h-8 sm:h-10"
+                >
+                  <span className="hidden sm:inline">Se connecter</span>
+                  <span className="sm:hidden">Connexion</span>
                 </Button>
               </>
             )}
@@ -250,13 +262,14 @@ const Index = () => {
         </div>
       </header>
 
-      <section className="pt-12 pb-8 sm:pt-24 sm:pb-12">
+      {/* HERO OPTIMISÉ */}
+      <section className="pt-8 pb-6 sm:pt-16 sm:pb-8 md:pt-24 md:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="text-center mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 sm:mb-6 leading-tight tracking-tight">
+          <div className="text-center mb-6 sm:mb-8 md:mb-12">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight px-2">
               Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
-            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs France ⇄ Algérie et
               International.
             </p>
@@ -264,36 +277,119 @@ const Index = () => {
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE OPTIMISÉE */}
-      {/* BARRE DE RECHERCHE - DESIGN RESPONSIVE CORRIGÉ */}
-      <form onSubmit={handleSearchClick} className="relative z-40 px-4 w-full">
+      {/* BARRE DE RECHERCHE MOBILE-FIRST */}
+      <form onSubmit={handleSearchClick} className="relative z-40 px-3 sm:px-4 mb-8">
         <div className="container mx-auto max-w-4xl">
-          {/* CONTENEUR PRINCIPAL
-                - Mobile (base) : flex-col (vertical), gap-3 (espacé), rounded-3xl (coins normaux)
-                - PC (md) : flex-row (horizontal), gap-0 (collé), rounded-full (pilule), divide-x (séparateurs)
-            */}
-          <div className="bg-white rounded-3xl md:rounded-full shadow-xl border border-gray-200 flex flex-col md:flex-row items-stretch p-3 md:p-2 gap-3 md:gap-0 md:divide-x divide-gray-100">
-            {/* 1. BLOC DÉPART */}
-            <div className="flex-1 relative group px-4 md:px-6 py-2 hover:bg-gray-50 rounded-xl md:rounded-l-full transition-colors cursor-pointer border md:border-0 border-gray-100">
-              <div className="flex items-center gap-1 mb-0.5">
+          {/* VERSION MOBILE (< md) : Layout vertical */}
+          <div className="md:hidden bg-white rounded-2xl shadow-lg border border-gray-200 p-4 space-y-3">
+            {/* DÉPART */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Départ</span>
+                <select
+                  value={fromCountry}
+                  onChange={(e) => {
+                    setFromCountry(e.target.value);
+                    setLocalFromCity("");
+                  }}
+                  className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <CityAutocomplete
+                placeholder={`Ville de ${fromCountry}`}
+                value={localFromCity}
+                onChange={setLocalFromCity}
+                limitToCountry={fromCountry}
+                className="border border-gray-200 rounded-lg p-2.5 text-sm w-full"
+              />
+            </div>
+
+            {/* BOUTON INVERSER MOBILE */}
+            <div className="flex justify-center -my-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={toggleDirection}
+                className="rounded-full h-8 px-4 bg-gray-50 text-xs border-gray-200 gap-2"
+              >
+                <ArrowRightLeft className="w-3 h-3" /> Inverser
+              </Button>
+            </div>
+
+            {/* ARRIVÉE */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Arrivée</span>
+                <select
+                  value={toCountry}
+                  onChange={(e) => {
+                    setToCountry(e.target.value);
+                    setLocalToCity("");
+                  }}
+                  className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c} disabled={c === fromCountry}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <CityAutocomplete
+                placeholder={`Ville de ${toCountry}`}
+                value={localToCity}
+                onChange={setLocalToCity}
+                limitToCountry={toCountry}
+                className="border border-gray-200 rounded-lg p-2.5 text-sm w-full"
+              />
+            </div>
+
+            {/* DATE MOBILE */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500 block">Quand ?</label>
+              <Input
+                type="date"
+                value={localSearchDate}
+                onChange={(e) => setLocalSearchDate(e.target.value)}
+                className="border-gray-200 rounded-lg p-2.5 text-sm w-full"
+              />
+            </div>
+
+            {/* BOUTON RECHERCHE MOBILE */}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full rounded-xl h-12 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base"
+            >
+              <Search className="w-5 h-5 mr-2" />
+              Rechercher
+            </Button>
+          </div>
+
+          {/* VERSION DESKTOP (≥ md) : Layout horizontal */}
+          <div className="hidden md:flex bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 items-center p-2 divide-x divide-gray-100 relative">
+            {/* DÉPART */}
+            <div className="flex-1 px-6 py-2.5 hover:bg-gray-50 rounded-full transition-colors">
+              <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Départ</span>
                 <div className="relative">
-                  {/* Sélecteur de Pays */}
                   <select
                     value={fromCountry}
                     onChange={(e) => {
                       setFromCountry(e.target.value);
                       setLocalFromCity("");
                     }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary"
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase pr-4 cursor-pointer outline-none hover:text-primary"
                   >
                     {COUNTRIES.map((c) => (
-                      <option
-                        key={c}
-                        value={c}
-                        disabled={c === toCountry}
-                        className={c === toCountry ? "text-gray-300" : ""}
-                      >
+                      <option key={c} value={c}>
                         {c}
                       </option>
                     ))}
@@ -301,32 +397,17 @@ const Index = () => {
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <div className="w-full">
-                <CityAutocomplete
-                  placeholder={`Ville de départ`}
-                  value={localFromCity}
-                  onChange={setLocalFromCity}
-                  limitToCountry={fromCountry}
-                  className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
-                />
-              </div>
+              <CityAutocomplete
+                placeholder={`Ville de ${fromCountry}`}
+                value={localFromCity}
+                onChange={setLocalFromCity}
+                limitToCountry={fromCountry}
+                className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full"
+              />
             </div>
 
-            {/* BOUTON INVERSION (Mobile : Bouton visible entre les champs) */}
-            <div className="md:hidden flex justify-center -my-4 z-10">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={toggleDirection}
-                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
-              </Button>
-            </div>
-
-            {/* BOUTON INVERSION (PC : Absolu au centre) */}
-            <div className="hidden md:flex absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            {/* BOUTON INVERSER DESKTOP - POSITION RESPONSIVE */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <Button
                 type="button"
                 variant="outline"
@@ -338,27 +419,21 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* 2. BLOC ARRIVÉE */}
-            <div className="flex-1 relative group px-4 md:px-6 py-2 hover:bg-gray-50 rounded-xl md:rounded-none transition-colors cursor-pointer md:pl-8 border md:border-0 border-gray-100">
-              <div className="flex items-center gap-1 mb-0.5">
+            {/* ARRIVÉE */}
+            <div className="flex-1 px-6 py-2.5 hover:bg-gray-50 rounded-full transition-colors">
+              <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Arrivée</span>
                 <div className="relative">
-                  {/* Sélecteur de Pays */}
                   <select
                     value={toCountry}
                     onChange={(e) => {
                       setToCountry(e.target.value);
                       setLocalToCity("");
                     }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary"
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase pr-4 cursor-pointer outline-none hover:text-primary"
                   >
                     {COUNTRIES.map((c) => (
-                      <option
-                        key={c}
-                        value={c}
-                        disabled={c === fromCountry}
-                        className={c === fromCountry ? "text-gray-300" : ""}
-                      >
+                      <option key={c} value={c} disabled={c === fromCountry}>
                         {c}
                       </option>
                     ))}
@@ -366,55 +441,52 @@ const Index = () => {
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <div className="w-full">
-                <CityAutocomplete
-                  placeholder={`Ville d'arrivée`}
-                  value={localToCity}
-                  onChange={setLocalToCity}
-                  limitToCountry={toCountry}
-                  className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
-                />
-              </div>
+              <CityAutocomplete
+                placeholder={`Ville de ${toCountry}`}
+                value={localToCity}
+                onChange={setLocalToCity}
+                limitToCountry={toCountry}
+                className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full"
+              />
             </div>
 
-            {/* 3. BLOC DATE */}
-            <div className="flex-[0.8] relative group px-4 md:px-6 py-2 hover:bg-gray-50 rounded-xl md:rounded-none transition-colors cursor-pointer border md:border-0 border-gray-100">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block mb-0.5">
-                Date
+            {/* DATE */}
+            <div className="flex-[0.8] px-6 py-2.5 hover:bg-gray-50 rounded-full transition-colors">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block mb-1">
+                Quand ?
               </label>
               <Input
                 type="date"
                 value={localSearchDate}
                 onChange={(e) => setLocalSearchDate(e.target.value)}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm font-medium text-gray-700 w-full p-0 h-auto cursor-pointer"
+                className="border-0 bg-transparent focus-visible:ring-0 text-sm font-medium w-full p-0 h-auto"
               />
             </div>
 
-            {/* 4. BOUTON RECHERCHE */}
-            <div className="w-full md:w-auto pl-0 md:pl-2 md:pr-1">
+            {/* BOUTON RECHERCHE */}
+            <div className="pl-2 pr-1">
               <Button
                 type="submit"
                 size="lg"
-                className="w-full md:w-auto rounded-xl md:rounded-full h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
+                className="rounded-full h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold"
               >
                 <Search className="w-5 h-5" />
-                <span className="md:hidden">Rechercher</span>
               </Button>
             </div>
           </div>
         </div>
       </form>
 
-      {/* Reste du contenu (inchangé) */}
-      <main className="container mx-auto px-4 max-w-7xl pb-20 pt-12" id="results-section">
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
+      {/* SECTION RÉSULTATS */}
+      <main className="container mx-auto px-3 sm:px-4 max-w-7xl pb-12 sm:pb-20 pt-6 sm:pt-12" id="results-section">
+        <div className="mb-6 sm:mb-8 flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             {isSearching ? `Résultats (${filteredRequests.length})` : "Dernières annonces"}
           </h2>
         </div>
 
         {isLoading && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(8)].map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -422,16 +494,18 @@ const Index = () => {
         )}
 
         {!isLoading && filteredRequests.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-3xl border border-dashed border-gray-200 text-center">
-            <div className="bg-primary/10 p-4 rounded-full mb-4">
-              <Bell className="w-8 h-8 text-primary" />
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 bg-white rounded-2xl sm:rounded-3xl border border-dashed border-gray-200 text-center">
+            <div className="bg-primary/10 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
+              <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun trajet ne correspond</h3>
-            <p className="text-gray-500 max-w-md mb-8">Créez une alerte voyageur et nous vous préviendrons.</p>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun trajet ne correspond</h3>
+            <p className="text-sm sm:text-base text-gray-500 max-w-md mb-6 sm:mb-8">
+              Créez une alerte voyageur et nous vous préviendrons.
+            </p>
             <Button
               onClick={() => navigate("/auth?role=traveler")}
               size="lg"
-              className="rounded-full px-8 text-base shadow-lg shadow-primary/20"
+              className="rounded-full px-6 sm:px-8 text-sm sm:text-base shadow-lg shadow-primary/20"
             >
               Créer une alerte
             </Button>
@@ -439,12 +513,12 @@ const Index = () => {
         )}
 
         {!isLoading && filteredRequests.length > 0 && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredRequests.map((request) => (
               <div
                 key={request.id}
                 role="button"
-                className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col focus:outline-none"
+                className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col"
                 onClick={() => handleShipmentClick(request)}
               >
                 <div className="aspect-[4/3] overflow-hidden relative bg-gray-100">
@@ -454,43 +528,47 @@ const Index = () => {
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-gray-900 text-xs font-bold px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
-                    <Package className="w-3 h-3 text-primary" />
+                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 backdrop-blur-md text-gray-900 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shadow-sm flex items-center gap-1">
+                    <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
                     {request.weight_kg} kg
                   </div>
                 </div>
 
-                <div className="p-4 flex flex-col flex-1">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-lg leading-tight">{request.to_city}</h3>
-                      <p className="text-sm text-gray-500">Depuis {request.from_city}</p>
+                <div className="p-3 sm:p-4 flex flex-col flex-1">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight truncate">
+                        {request.to_city}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">Depuis {request.from_city}</p>
                     </div>
                     {(request.sender_request_count || 0) > 2 && (
-                      <div className="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" /> FIABLE
+                      <div className="bg-green-50 text-green-700 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ml-2">
+                        <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        <span className="hidden sm:inline">FIABLE</span>
+                        <span className="sm:hidden">✓</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>
+                  <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">
                         {format(new Date(request.earliest_date), "dd MMM")} -{" "}
                         {format(new Date(request.latest_date), "dd MMM")}
                       </span>
                     </div>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
+                  <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
                     <UserAvatar
                       fullName={request.profiles?.full_name || ""}
                       avatarUrl={request.profiles?.avatar_url}
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
                       </p>
                     </div>
@@ -502,8 +580,9 @@ const Index = () => {
         )}
       </main>
 
-      <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-400">
+      {/* FOOTER */}
+      <footer className="border-t border-gray-200 bg-white py-6 sm:py-8 mt-auto">
+        <div className="container mx-auto px-4 text-center text-xs sm:text-sm text-gray-400">
           © 2025 EDIM3AK. La plateforme de confiance.
         </div>
       </footer>
