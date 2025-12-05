@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { FeedbackButton } from "./FeedbackButton";
 import { Badge } from "@/components/ui/badge";
+// CORRECTION ICI : Ajout de l'import Button qui manquait
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -254,6 +256,7 @@ export const DashboardMobileHeader = ({
         <div className="relative flex items-center justify-center">
           <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
 
+          {/* LE BADGE : Si des notifs existent (messages OU matchs) */}
           {unreadCount > 0 && (
             <div className="absolute -top-1 -right-1 z-50 pointer-events-none">
               <span className="relative flex h-4 w-4">
