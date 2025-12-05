@@ -176,7 +176,7 @@ const SenderDashboard = () => {
             </div>
           </div>
 
-          <SenderShipments />
+          <SenderShipments embedded />
         </div>
       </div>
     </DashboardLayout>

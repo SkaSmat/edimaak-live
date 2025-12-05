@@ -22,6 +22,7 @@ import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
+import { PublicProfileModal } from "@/components/PublicProfileModal";
 import { toast } from "sonner";
 // IMPORTS MODULAIRES AJOUTÉS
 import { useAuth, UserRole } from "@/hooks/useAuth";
@@ -72,6 +73,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // Valeurs réelles des filtres lues de l'URL
   const currentFromCity = searchParams.get("from") || "";
@@ -457,15 +459,39 @@ const Index = () => {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
-                    <UserAvatar
-                      fullName={request.profiles?.full_name || ""}
-                      avatarUrl={request.profiles?.avatar_url}
-                      size="sm"
-                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (session) {
+                          setSelectedProfileId(request.sender_id);
+                        } else {
+                          toast.info("Connectez-vous pour voir le profil");
+                        }
+                      }}
+                      className="hover:opacity-80 transition-opacity"
+                    >
+                      <UserAvatar
+                        fullName={request.profiles?.full_name || ""}
+                        avatarUrl={request.profiles?.avatar_url}
+                        size="sm"
+                      />
+                    </button>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (session) {
+                            setSelectedProfileId(request.sender_id);
+                          } else {
+                            toast.info("Connectez-vous pour voir le profil");
+                          }
+                        }}
+                        className="text-sm font-medium text-gray-900 truncate hover:text-primary transition-colors text-left"
+                      >
                         {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
-                      </p>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -501,6 +527,19 @@ const Index = () => {
           isAuthenticated={!!session}
           onSignUp={handleSignUp}
           onLogin={handleLogin}
+          onViewProfile={(userId) => {
+            setSelectedShipment(null);
+            setSelectedProfileId(userId);
+          }}
+        />
+      )}
+
+      {/* MODAL PROFIL PUBLIC */}
+      {selectedProfileId && (
+        <PublicProfileModal
+          isOpen={!!selectedProfileId}
+          onClose={() => setSelectedProfileId(null)}
+          userId={selectedProfileId}
         />
       )}
     </div>
