@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar, DashboardMobileHeader } from "./DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle, Handshake } from "lucide-react";
+import { LogOut, MessageCircle, RefreshCw, Handshake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -24,6 +24,38 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingMatchCount, setPendingMatchCount] = useState(0);
   const location = useLocation();
+
+  // --- FONCTION SWITCH ROLE (CORRIGÉE) ---
+  const switchRole = async () => {
+    try {
+      const newRole = role === "traveler" ? "sender" : "traveler";
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée");
+        return;
+      }
+
+      // On tente la mise à jour
+      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", session.user.id);
+
+      if (error) {
+        console.error("Erreur RLS:", error);
+        toast.error("Erreur de droits. Demandez à l'admin d'activer la policy SQL.");
+        return;
+      }
+
+      toast.success(`Vous êtes passé en mode ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} !`);
+
+      // On recharge la page vers le bon dashboard
+      window.location.href = newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de changer de mode");
+    }
+  };
 
   const handleInternalLogout = async () => {
     try {
@@ -121,8 +153,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
 
   return (
     <SidebarProvider defaultOpen={false}>
-      {/* CORRECTION ICI : max-w-[100vw] et overflow-x-hidden pour empêcher le scroll horizontal */}
-      <div className="min-h-screen flex w-full bg-background relative max-w-[100vw] overflow-x-hidden">
+      <div className="min-h-screen flex w-full bg-background relative">
         <DashboardSidebar
           role={role === "admin" ? "traveler" : role}
           isAdmin={effectiveIsAdmin}
@@ -147,18 +178,37 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
                 {roleLabel}
               </Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleInternalLogout}
-              className="text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
-            </Button>
+
+            <div className="flex items-center gap-3">
+              {/* BOUTON CHANGER DE MODE (Bien visible et à gauche de déconnexion) */}
+              {role !== "admin" && (
+                <Button
+                  // Style 'default' (rempli) ou 'outline' avec couleur forte pour être visible
+                  variant="outline"
+                  size="sm"
+                  onClick={switchRole}
+                  className="gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm"
+                  title={`Cliquez pour passer au mode ${role === "traveler" ? "Expéditeur" : "Voyageur"}`}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Passer au mode {role === "traveler" ? "Expéditeur" : "Voyageur"}
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleInternalLogout}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                title="Se déconnecter"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Déconnexion
+              </Button>
+            </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-[100vw]">
+          <main className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>
           </main>
         </SidebarInset>
