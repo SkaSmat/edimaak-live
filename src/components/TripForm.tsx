@@ -13,6 +13,53 @@ interface TripFormProps {
   onSuccess: () => void;
 }
 
+// LISTES STRICTES
+const CITIES_FRANCE = [
+  "Paris",
+  "Lyon",
+  "Marseille",
+  "Toulouse",
+  "Nice",
+  "Nantes",
+  "Montpellier",
+  "Strasbourg",
+  "Bordeaux",
+  "Lille",
+  "Rennes",
+  "Reims",
+  "Le Havre",
+  "Saint-Étienne",
+  "Toulon",
+  "Grenoble",
+  "Dijon",
+  "Angers",
+  "Nîmes",
+  "Villeurbanne",
+];
+
+const CITIES_ALGERIA = [
+  "Alger",
+  "Oran",
+  "Constantine",
+  "Annaba",
+  "Blida",
+  "Batna",
+  "Djelfa",
+  "Sétif",
+  "Sidi Bel Abbès",
+  "Biskra",
+  "Tébessa",
+  "El Oued",
+  "Skikda",
+  "Tiaret",
+  "Béjaïa",
+  "Tlemcen",
+  "Ouargla",
+  "Béchar",
+  "Mostaganem",
+  "Bordj Bou Arreridj",
+];
+
 const TripForm = ({ userId, onSuccess }: TripFormProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,24 +69,30 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
     toCity: "",
     departureDate: "",
     arrivalDate: "",
-    maxWeightKg: "",
+    maxWeightKg: "", // String vide par défaut
     notes: "",
   });
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Fonction pour inverser le sens du voyage en un clic
+  useEffect(() => {
+    if (formData.fromCountry === "France") {
+      setFormData((prev) => ({ ...prev, toCountry: "Algérie", fromCity: "", toCity: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, toCountry: "France", fromCity: "", toCity: "" }));
+    }
+  }, [formData.fromCountry]);
+
   const toggleDirection = () => {
     setFormData((prev) => ({
       ...prev,
       fromCountry: prev.toCountry,
-      fromCity: "", // On vide les villes car elles ne sont plus valides
+      fromCity: "",
       toCountry: prev.fromCountry,
       toCity: "",
     }));
   };
 
-  // Sécurité : Si l'utilisateur change manuellement le pays (via select), on adapte l'autre
   const handleCountryChange = (type: "from" | "to", value: string) => {
     if (type === "from") {
       const newFrom = value as "France" | "Algérie";
@@ -52,14 +105,25 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
     }
   };
 
+  const departureCities = formData.fromCountry === "France" ? CITIES_FRANCE : CITIES_ALGERIA;
+  const arrivalCities = formData.toCountry === "France" ? CITIES_FRANCE : CITIES_ALGERIA;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (parseFloat(formData.maxWeightKg) <= 0) throw new Error("Le poids doit être positif");
-      if (formData.arrivalDate && formData.arrivalDate < formData.departureDate) throw new Error("Erreur de dates");
-      if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
+      // Validation dates
+      if (formData.arrivalDate && formData.arrivalDate < formData.departureDate) {
+        throw new Error("La date d'arrivée ne peut pas être avant la date de départ");
+      }
+      if (!formData.fromCity || !formData.toCity) {
+        throw new Error("Veuillez sélectionner les villes");
+      }
+
+      // CORRECTION : Poids optionnel
+      // Si vide -> on envoie 0 (pour ne pas casser le type numérique de la base)
+      const weightToSend = formData.maxWeightKg ? parseFloat(formData.maxWeightKg) : 0;
 
       const { error } = await supabase.from("trips").insert({
         traveler_id: userId,
@@ -69,7 +133,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
         to_city: formData.toCity,
         departure_date: formData.departureDate,
         arrival_date: formData.arrivalDate || null,
-        max_weight_kg: parseFloat(formData.maxWeightKg),
+        max_weight_kg: weightToSend, // On envoie 0 si vide
         notes: formData.notes || null,
       });
 
@@ -77,8 +141,8 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
       toast.success("Voyage créé avec succès !");
       onSuccess();
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Erreur création voyage");
+      console.error("Error creating trip:", error);
+      toast.error(error.message || "Une erreur est survenue.");
     } finally {
       setLoading(false);
     }
@@ -123,13 +187,19 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Ville</Label>
-            {/* ICI : On passe limitToCountry pour restreindre la liste */}
-            <CityAutocomplete
+            <select
               value={formData.fromCity}
-              onChange={(val) => setFormData({ ...formData, fromCity: val })}
-              limitToCountry={formData.fromCountry}
-              placeholder={`Ville de départ (${formData.fromCountry})`}
-            />
+              onChange={(e) => setFormData({ ...formData, fromCity: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
+              required
+            >
+              <option value="">Choisir une ville...</option>
+              {departureCities.sort().map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1">
@@ -157,23 +227,33 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Ville</Label>
-            <CityAutocomplete
+            <select
               value={formData.toCity}
-              onChange={(val) => setFormData({ ...formData, toCity: val })}
-              limitToCountry={formData.toCountry}
-              placeholder={`Ville d'arrivée (${formData.toCountry})`}
-            />
+              onChange={(e) => setFormData({ ...formData, toCity: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
+              required
+            >
+              <option value="">Choisir une ville...</option>
+              {arrivalCities.sort().map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1">
-            <Label>Poids Dispo (kg)</Label>
+            {/* CORRECTION ICI : Label Optionnel et pas de required */}
+            <Label>
+              Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span>
+            </Label>
             <Input
               type="number"
               step="0.5"
-              min="0.5"
+              min="0"
               value={formData.maxWeightKg}
               onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
-              required
+              // Pas de 'required'
               placeholder="Ex: 23"
             />
           </div>
