@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, MessageSquare, UserCircle } from "lucide-react";
+import { LogOut, MessageSquare, UserCircle, ArrowLeftRight, Loader2 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface DashboardHeaderProps {
   fullName: string;
@@ -17,6 +20,30 @@ export const DashboardHeader = ({
 }: DashboardHeaderProps) => {
   const navigate = useNavigate();
   const firstName = fullName.split(" ")[0];
+  const [switching, setSwitching] = useState(false);
+
+  const handleSwitchRole = async () => {
+    setSwitching(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non connecté");
+
+      const newRole = role === "traveler" ? "sender" : "traveler";
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: newRole })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success(`Vous êtes maintenant ${newRole === "traveler" ? "Voyageur" : "Expéditeur"}`);
+      navigate(newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender");
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors du changement");
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   return (
     <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
@@ -25,7 +52,7 @@ export const DashboardHeader = ({
         <LogoEdiM3ak iconSize="md" onClick={() => navigate("/")} />
 
         {/* Right side */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* User greeting */}
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm text-foreground">
@@ -35,6 +62,24 @@ export const DashboardHeader = ({
               {role === "traveler" ? "Voyageur" : "Expéditeur"}
             </Badge>
           </div>
+
+          {/* Switch role button */}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleSwitchRole}
+            disabled={switching}
+            className="gap-1.5"
+          >
+            {switching ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowLeftRight className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">
+              {role === "traveler" ? "Expédier" : "Voyager"}
+            </span>
+          </Button>
 
           {/* Profile button */}
           <Button 

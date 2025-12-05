@@ -76,13 +76,12 @@ const CITIES_ALGERIA = [
   "Abalessa", "In Guezzam", "Tinzaouatine", "In Amguel", "Silet", "Tazrouk", "Ideles"
 ];
 
-const CITIES = [...CITIES_FRANCE, ...CITIES_ALGERIA];
-
 interface CityAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  country?: "France" | "Algérie";
 }
 
 export const CityAutocomplete = ({
@@ -90,6 +89,7 @@ export const CityAutocomplete = ({
   onChange,
   placeholder,
   className,
+  country,
 }: CityAutocompleteProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredCities, setFilteredCities] = useState<string[]>([]);
@@ -97,7 +97,15 @@ export const CityAutocomplete = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Sélectionne la liste de villes selon le pays
+  const getCitiesList = () => {
+    if (country === "France") return CITIES_FRANCE;
+    if (country === "Algérie") return CITIES_ALGERIA;
+    return [...CITIES_FRANCE, ...CITIES_ALGERIA];
+  };
+
   useEffect(() => {
+    const CITIES = getCitiesList();
     if (value.trim().length >= 1) {
       const search = value.toLowerCase().trim();
       // Priorité aux villes qui commencent par la recherche
@@ -117,7 +125,7 @@ export const CityAutocomplete = ({
       setFilteredCities([]);
       setIsOpen(false);
     }
-  }, [value]);
+  }, [value, country]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -130,6 +130,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
             value={formData.fromCity}
             onChange={(val) => setFormData({ ...formData, fromCity: val })}
             placeholder={formData.fromCountry === "France" ? "Ex: Paris" : "Ex: Alger"}
+            country={formData.fromCountry as "France" | "Algérie"}
           />
         </div>
 
@@ -139,15 +140,15 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
           <select
             id="toCountry"
             value={formData.toCountry}
-            // On empêche la modification manuelle incohérente si on veut forcer le cross-border
-            // Ou on laisse libre mais on a l'auto-switch qui aide
             onChange={(e) => setFormData({ ...formData, toCountry: e.target.value })}
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
+            disabled
           >
             <option value="Algérie">Algérie</option>
             <option value="France">France</option>
           </select>
+          <p className="text-[10px] text-muted-foreground">Automatiquement défini selon le pays de départ</p>
         </div>
 
         <div className="space-y-2">
@@ -156,6 +157,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
             value={formData.toCity}
             onChange={(val) => setFormData({ ...formData, toCity: val })}
             placeholder={formData.toCountry === "France" ? "Ex: Paris" : "Ex: Alger"}
+            country={formData.toCountry as "France" | "Algérie"}
           />
         </div>
 
