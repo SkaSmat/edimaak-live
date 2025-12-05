@@ -5,66 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRightLeft } from "lucide-react";
+import { CityAutocomplete } from "@/components/CityAutocomplete";
 
 interface TripFormProps {
   userId: string;
   onSuccess: () => void;
 }
 
-// LISTES STRICTES
-const CITIES_FRANCE = [
-  "Paris",
-  "Lyon",
-  "Marseille",
-  "Toulouse",
-  "Nice",
-  "Nantes",
-  "Montpellier",
-  "Strasbourg",
-  "Bordeaux",
-  "Lille",
-  "Rennes",
-  "Reims",
-  "Le Havre",
-  "Saint-Étienne",
-  "Toulon",
-  "Grenoble",
-  "Dijon",
-  "Angers",
-  "Nîmes",
-  "Villeurbanne",
-];
-
-const CITIES_ALGERIA = [
-  "Alger",
-  "Oran",
-  "Constantine",
-  "Annaba",
-  "Blida",
-  "Batna",
-  "Djelfa",
-  "Sétif",
-  "Sidi Bel Abbès",
-  "Biskra",
-  "Tébessa",
-  "El Oued",
-  "Skikda",
-  "Tiaret",
-  "Béjaïa",
-  "Tlemcen",
-  "Ouargla",
-  "Béchar",
-  "Mostaganem",
-  "Bordj Bou Arreridj",
-];
-
 const TripForm = ({ userId, onSuccess }: TripFormProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fromCountry: "France",
+    fromCountry: "France" as "France" | "Algérie",
     fromCity: "",
-    toCountry: "Algérie",
+    toCountry: "Algérie" as "France" | "Algérie",
     toCity: "",
     departureDate: "",
     arrivalDate: "",
@@ -74,32 +28,38 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // LOGIQUE DE BASCULE ET DE LISTE
-  // Si départ = France -> Arrivée = Algérie
-  useEffect(() => {
-    if (formData.fromCountry === "France") {
-      setFormData((prev) => ({ ...prev, toCountry: "Algérie", fromCity: "", toCity: "" }));
-    } else {
-      setFormData((prev) => ({ ...prev, toCountry: "France", fromCity: "", toCity: "" }));
-    }
-  }, [formData.fromCountry]);
+  // Fonction pour inverser le sens du voyage en un clic
+  const toggleDirection = () => {
+    setFormData((prev) => ({
+      ...prev,
+      fromCountry: prev.toCountry,
+      fromCity: "", // On vide les villes car elles ne sont plus valides
+      toCountry: prev.fromCountry,
+      toCity: "",
+    }));
+  };
 
-  // Détermine quelle liste afficher pour le départ et l'arrivée
-  const departureCities = formData.fromCountry === "France" ? CITIES_FRANCE : CITIES_ALGERIA;
-  const arrivalCities = formData.toCountry === "France" ? CITIES_FRANCE : CITIES_ALGERIA;
+  // Sécurité : Si l'utilisateur change manuellement le pays (via select), on adapte l'autre
+  const handleCountryChange = (type: "from" | "to", value: string) => {
+    if (type === "from") {
+      const newFrom = value as "France" | "Algérie";
+      const newTo = newFrom === "France" ? "Algérie" : "France";
+      setFormData((prev) => ({ ...prev, fromCountry: newFrom, toCountry: newTo, fromCity: "", toCity: "" }));
+    } else {
+      const newTo = value as "France" | "Algérie";
+      const newFrom = newTo === "France" ? "Algérie" : "France";
+      setFormData((prev) => ({ ...prev, toCountry: newTo, fromCountry: newFrom, fromCity: "", toCity: "" }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (parseFloat(formData.maxWeightKg) <= 0) throw new Error("Le poids doit être supérieur à 0 kg");
-      if (formData.arrivalDate && formData.arrivalDate < formData.departureDate) {
-        throw new Error("La date d'arrivée ne peut pas être avant la date de départ");
-      }
-      if (!formData.fromCity || !formData.toCity) {
-        throw new Error("Veuillez sélectionner les villes");
-      }
+      if (parseFloat(formData.maxWeightKg) <= 0) throw new Error("Le poids doit être positif");
+      if (formData.arrivalDate && formData.arrivalDate < formData.departureDate) throw new Error("Erreur de dates");
+      if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
 
       const { error } = await supabase.from("trips").insert({
         traveler_id: userId,
@@ -117,110 +77,120 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
       toast.success("Voyage créé avec succès !");
       onSuccess();
     } catch (error: any) {
-      console.error("Error creating trip:", error);
-      toast.error(error.message || "Une erreur est survenue.");
+      console.error(error);
+      toast.error(error.message || "Erreur création voyage");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg bg-card shadow-sm">
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* DÉPART */}
-        <div className="space-y-2">
-          <Label>Pays de départ *</Label>
-          <select
-            value={formData.fromCountry}
-            onChange={(e) => setFormData({ ...formData, fromCountry: e.target.value })}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
-            required
+    <form onSubmit={handleSubmit} className="space-y-5 p-5 border rounded-xl bg-card shadow-sm">
+      {/* HEADER AVEC BOUTON D'INVERSION */}
+      <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
+        <span className="text-sm font-medium text-muted-foreground">Sens du voyage :</span>
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-primary">{formData.fromCountry}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleDirection}
+            className="h-8 w-8 rounded-full hover:bg-primary/10"
           >
-            <option value="France">France</option>
-            <option value="Algérie">Algérie</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Ville de départ *</Label>
-          {/* LISTE DÉROULANTE STRICTE */}
-          <select
-            value={formData.fromCity}
-            onChange={(e) => setFormData({ ...formData, fromCity: e.target.value })}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
-            required
-          >
-            <option value="">Choisir une ville...</option>
-            {departureCities.sort().map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* ARRIVÉE (Désactivé pour forcer la logique inverse, ou juste affichage) */}
-        <div className="space-y-2">
-          <Label>Pays d'arrivée (Auto)</Label>
-          <div className="w-full px-3 py-2 border border-input rounded-md bg-muted text-muted-foreground h-10 flex items-center">
-            {formData.toCountry}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Ville d'arrivée *</Label>
-          <select
-            value={formData.toCity}
-            onChange={(e) => setFormData({ ...formData, toCity: e.target.value })}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
-            required
-          >
-            <option value="">Choisir une ville...</option>
-            {arrivalCities.sort().map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* DATES & POIDS */}
-        <div className="space-y-2">
-          <Label>Date de départ *</Label>
-          <Input
-            type="date"
-            min={today}
-            value={formData.departureDate}
-            onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Poids disponible (kg) *</Label>
-          <Input
-            type="number"
-            step="0.5"
-            min="0.5"
-            value={formData.maxWeightKg}
-            onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
-            required
-            placeholder="Ex: 5"
-          />
+            <ArrowRightLeft className="w-4 h-4 text-primary" />
+          </Button>
+          <span className="font-bold text-primary">{formData.toCountry}</span>
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* BLOC DÉPART */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Départ</h4>
+
+          <div className="space-y-1">
+            <Label>Pays</Label>
+            <select
+              value={formData.fromCountry}
+              onChange={(e) => handleCountryChange("from", e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
+            >
+              <option value="France">France</option>
+              <option value="Algérie">Algérie</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Ville</Label>
+            {/* ICI : On passe limitToCountry pour restreindre la liste */}
+            <CityAutocomplete
+              value={formData.fromCity}
+              onChange={(val) => setFormData({ ...formData, fromCity: val })}
+              limitToCountry={formData.fromCountry}
+              placeholder={`Ville de départ (${formData.fromCountry})`}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              min={today}
+              value={formData.departureDate}
+              onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+              required
+            />
+          </div>
+        </div>
+
+        {/* BLOC ARRIVÉE */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Arrivée</h4>
+
+          <div className="space-y-1">
+            <Label>Pays</Label>
+            <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground cursor-not-allowed">
+              {formData.toCountry}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Ville</Label>
+            <CityAutocomplete
+              value={formData.toCity}
+              onChange={(val) => setFormData({ ...formData, toCity: val })}
+              limitToCountry={formData.toCountry}
+              placeholder={`Ville d'arrivée (${formData.toCountry})`}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Poids Dispo (kg)</Label>
+            <Input
+              type="number"
+              step="0.5"
+              min="0.5"
+              value={formData.maxWeightKg}
+              onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
+              required
+              placeholder="Ex: 23"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 pt-2">
         <Label>Notes (optionnel)</Label>
         <Textarea
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          placeholder="Précisions sur le lieu de RDV..."
-          rows={3}
+          placeholder="Ex: Je pars de Orly, je peux prendre des objets fragiles..."
+          rows={2}
         />
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={loading} className="w-full h-11 text-base">
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Publication...
