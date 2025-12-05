@@ -34,19 +34,27 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       } = await supabase.auth.getSession();
 
       if (!session) {
-        toast.error("Session expirée");
+        // Juste une notification, pas de redirection brutale
+        toast.error("Votre session a expiré. Veuillez rafraîchir la page.");
         return;
       }
 
+      // Tentative de mise à jour
       const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur switch:", error);
+        toast.error("Impossible de changer de mode pour l'instant.");
+        return;
+      }
 
-      toast.success(`Mode ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} activé !`);
+      toast.success(`Bienvenue dans l'espace ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} !`);
+
+      // Rechargement vers le bon dashboard
       window.location.href = newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
     } catch (error) {
       console.error(error);
-      toast.error("Impossible de changer de mode");
+      toast.error("Une erreur inattendue est survenue.");
     }
   };
 
