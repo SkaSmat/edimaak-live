@@ -265,24 +265,35 @@ const Index = () => {
       </section>
 
       {/* BARRE DE RECHERCHE OPTIMISÉE */}
-      <form onSubmit={handleSearchClick} className="relative z-40 px-4">
+      {/* BARRE DE RECHERCHE - DESIGN RESPONSIVE CORRIGÉ */}
+      <form onSubmit={handleSearchClick} className="relative z-40 px-4 w-full">
         <div className="container mx-auto max-w-4xl">
-          <div className="bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 flex flex-col md:flex-row items-center p-2 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-            {/* BLOC DÉPART */}
-            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex flex-col justify-center">
-              <div className="flex items-center gap-1">
+          {/* CONTENEUR PRINCIPAL
+                - Mobile (base) : flex-col (vertical), gap-3 (espacé), rounded-3xl (coins normaux)
+                - PC (md) : flex-row (horizontal), gap-0 (collé), rounded-full (pilule), divide-x (séparateurs)
+            */}
+          <div className="bg-white rounded-3xl md:rounded-full shadow-xl border border-gray-200 flex flex-col md:flex-row items-stretch p-3 md:p-2 gap-3 md:gap-0 md:divide-x divide-gray-100">
+            {/* 1. BLOC DÉPART */}
+            <div className="flex-1 relative group px-4 md:px-6 py-2 hover:bg-gray-50 rounded-xl md:rounded-l-full transition-colors cursor-pointer border md:border-0 border-gray-100">
+              <div className="flex items-center gap-1 mb-0.5">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Départ</span>
                 <div className="relative">
+                  {/* Sélecteur de Pays */}
                   <select
                     value={fromCountry}
                     onChange={(e) => {
                       setFromCountry(e.target.value);
                       setLocalFromCity("");
                     }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors"
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary"
                   >
                     {COUNTRIES.map((c) => (
-                      <option key={c} value={c}>
+                      <option
+                        key={c}
+                        value={c}
+                        disabled={c === toCountry}
+                        className={c === toCountry ? "text-gray-300" : ""}
+                      >
                         {c}
                       </option>
                     ))}
@@ -290,9 +301,9 @@ const Index = () => {
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <div className="w-full mt-0.5">
+              <div className="w-full">
                 <CityAutocomplete
-                  placeholder={`Ville de ${fromCountry}`}
+                  placeholder={`Ville de départ`}
                   value={localFromCity}
                   onChange={setLocalFromCity}
                   limitToCountry={fromCountry}
@@ -301,7 +312,20 @@ const Index = () => {
               </div>
             </div>
 
-            {/* BOUTON INVERSION (Visible Desktop) */}
+            {/* BOUTON INVERSION (Mobile : Bouton visible entre les champs) */}
+            <div className="md:hidden flex justify-center -my-4 z-10">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={toggleDirection}
+                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
+              </Button>
+            </div>
+
+            {/* BOUTON INVERSION (PC : Absolu au centre) */}
             <div className="hidden md:flex absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <Button
                 type="button"
@@ -309,24 +333,24 @@ const Index = () => {
                 size="icon"
                 onClick={toggleDirection}
                 className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform hover:bg-gray-50"
-                title="Inverser le sens"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
               </Button>
             </div>
 
-            {/* BLOC ARRIVÉE */}
-            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8 flex flex-col justify-center">
-              <div className="flex items-center gap-1">
+            {/* 2. BLOC ARRIVÉE */}
+            <div className="flex-1 relative group px-4 md:px-6 py-2 hover:bg-gray-50 rounded-xl md:rounded-none transition-colors cursor-pointer md:pl-8 border md:border-0 border-gray-100">
+              <div className="flex items-center gap-1 mb-0.5">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Arrivée</span>
                 <div className="relative">
+                  {/* Sélecteur de Pays */}
                   <select
                     value={toCountry}
                     onChange={(e) => {
                       setToCountry(e.target.value);
                       setLocalToCity("");
                     }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors"
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary"
                   >
                     {COUNTRIES.map((c) => (
                       <option
@@ -342,9 +366,9 @@ const Index = () => {
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <div className="w-full mt-0.5">
+              <div className="w-full">
                 <CityAutocomplete
-                  placeholder={`Ville de ${toCountry}`}
+                  placeholder={`Ville d'arrivée`}
                   value={localToCity}
                   onChange={setLocalToCity}
                   limitToCountry={toCountry}
@@ -353,10 +377,10 @@ const Index = () => {
               </div>
             </div>
 
-            {/* BLOC DATE */}
-            <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex flex-col justify-center">
+            {/* 3. BLOC DATE */}
+            <div className="flex-[0.8] relative group px-4 md:px-6 py-2 hover:bg-gray-50 rounded-xl md:rounded-none transition-colors cursor-pointer border md:border-0 border-gray-100">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block mb-0.5">
-                Quand ?
+                Date
               </label>
               <Input
                 type="date"
@@ -366,30 +390,17 @@ const Index = () => {
               />
             </div>
 
-            {/* BOUTON RECHERCHE */}
-            <div className="pl-2 pr-1 w-full md:w-auto p-2">
+            {/* 4. BOUTON RECHERCHE */}
+            <div className="w-full md:w-auto pl-0 md:pl-2 md:pr-1">
               <Button
                 type="submit"
                 size="lg"
-                className="w-full md:w-auto rounded-full h-12 md:h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
+                className="w-full md:w-auto rounded-xl md:rounded-full h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
               >
-                <Search className="w-5 h-5 mr-2 sm:mr-0" />
+                <Search className="w-5 h-5" />
                 <span className="md:hidden">Rechercher</span>
               </Button>
             </div>
-          </div>
-
-          {/* Bouton mobile inversion */}
-          <div className="md:hidden flex justify-center mt-4 mb-4 relative z-50">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={toggleDirection}
-              className="rounded-full h-8 px-4 bg-white text-xs border-gray-200 shadow-sm gap-2"
-            >
-              <ArrowRightLeft className="w-3 h-3" /> Inverser sens
-            </Button>
           </div>
         </div>
       </form>
