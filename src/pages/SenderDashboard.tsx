@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import MatchProposals from "@/components/MatchProposals";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Package, Handshake, User, Plus, ChevronRight, Loader2, Clock } from "lucide-react";
+import { Package, Handshake, User, Plus, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const SenderDashboard = () => {
@@ -165,17 +165,8 @@ const SenderDashboard = () => {
           </div>
         </div>
 
-        {/* --- SECTION PROPOSITIONS EN ATTENTE --- */}
+        {/* --- SECTION PROPOSITIONS --- */}
         <div className="pt-4">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" /> Propositions en attente
-              </h2>
-              <p className="text-sm text-muted-foreground">Ces voyageurs proposent de transporter vos colis.</p>
-            </div>
-          </div>
-
           {profile?.id && <MatchProposals userId={profile.id} />}
         </div>
       </div>
