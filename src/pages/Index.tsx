@@ -24,6 +24,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
 import { toast } from "sonner";
+// Imports des modules que nous avons créés ensemble
 import { useAuth, UserRole } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
@@ -55,7 +56,9 @@ const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Hooks personnalisés (Authentification & Notifications)
   const { session, userRole, isLoading: authLoading } = useAuth();
+  // Le système de notification est bien branché ici
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
   const [direction, setDirection] = useState<"fr-dz" | "dz-fr">("fr-dz");
@@ -84,6 +87,11 @@ const Index = () => {
     if (userRole === "admin") return "/admin";
     return "/dashboard/traveler";
   };
+
+  const handleDashboardClick = useCallback(() => {
+    resetUnreadCount();
+    navigate(getDashboardPath(userRole));
+  }, [userRole, navigate, resetUnreadCount]);
 
   useEffect(() => {
     fetchShipmentRequests();
@@ -180,11 +188,6 @@ const Index = () => {
     }
   }, [selectedShipment, navigate]);
 
-  const handleDashboardClick = useCallback(() => {
-    resetUnreadCount();
-    navigate(getDashboardPath(userRole));
-  }, [userRole, navigate, resetUnreadCount]);
-
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* HEADER */}
@@ -198,6 +201,7 @@ const Index = () => {
             ) : session ? (
               <Button onClick={handleDashboardClick} className="rounded-full font-medium relative overflow-visible">
                 Mon Dashboard
+                {/* Badge Rouge de Notification (Préservé) */}
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
                     {unreadCount > 9 ? "9+" : unreadCount}
@@ -236,14 +240,14 @@ const Index = () => {
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE "AIRBNB STYLE" */}
+      {/* BARRE DE RECHERCHE "STYLE AIRBNB" - DESIGN INTÉGRÉ */}
       <form onSubmit={handleSearchClick} className="relative z-40 px-4">
         <div className="container mx-auto max-w-4xl">
-          {/* Conteneur principal avec ombre portée et arrondis */}
-          <div className="bg-white rounded-[32px] shadow-xl border border-gray-100 flex flex-col md:flex-row items-center p-2 gap-1 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+          {/* Conteneur principal "Pilule" avec ombre portée */}
+          <div className="bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 flex flex-col md:flex-row items-center p-2 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
             {/* Champ Départ */}
-            <div className="flex-1 w-full md:w-auto relative group px-6 py-3 hover:bg-gray-50 rounded-[24px] transition-colors cursor-pointer">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-800 block mb-1">
+            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
                 Départ ({direction === "fr-dz" ? "France" : "Algérie"})
               </label>
               <div className="w-full">
@@ -258,7 +262,7 @@ const Index = () => {
             </div>
 
             {/* Bouton Inversion (Absolu au centre sur Desktop) */}
-            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="hidden md:flex absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <Button
                 type="button"
                 variant="outline"
@@ -272,8 +276,8 @@ const Index = () => {
             </div>
 
             {/* Champ Arrivée */}
-            <div className="flex-1 w-full md:w-auto relative group px-6 py-3 hover:bg-gray-50 rounded-[24px] transition-colors cursor-pointer md:pl-8">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-800 block mb-1">
+            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
                 Arrivée ({direction === "fr-dz" ? "Algérie" : "France"})
               </label>
               <div className="w-full">
@@ -288,9 +292,9 @@ const Index = () => {
             </div>
 
             {/* Champ Date */}
-            <div className="flex-[0.8] w-full md:w-auto relative group px-6 py-3 hover:bg-gray-50 rounded-[24px] transition-colors cursor-pointer">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-800 block mb-1">
-                Date de départ
+            <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
+                Départ
               </label>
               <Input
                 type="date"
@@ -300,12 +304,13 @@ const Index = () => {
               />
             </div>
 
-            {/* Bouton Recherche */}
-            <div className="p-2 w-full md:w-auto">
+            {/* Bouton Recherche INTÉGRÉ À DROITE */}
+            <div className="pl-2 pr-1 w-full md:w-auto">
               <Button
                 type="submit"
                 size="lg"
-                className="w-full md:w-auto rounded-full h-12 md:h-12 px-6 bg-primary hover:bg-primary/90 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
+                // ICI : Changement de couleur (Orange) pour coller à la marque
+                className="w-full md:w-auto rounded-full h-12 md:h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base flex items-center justify-center gap-2"
               >
                 <Search className="w-5 h-5" />
                 <span className="md:hidden">Rechercher</span>
@@ -314,7 +319,7 @@ const Index = () => {
           </div>
 
           {/* Petit bouton mobile pour inverser si besoin */}
-          <div className="md:hidden flex justify-center -mt-4 mb-4 relative z-50">
+          <div className="md:hidden flex justify-center mt-4 mb-4 relative z-50">
             <Button
               type="button"
               variant="outline"
@@ -407,6 +412,10 @@ const Index = () => {
                         {format(new Date(request.latest_date), "dd MMM")}
                       </span>
                     </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Package className="w-4 h-4 text-gray-400" />
+                      <span className="truncate">{request.item_type}</span>
+                    </div>
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
@@ -428,14 +437,12 @@ const Index = () => {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-gray-400">
           © 2025 EDIM3AK. La plateforme de confiance.
         </div>
       </footer>
 
-      {/* Modal Détail */}
       {selectedShipment && (
         <ShipmentDetailModal
           isOpen={!!selectedShipment}
