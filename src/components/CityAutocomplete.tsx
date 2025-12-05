@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-// Listes étendues pour couvrir un maximum de cas
-const CITIES_FRANCE = [
+// Listes complètes pour le filtrage strict
+export const CITIES_FRANCE = [
   "Paris",
   "Marseille",
   "Lyon",
@@ -42,24 +42,23 @@ const CITIES_FRANCE = [
   "Orléans",
   "Mulhouse",
   "Rouen",
-  "Saint-Denis",
   "Caen",
-  "Argenteuil",
-  "Saint-Paul",
-  "Montreuil",
   "Nancy",
+  "Argenteuil",
+  "Montreuil",
   "Roubaix",
-  "Tourcoing",
-  "Nanterre",
-  "Avignon",
-  "Vitry-sur-Seine",
-  "Créteil",
   "Dunkerque",
+  "Tourcoing",
+  "Avignon",
+  "Nanterre",
   "Poitiers",
-  "Asnières-sur-Seine",
+  "Créteil",
+  "Versailles",
+  "Courbevoie",
+  "Pau",
 ].sort();
 
-const CITIES_ALGERIA = [
+export const CITIES_ALGERIA = [
   "Alger",
   "Oran",
   "Constantine",
@@ -92,7 +91,7 @@ const CITIES_ALGERIA = [
   "Jijel",
   "Relizane",
   "Guelma",
-  "Aïn Béïda",
+  "Ain Beida",
   "Khenchela",
   "Bousaada",
   "Mascara",
@@ -105,6 +104,8 @@ interface CityAutocompleteProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  // NOUVEAU : Permet de forcer une liste de pays spécifique
+  limitToCountry?: "France" | "Algérie" | null;
 }
 
 export function CityAutocomplete({
@@ -112,25 +113,32 @@ export function CityAutocomplete({
   onChange,
   placeholder = "Sélectionner une ville...",
   className,
+  limitToCountry = null,
 }: CityAutocompleteProps) {
   const [open, setOpen] = React.useState(false);
 
-  // Détection automatique du pays selon le placeholder ou le contexte
-  // Si le placeholder parle de "Paris" ou "France", on charge les villes FR. Sinon DZ.
-  // Par défaut, on peut aussi combiner les deux si on veut être large.
-  const isFranceContext =
-    placeholder?.toLowerCase().includes("paris") ||
-    placeholder?.toLowerCase().includes("france") ||
-    placeholder?.toLowerCase().includes("départ");
-  const isAlgeriaContext =
-    placeholder?.toLowerCase().includes("alger") ||
-    placeholder?.toLowerCase().includes("algérie") ||
-    placeholder?.toLowerCase().includes("arrivée");
+  // Détermination de la liste à afficher
+  let cities: string[] = [];
 
-  let cities = [];
-  if (isFranceContext) cities = CITIES_FRANCE;
-  else if (isAlgeriaContext) cities = CITIES_ALGERIA;
-  else cities = [...CITIES_FRANCE, ...CITIES_ALGERIA].sort(); // Fallback : tout
+  if (limitToCountry === "France") {
+    cities = CITIES_FRANCE;
+  } else if (limitToCountry === "Algérie") {
+    cities = CITIES_ALGERIA;
+  } else {
+    // Si pas de limite stricte (ex: barre de recherche accueil), on essaie de deviner ou on met tout
+    const isFranceContext =
+      placeholder?.toLowerCase().includes("paris") ||
+      placeholder?.toLowerCase().includes("france") ||
+      placeholder?.toLowerCase().includes("départ");
+    const isAlgeriaContext =
+      placeholder?.toLowerCase().includes("alger") ||
+      placeholder?.toLowerCase().includes("algérie") ||
+      placeholder?.toLowerCase().includes("arrivée");
+
+    if (isFranceContext) cities = CITIES_FRANCE;
+    else if (isAlgeriaContext) cities = CITIES_ALGERIA;
+    else cities = [...CITIES_FRANCE, ...CITIES_ALGERIA].sort();
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -147,21 +155,12 @@ export function CityAutocomplete({
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Rechercher une ville..." />
+          <CommandInput
+            placeholder={limitToCountry ? `Rechercher en ${limitToCountry}...` : "Rechercher une ville..."}
+          />
           <CommandList>
             <CommandEmpty>
-              {/* Si la ville n'est pas dans la liste, on propose de l'utiliser quand même */}
-              <button
-                className="w-full text-left px-4 py-2 text-sm text-primary hover:bg-accent"
-                onClick={() => {
-                  // On prend ce qui a été tapé dans l'input (c'est un hack accessible via le DOM local si besoin,
-                  // mais ici on simplifie : on laisse l'utilisateur cliquer sur une suggestion ou taper)
-                  // Pour une vraie saisie libre dans un combobox, c'est plus complexe.
-                  // Ici on reste sur la liste stricte pour éviter les fautes.
-                }}
-              >
-                Ville non trouvée ? Vérifiez l'orthographe.
-              </button>
+              <div className="py-2 px-4 text-sm text-muted-foreground">Ville introuvable.</div>
             </CommandEmpty>
             <CommandGroup>
               {cities.map((city) => (
@@ -169,7 +168,7 @@ export function CityAutocomplete({
                   key={city}
                   value={city}
                   onSelect={(currentValue) => {
-                    // On utilise la vraie casse de la ville (Pas en minuscule)
+                    // On recupère la vraie casse depuis la liste
                     const realValue = cities.find((c) => c.toLowerCase() === currentValue) || currentValue;
                     onChange(realValue);
                     setOpen(false);
