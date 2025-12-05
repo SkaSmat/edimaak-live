@@ -42,16 +42,17 @@ const Auth = () => {
   const handleSmartRedirect = async (userId: string) => {
     try {
       const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
-
       const targetShipmentId = localStorage.getItem("targetShipmentId");
 
+      // Si un shipment était sélectionné avant login, rediriger vers la landing avec highlight
+      if (targetShipmentId) {
+        localStorage.removeItem("targetShipmentId");
+        navigate(`/?highlight=${targetShipmentId}`);
+        return;
+      }
+
       if (data?.role === "traveler") {
-        if (targetShipmentId) {
-          localStorage.removeItem("targetShipmentId");
-          navigate(`/dashboard/traveler?highlight=${targetShipmentId}`);
-        } else {
-          navigate("/dashboard/traveler");
-        }
+        navigate("/dashboard/traveler");
       } else if (data?.role === "sender") {
         navigate("/dashboard/sender");
       } else if (data?.role === "admin") {

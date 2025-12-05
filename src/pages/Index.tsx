@@ -79,6 +79,7 @@ const Index = () => {
   const currentFromCity = searchParams.get("from") || "";
   const currentToCity = searchParams.get("to") || "";
   const currentSearchDate = searchParams.get("date") || "";
+  const highlightedShipmentId = searchParams.get("highlight") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
   // --- FONCTIONS UTILITAIRES ---
@@ -170,8 +171,31 @@ const Index = () => {
       filtered = filtered.filter((req) => isDateInRange(req, currentSearchDate));
     }
 
+    // Si un shipment est highlighté, le mettre en premier
+    if (highlightedShipmentId) {
+      const highlightedIndex = filtered.findIndex((req) => req.id === highlightedShipmentId);
+      if (highlightedIndex > 0) {
+        const [highlighted] = filtered.splice(highlightedIndex, 1);
+        filtered = [highlighted, ...filtered];
+      }
+    }
+
     return filtered;
-  }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate]);
+  }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate, highlightedShipmentId]);
+
+  // Auto-open highlighted shipment modal after login
+  useEffect(() => {
+    if (highlightedShipmentId && filteredRequests.length > 0 && !selectedShipment) {
+      const highlighted = filteredRequests.find((req) => req.id === highlightedShipmentId);
+      if (highlighted) {
+        setSelectedShipment(highlighted);
+        // Clear highlight from URL
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("highlight");
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [highlightedShipmentId, filteredRequests, selectedShipment]);
 
   // --- LOGIQUE DE REDIRECTION DU BOUTON RECHERCHE ---
   const handleSearchClick = (e: React.FormEvent) => {
