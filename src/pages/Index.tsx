@@ -15,6 +15,7 @@ import {
   Bell,
   MessageCircle,
   ArrowRightLeft,
+  ChevronDown,
 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
@@ -52,7 +53,7 @@ interface ShipmentRequest {
 }
 
 // Liste des pays disponibles
-const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
+const COUNTRIES = ["Algérie", "France", "Canada", "Espagne", "Royaume-Uni"];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -79,14 +80,23 @@ const Index = () => {
   const currentSearchDate = searchParams.get("date") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
+  // --- LOGIQUE INTELLIGENTE DES PAYS ---
+  // Si on change le départ et qu'il devient égal à l'arrivée, on change l'arrivée
+  useEffect(() => {
+    if (fromCountry === toCountry) {
+      const otherCountry = COUNTRIES.find((c) => c !== fromCountry) || "Algérie";
+      setToCountry(otherCountry);
+      setLocalToCity(""); // Reset ville car pays a changé
+    }
+  }, [fromCountry]);
+
   // Fonction d'inversion complète (Pays + Ville)
   const toggleDirection = () => {
-    // On inverse les pays
     const tempCountry = fromCountry;
+    // On utilise les setters fonctionnels pour éviter les conflits
     setFromCountry(toCountry);
     setToCountry(tempCountry);
 
-    // On inverse aussi les villes saisies
     const tempCity = localFromCity;
     setLocalFromCity(localToCity);
     setLocalToCity(tempCity);
@@ -155,7 +165,6 @@ const Index = () => {
 
   const filteredRequests = useMemo(() => {
     let filtered = shipmentRequests;
-    // Note : On filtre principalement sur la ville car c'est ce qui est le plus précis
     if (currentFromCity)
       filtered = filtered.filter((req) => req.from_city.toLowerCase().includes(currentFromCity.toLowerCase().trim()));
     if (currentToCity)
@@ -167,8 +176,8 @@ const Index = () => {
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Petite validation
-    if (fromCountry === toCountry && localFromCity === localToCity && localFromCity !== "") {
+    // Validation finale de sécurité
+    if (fromCountry === toCountry) {
       toast.error("Le départ et l'arrivée ne peuvent pas être identiques.");
       return;
     }
@@ -211,7 +220,6 @@ const Index = () => {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 max-w-7xl h-16 sm:h-20 flex items-center justify-between">
           <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
-
           <div className="flex items-center gap-2 sm:gap-4">
             {authLoading ? (
               <div className="h-10 w-32 bg-gray-200 rounded-full animate-pulse" />
@@ -249,83 +257,94 @@ const Index = () => {
               Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
             <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs.
+              La 1ère plateforme de mise en relation sécurisée entre voyageurs et expéditeurs France ⇄ Algérie et
+              International.
             </p>
           </div>
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE "STYLE AIRBNB" - DESIGN FINAL */}
+      {/* BARRE DE RECHERCHE OPTIMISÉE */}
       <form onSubmit={handleSearchClick} className="relative z-40 px-4">
         <div className="container mx-auto max-w-4xl">
           <div className="bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 flex flex-col md:flex-row items-center p-2 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-            {/* Champ Départ (Pays sélectionnable) */}
-            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-              <div className="flex items-center gap-1 mb-0.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800">Départ</span>
-                <select
-                  value={fromCountry}
-                  onChange={(e) => {
-                    setFromCountry(e.target.value);
-                    setLocalFromCity("");
-                  }}
-                  className="text-[10px] font-bold text-primary uppercase tracking-wider bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:underline"
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>
-                      ({c})
-                    </option>
-                  ))}
-                </select>
+            {/* BLOC DÉPART */}
+            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex flex-col justify-center">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Départ</span>
+                <div className="relative">
+                  <select
+                    value={fromCountry}
+                    onChange={(e) => {
+                      setFromCountry(e.target.value);
+                      setLocalFromCity("");
+                    }}
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors"
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                </div>
               </div>
-              <div className="w-full">
+              <div className="w-full mt-0.5">
                 <CityAutocomplete
-                  placeholder={`Ville de départ`}
+                  placeholder={`Ville de ${fromCountry}`}
                   value={localFromCity}
                   onChange={setLocalFromCity}
-                  // On passe le pays sélectionné pour filtrer la liste
                   limitToCountry={fromCountry}
                   className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full truncate"
                 />
               </div>
             </div>
 
-            {/* Bouton Inversion */}
+            {/* BOUTON INVERSION (Visible Desktop) */}
             <div className="hidden md:flex absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={toggleDirection}
-                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform"
+                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform hover:bg-gray-50"
                 title="Inverser le sens"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
               </Button>
             </div>
 
-            {/* Champ Arrivée (Pays sélectionnable) */}
-            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8">
-              <div className="flex items-center gap-1 mb-0.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800">Arrivée</span>
-                <select
-                  value={toCountry}
-                  onChange={(e) => {
-                    setToCountry(e.target.value);
-                    setLocalToCity("");
-                  }}
-                  className="text-[10px] font-bold text-primary uppercase tracking-wider bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:underline"
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>
-                      ({c})
-                    </option>
-                  ))}
-                </select>
+            {/* BLOC ARRIVÉE */}
+            <div className="flex-1 w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer md:pl-8 flex flex-col justify-center">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Arrivée</span>
+                <div className="relative">
+                  <select
+                    value={toCountry}
+                    onChange={(e) => {
+                      setToCountry(e.target.value);
+                      setLocalToCity("");
+                    }}
+                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors"
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option
+                        key={c}
+                        value={c}
+                        disabled={c === fromCountry}
+                        className={c === fromCountry ? "text-gray-300" : ""}
+                      >
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                </div>
               </div>
-              <div className="w-full">
+              <div className="w-full mt-0.5">
                 <CityAutocomplete
-                  placeholder={`Ville d'arrivée`}
+                  placeholder={`Ville de ${toCountry}`}
                   value={localToCity}
                   onChange={setLocalToCity}
                   limitToCountry={toCountry}
@@ -334,10 +353,10 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Champ Date */}
-            <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 block mb-0.5 ml-1">
-                Date de départ
+            {/* BLOC DATE */}
+            <div className="flex-[0.8] w-full relative group px-6 py-2.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex flex-col justify-center">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block mb-0.5">
+                Quand ?
               </label>
               <Input
                 type="date"
@@ -347,8 +366,8 @@ const Index = () => {
               />
             </div>
 
-            {/* Bouton Recherche */}
-            <div className="pl-2 pr-1 w-full md:w-auto">
+            {/* BOUTON RECHERCHE */}
+            <div className="pl-2 pr-1 w-full md:w-auto p-2">
               <Button
                 type="submit"
                 size="lg"
@@ -360,6 +379,7 @@ const Index = () => {
             </div>
           </div>
 
+          {/* Bouton mobile inversion */}
           <div className="md:hidden flex justify-center mt-4 mb-4 relative z-50">
             <Button
               type="button"
@@ -374,6 +394,7 @@ const Index = () => {
         </div>
       </form>
 
+      {/* Reste du contenu (inchangé) */}
       <main className="container mx-auto px-4 max-w-7xl pb-20 pt-12" id="results-section">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
