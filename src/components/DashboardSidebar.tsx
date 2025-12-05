@@ -1,15 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Plane,
-  Package,
-  MessageCircle,
-  User,
-  LogOut,
-  Handshake,
-  ShieldCheck,
-  RefreshCw,
-} from "lucide-react";
+import { LayoutDashboard, Plane, Package, MessageCircle, User, LogOut, Handshake, ShieldCheck } from "lucide-react";
 import { LogoEdiM3ak } from "./LogoEdiM3ak";
 import {
   Sidebar,
@@ -28,10 +18,6 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { FeedbackButton } from "./FeedbackButton";
 import { Badge } from "@/components/ui/badge";
-// CORRECTION ICI : Ajout de l'import Button qui manquait
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface DashboardSidebarProps {
   role: "traveler" | "sender" | "admin";
@@ -55,62 +41,29 @@ export const DashboardSidebar = ({
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    if (isMobile) {
-      setOpenMobile(false);
-    }
+    if (isMobile) setOpenMobile(false);
   };
 
-  // --- FONCTION : CHANGER DE RÔLE ---
-  const switchRole = async () => {
-    try {
-      const newRole = role === "traveler" ? "sender" : "traveler";
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) return;
-
-      // Mise à jour du rôle en DB
-      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", session.user.id);
-
-      if (error) throw error;
-
-      toast.success(`Mode ${newRole === "traveler" ? "Voyageur" : "Expéditeur"} activé !`);
-
-      // Redirection forcée pour recharger le layout avec le nouveau rôle
-      window.location.href = newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
-    } catch (error) {
-      console.error(error);
-      toast.error("Impossible de changer de mode");
-    }
-  };
-
-  // --- MENUS ---
   const travelerNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/traveler" },
     { title: "Mes voyages", icon: Plane, path: "/dashboard/traveler/trips" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/traveler/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages" },
+    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
   ];
 
   const senderNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard/sender" },
     { title: "Mes demandes", icon: Package, path: "/dashboard/sender/shipments" },
     { title: "Mes matches", icon: Handshake, path: "/dashboard/sender/matches" },
-    { title: "Messages", icon: MessageCircle, path: "/messages" },
+    { title: "Messages", icon: MessageCircle, path: "/messages", hasBadge: true },
   ];
 
   const adminNavItems = [{ title: "Administration", icon: ShieldCheck, path: "/admin" }];
-
   const mainNavItems = role === "admin" ? adminNavItems : role === "traveler" ? travelerNavItems : senderNavItems;
-
   const accountNavItems = [{ title: "Mon profil", icon: User, path: "/profile" }];
 
   if (isAdmin && role !== "admin") {
-    accountNavItems.push({
-      title: "Administration",
-      icon: ShieldCheck,
-      path: "/admin",
-    });
+    accountNavItems.push({ title: "Administration", icon: ShieldCheck, path: "/admin" });
   }
 
   const isActive = (path: string) => location.pathname === path;
@@ -121,7 +74,6 @@ export const DashboardSidebar = ({
         <button
           onClick={() => handleNavigation("/")}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          type="button"
         >
           <LogoEdiM3ak iconSize={collapsed ? "sm" : "md"} className={collapsed ? "justify-center" : ""} />
         </button>
@@ -132,14 +84,11 @@ export const DashboardSidebar = ({
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item: any) => {
-                // Logique des badges
                 const isMessagesLink = item.path === "/messages";
                 const isMatchesLink = item.path.includes("/matches");
-
                 let badgeCount = 0;
                 if (isMessagesLink) badgeCount = unreadCount;
                 if (isMatchesLink) badgeCount = pendingMatchCount;
-
                 const showBadge = badgeCount > 0;
 
                 return (
@@ -157,8 +106,6 @@ export const DashboardSidebar = ({
                         <item.icon className="h-5 w-5" />
                         <span>{item.title}</span>
                       </div>
-
-                      {/* Badge menu ouvert */}
                       {showBadge && !collapsed && (
                         <Badge
                           variant="destructive"
@@ -167,8 +114,6 @@ export const DashboardSidebar = ({
                           {badgeCount}
                         </Badge>
                       )}
-
-                      {/* Point rouge menu fermé */}
                       {showBadge && collapsed && (
                         <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
                       )}
@@ -181,21 +126,6 @@ export const DashboardSidebar = ({
         </SidebarGroup>
 
         <Separator className="my-2 mx-4" />
-
-        {/* BOUTON CHANGER DE MODE (Visible si non-admin) */}
-        {role !== "admin" && (
-          <div className="px-2 py-2">
-            <Button
-              variant="outline"
-              className={`w-full justify-start gap-2 ${collapsed ? "px-0 justify-center" : ""}`}
-              onClick={switchRole}
-              title={role === "traveler" ? "Passer en mode Expéditeur" : "Passer en mode Voyageur"}
-            >
-              <RefreshCw className="h-4 w-4 text-primary" />
-              {!collapsed && <span>Devenir {role === "traveler" ? "Expéditeur" : "Voyageur"}</span>}
-            </Button>
-          </div>
-        )}
 
         <SidebarGroup>
           <SidebarGroupContent>
@@ -237,7 +167,6 @@ export const DashboardSidebar = ({
   );
 };
 
-// --- HEADER MOBILE (Avec notification sur le bouton) ---
 export const DashboardMobileHeader = ({
   fullName,
   onLogout,
@@ -248,36 +177,27 @@ export const DashboardMobileHeader = ({
   unreadCount?: number;
 }) => {
   const navigate = useNavigate();
-
   return (
     <header className="md:hidden flex items-center justify-between p-4 bg-background border-b border-border/50 sticky top-0 z-40 w-full">
       <div className="flex items-center gap-4">
-        {/* BOUTON MENU AVEC BADGE ROUGE */}
         <div className="relative flex items-center justify-center">
           <SidebarTrigger className="h-9 w-9 border border-border/50 bg-background" />
-
-          {/* LE BADGE : Si des notifs existent (messages OU matchs) */}
           {unreadCount > 0 && (
             <div className="absolute -top-1 -right-1 z-50 pointer-events-none">
               <span className="relative flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-white items-center justify-center">
-                  {/* Optionnel: Afficher le chiffre */}
-                </span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-white items-center justify-center"></span>
               </span>
             </div>
           )}
         </div>
-
         <div onClick={() => navigate("/")}>
           <LogoEdiM3ak iconSize="sm" />
         </div>
       </div>
-
       <button
         onClick={onLogout}
         className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-full hover:bg-muted/50"
-        aria-label="Déconnexion"
       >
         <LogOut className="h-5 w-5" />
       </button>
