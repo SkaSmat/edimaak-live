@@ -228,7 +228,7 @@ const Index = () => {
                   <select value={fromCountry} onChange={e => {
                   setFromCountry(e.target.value);
                   setLocalFromCity("");
-                }} className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors">
+                }} className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors px-[5px] py-[8px]">
                     {COUNTRIES.map(c => <option key={c} value={c}>
                         {c}
                       </option>)}
@@ -256,7 +256,7 @@ const Index = () => {
                   <select value={toCountry} onChange={e => {
                   setToCountry(e.target.value);
                   setLocalToCity("");
-                }} className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors">
+                }} className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase tracking-wider border-none p-0 pr-3 focus:ring-0 cursor-pointer outline-none hover:text-primary transition-colors py-[8px]">
                     {COUNTRIES.map(c => <option key={c} value={c} disabled={c === fromCountry} className={c === fromCountry ? "text-gray-300" : ""}>
                         {c}
                       </option>)}
