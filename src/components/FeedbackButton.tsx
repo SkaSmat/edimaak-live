@@ -12,13 +12,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquareWarning, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FeedbackButtonProps {
   variant?: "sidebar" | "floating";
   collapsed?: boolean;
 }
 
-// ✅ TON EMAIL EST ICI
 const ADMIN_EMAIL = "10poubelle0@gmail.com";
 
 export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: FeedbackButtonProps) => {
@@ -34,18 +34,14 @@ export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: Feedb
 
     setIsSending(true);
 
-    // Simulation UX
     setTimeout(() => {
-      // Préparation du mail
       const subject = encodeURIComponent("Feedback / Signalement EDIM3AK");
       const body = encodeURIComponent(message);
 
-      // Ouvre le client mail de l'utilisateur vers TON adresse
       window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
 
       toast.success("Merci ! Ton application mail va s'ouvrir pour envoyer le message.");
 
-      // Reset
       setMessage("");
       setOpen(false);
       setIsSending(false);
@@ -72,18 +68,32 @@ export const FeedbackButton = ({ variant = "sidebar", collapsed = false }: Feedb
     );
   }
 
-  // Version Sidebar
+  // Version Sidebar (Avec Tooltip ajouté)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start gap-3 w-full p-3 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-        >
-          <MessageSquareWarning className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="text-sm">Donner un avis</span>}
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`flex items-center justify-start gap-3 w-full p-2 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
+              >
+                <MessageSquareWarning className="h-5 w-5 shrink-0" />
+                {!collapsed && <span className="text-sm font-medium">Donner un avis</span>}
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+
+          {/* Le tooltip ne s'affiche que si le menu est replié (collapsed) */}
+          {collapsed && (
+            <TooltipContent side="right" className="flex items-center gap-4">
+              Donner un avis
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
+
       <FeedbackModal {...commonProps} />
     </Dialog>
   );
