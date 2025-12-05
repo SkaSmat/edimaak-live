@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, ArrowRightLeft } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 
 interface ShipmentRequestFormProps {
@@ -19,9 +19,9 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    fromCountry: "France",
+    fromCountry: "France" as "France" | "Algérie",
     fromCity: "",
-    toCountry: "Algérie",
+    toCountry: "Algérie" as "France" | "Algérie",
     toCity: "",
     earliestDate: "",
     latestDate: "",
@@ -31,6 +31,18 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
   });
 
   const today = new Date().toISOString().split("T")[0];
+
+  const handleCountryChange = (type: "from" | "to", value: string) => {
+    if (type === "from") {
+      const newFrom = value as "France" | "Algérie";
+      const newTo = newFrom === "France" ? "Algérie" : "France";
+      setFormData((prev) => ({ ...prev, fromCountry: newFrom, toCountry: newTo, fromCity: "", toCity: "" }));
+    } else {
+      const newTo = value as "France" | "Algérie";
+      const newFrom = newTo === "France" ? "Algérie" : "France";
+      setFormData((prev) => ({ ...prev, toCountry: newTo, fromCountry: newFrom, fromCity: "", toCity: "" }));
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,32 +70,26 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     try {
       if (parseFloat(formData.weightKg) <= 0) throw new Error("Le poids doit être positif");
       if (formData.latestDate < formData.earliestDate) throw new Error("La date limite est avant la date de début");
+      if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
 
       let imageUrl: string | null = null;
-
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${userId}-${Date.now()}.${fileExt}`;
-
         const { error: uploadError } = await supabase.storage.from("shipment-images").upload(fileName, imageFile);
-
         if (uploadError) throw uploadError;
-
         const {
           data: { publicUrl },
         } = supabase.storage.from("shipment-images").getPublicUrl(fileName);
         imageUrl = publicUrl;
       }
 
-      const cleanFromCity = formData.fromCity.trim();
-      const cleanToCity = formData.toCity.trim();
-
       const { error } = await supabase.from("shipment_requests").insert({
         sender_id: userId,
         from_country: formData.fromCountry,
-        from_city: cleanFromCity,
+        from_city: formData.fromCity,
         to_country: formData.toCountry,
-        to_city: cleanToCity,
+        to_city: formData.toCity,
         earliest_date: formData.earliestDate,
         latest_date: formData.latestDate,
         weight_kg: parseFloat(formData.weightKg),
@@ -111,14 +117,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <Label>Pays d'origine *</Label>
           <select
             value={formData.fromCountry}
-            onChange={(e) => setFormData({ ...formData, fromCountry: e.target.value })}
+            onChange={(e) => handleCountryChange("from", e.target.value)}
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
           >
             <option value="France">France</option>
             <option value="Algérie">Algérie</option>
-            <option value="Belgique">Belgique</option>
-            <option value="Canada">Canada</option>
           </select>
         </div>
 
@@ -127,23 +131,16 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <CityAutocomplete
             value={formData.fromCity}
             onChange={(val) => setFormData({ ...formData, fromCity: val })}
-            placeholder="Ex: Paris"
+            limitToCountry={formData.fromCountry}
+            placeholder={`Départ (${formData.fromCountry})`}
           />
         </div>
 
         <div className="space-y-2">
           <Label>Pays de destination *</Label>
-          <select
-            value={formData.toCountry}
-            onChange={(e) => setFormData({ ...formData, toCountry: e.target.value })}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
-            required
-          >
-            <option value="Algérie">Algérie</option>
-            <option value="France">France</option>
-            <option value="Tunisie">Tunisie</option>
-            <option value="Maroc">Maroc</option>
-          </select>
+          <div className="w-full px-3 py-2 border border-input rounded-md bg-muted text-muted-foreground h-10 flex items-center">
+            {formData.toCountry}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -151,7 +148,8 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <CityAutocomplete
             value={formData.toCity}
             onChange={(val) => setFormData({ ...formData, toCity: val })}
-            placeholder="Ex: Alger"
+            limitToCountry={formData.toCountry}
+            placeholder={`Arrivée (${formData.toCountry})`}
           />
         </div>
 
@@ -190,7 +188,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           />
         </div>
 
-        {/* NOUVEAU : Liste déroulante des types d'objets */}
         <div className="space-y-2">
           <Label>Type d'objet *</Label>
           <select
