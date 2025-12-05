@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, MessageSquare, UserCircle, ArrowLeftRight, Loader2 } from "lucide-react";
+import { LogOut, MessageSquare, UserCircle, ArrowLeftRight, Loader2, Plane, Package } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -39,7 +39,7 @@ export const DashboardHeader = ({
       toast.success(`Vous êtes maintenant ${newRole === "traveler" ? "Voyageur" : "Expéditeur"}`);
       navigate(newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender");
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors du changement");
+      toast.error(error.message || "Erreur lors du changement de mode");
     } finally {
       setSwitching(false);
     }
@@ -53,33 +53,36 @@ export const DashboardHeader = ({
 
         {/* Right side */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* User greeting */}
-          <div className="hidden sm:flex items-center gap-2">
+          {/* User greeting - hidden on mobile */}
+          <div className="hidden lg:flex items-center gap-2">
             <span className="text-sm text-foreground">
               Bonjour, <span className="font-medium">{firstName}</span>
             </span>
-            <Badge variant="secondary" className="text-xs">
-              {role === "traveler" ? "Voyageur" : "Expéditeur"}
-            </Badge>
           </div>
 
-          {/* Switch role button */}
+          {/* Switch role button - PROMINENT */}
           <Button
-            variant="default"
-            size="sm"
             onClick={handleSwitchRole}
             disabled={switching}
-            className="gap-1.5"
+            className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md"
+            size="default"
           >
             {switching ? (
               <Loader2 className="w-4 h-4 animate-spin" />
+            ) : role === "traveler" ? (
+              <Package className="w-4 h-4" />
             ) : (
-              <ArrowLeftRight className="w-4 h-4" />
+              <Plane className="w-4 h-4" />
             )}
-            <span className="hidden sm:inline">
-              {role === "traveler" ? "Expédier" : "Voyager"}
+            <span className="font-medium">
+              {role === "traveler" ? "Passer Expéditeur" : "Passer Voyageur"}
             </span>
           </Button>
+
+          {/* Current role badge */}
+          <Badge variant="outline" className="hidden sm:flex text-xs border-primary/30 bg-primary/5">
+            {role === "traveler" ? "Voyageur" : "Expéditeur"}
+          </Badge>
 
           {/* Profile button */}
           <Button 
@@ -88,7 +91,7 @@ export const DashboardHeader = ({
             onClick={() => navigate("/profile")}
           >
             <UserCircle className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">Mon profil</span>
+            <span className="hidden md:inline">Profil</span>
           </Button>
 
           {/* Messages button */}
@@ -108,8 +111,7 @@ export const DashboardHeader = ({
             onClick={onLogout}
             className="text-muted-foreground hover:text-foreground"
           >
-            <LogOut className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">Déconnexion</span>
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </div>
