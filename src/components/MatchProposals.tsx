@@ -120,52 +120,54 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Section Propositions en attente */}
       {pendingMatches.length > 0 && (
-        <div className="rounded-2xl border bg-primary/5 border-primary/20 p-6">
+        <div className="rounded-xl sm:rounded-2xl border bg-primary/5 border-primary/20 p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-bold text-primary">
-              Propositions en attente ({pendingMatches.length})
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <h3 className="text-base sm:text-lg font-bold text-primary">
+              En attente ({pendingMatches.length})
             </h3>
           </div>
-          <p className="text-sm text-primary/70 mb-4">Ces voyageurs proposent de transporter vos colis.</p>
+          <p className="text-xs sm:text-sm text-primary/70 mb-3 sm:mb-4">Ces voyageurs proposent de transporter vos colis.</p>
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {pendingMatches.map((match: any) => (
               <div
                 key={match.id}
-                className="bg-card rounded-xl p-4 border border-border/50 shadow-sm"
+                className="bg-card rounded-lg sm:rounded-xl p-3 sm:p-4 border border-border/50 shadow-sm"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-foreground">
+                    <h4 className="font-semibold text-foreground text-sm sm:text-base">
                       {match.trips?.profiles?.full_name || "Voyageur"} propose un trajet
                     </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Pour votre colis : {match.shipment_requests?.item_type || "Colis"} ({match.trips.from_city} → {match.trips.to_city})
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                      {match.shipment_requests?.item_type || "Colis"} • {match.trips.from_city} → {match.trips.to_city}
                     </p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>Date de départ : {format(new Date(match.trips.departure_date), "d MMMM yyyy", { locale: fr })}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-2">
+                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span>{format(new Date(match.trips.departure_date), "d MMM yyyy", { locale: fr })}</span>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2">
                     <Button
                       onClick={() => handleUpdateStatus(match.id, "accepted")}
-                      className="gap-2"
+                      className="gap-1.5 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
+                      size="sm"
                     >
-                      <Check className="w-4 h-4" />
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Accepter
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => handleUpdateStatus(match.id, "rejected")}
-                      className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
+                      className="gap-1.5 sm:gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
+                      size="sm"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Refuser
                     </Button>
                   </div>
@@ -178,42 +180,42 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
 
       {/* Section Matches acceptés */}
       {acceptedMatches.length > 0 && (
-        <div className="rounded-2xl border bg-card p-6">
-          <h3 className="text-lg font-bold text-foreground mb-1">Mes matches acceptés</h3>
-          <p className="text-sm text-muted-foreground mb-4">Voyageurs avec qui vous êtes en contact</p>
+        <div className="rounded-xl sm:rounded-2xl border bg-card p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">Mes matches acceptés</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Voyageurs avec qui vous êtes en contact</p>
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {acceptedMatches.map((match: any) => (
               <div
                 key={match.id}
-                className="rounded-xl border border-border/50 p-4 hover:shadow-md transition-shadow"
+                className="rounded-lg sm:rounded-xl border border-border/50 p-3 sm:p-4 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Package className="w-5 h-5 text-primary" />
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">
+                    <div className="min-w-0">
+                      <h4 className="font-semibold text-foreground text-sm sm:text-base truncate">
                         {match.trips.from_city} → {match.trips.to_city}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         Avec {match.trips?.profiles?.full_name || "Voyageur"}
                       </p>
                     </div>
                   </div>
-                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-xs self-end sm:self-auto">
                     Actif
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <Calendar className="w-4 h-4" />
-                  <span>Départ: {format(new Date(match.trips.departure_date), "d MMMM yyyy", { locale: fr })}</span>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span>Départ: {format(new Date(match.trips.departure_date), "d MMM yyyy", { locale: fr })}</span>
                 </div>
 
-                <Button onClick={() => handleOpenChat(match.id)} className="w-full">
-                  <MessageSquare className="w-4 h-4 mr-2" />
+                <Button onClick={() => handleOpenChat(match.id)} className="w-full text-xs sm:text-sm h-8 sm:h-9" size="sm">
+                  <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                   Discuter
                 </Button>
               </div>
@@ -224,26 +226,26 @@ const MatchProposals = ({ userId }: MatchProposalsProps) => {
 
       {/* Section Matches refusés */}
       {rejectedMatches.length > 0 && (
-        <div className="rounded-2xl border bg-muted/30 p-6">
-          <h3 className="text-lg font-bold text-muted-foreground mb-1">Propositions refusées</h3>
-          <p className="text-sm text-muted-foreground mb-4">Historique des propositions que vous avez déclinées</p>
+        <div className="rounded-xl sm:rounded-2xl border bg-muted/30 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-muted-foreground mb-1">Propositions refusées</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Historique des propositions déclinées</p>
           
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {rejectedMatches.map((match: any) => (
               <div
                 key={match.id}
-                className="rounded-xl border border-border/30 bg-card/50 p-4 opacity-60"
+                className="rounded-lg sm:rounded-xl border border-border/30 bg-card/50 p-3 sm:p-4 opacity-60"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-foreground text-sm sm:text-base truncate">
                       {match.trips.from_city} → {match.trips.to_city}
                     </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Par {match.trips?.profiles?.full_name || "Voyageur"} • {format(new Date(match.trips.departure_date), "d MMM yyyy", { locale: fr })}
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                      Par {match.trips?.profiles?.full_name || "Voyageur"} • {format(new Date(match.trips.departure_date), "d MMM", { locale: fr })}
                     </p>
                   </div>
-                  <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                  <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs self-end sm:self-auto">
                     Refusé
                   </Badge>
                 </div>

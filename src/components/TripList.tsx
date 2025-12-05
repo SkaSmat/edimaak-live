@@ -96,44 +96,44 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
       {trips.map((trip) => (
         <div
           key={trip.id}
-          className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
+          className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
         >
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">
-                {trip.from_city} ({trip.from_country}) → {trip.to_city} ({trip.to_country})
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <h3 className="font-semibold text-sm sm:text-base truncate">
+                {trip.from_city} → {trip.to_city}
               </h3>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={trip.status === "open" ? "default" : "secondary"}>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <Badge variant={trip.status === "open" ? "default" : "secondary"} className="text-xs">
                 {trip.status === "open" ? "Ouvert" : trip.status === "matched" ? "Associé" : "Fermé"}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(trip.id)}>
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(trip.id)} className="h-8 w-8 p-0">
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              <span>Départ: {format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}</span>
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Départ: {format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}</span>
             </div>
             {trip.arrival_date && (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                <span>Arrivée: {format(new Date(trip.arrival_date), "d MMM yyyy", { locale: fr })}</span>
+                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">Arrivée: {format(new Date(trip.arrival_date), "d MMM yyyy", { locale: fr })}</span>
               </div>
             )}
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Weight className="w-4 h-4" />
+              <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
               <span>Max: {trip.max_weight_kg} kg</span>
             </div>
           </div>
 
           {trip.notes && (
-            <p className="mt-3 text-sm text-muted-foreground border-t pt-3">{trip.notes}</p>
+            <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground border-t pt-2 sm:pt-3 line-clamp-2">{trip.notes}</p>
           )}
         </div>
       ))}

@@ -64,89 +64,89 @@ const TravelerDashboard = () => {
       fullName={profile.full_name}
       onLogout={handleLogout}
     >
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Card className="bg-card border shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Voyages actifs
               </CardTitle>
-              <Plane className="h-5 w-5 text-primary" />
+              <Plane className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">
                 {statsLoading ? "..." : tripsCount}
               </div>
               <Button
                 variant="link"
-                className="p-0 h-auto text-primary mt-2"
+                className="p-0 h-auto text-primary mt-2 text-xs sm:text-sm"
                 onClick={() => navigate("/dashboard/traveler/trips")}
               >
-                Voir mes voyages <ArrowRight className="ml-1 h-4 w-4" />
+                Voir mes voyages <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </CardContent>
           </Card>
 
           <Card className="bg-card border shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Matches acceptés
               </CardTitle>
-              <Handshake className="h-5 w-5 text-primary" />
+              <Handshake className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">
                 {statsLoading ? "..." : matchesCount}
               </div>
               <Button
                 variant="link"
-                className="p-0 h-auto text-primary mt-2"
+                className="p-0 h-auto text-primary mt-2 text-xs sm:text-sm"
                 onClick={() => navigate("/dashboard/traveler/matches")}
               >
-                Voir mes matches <ArrowRight className="ml-1 h-4 w-4" />
+                Voir mes matches <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+          <Card className="bg-card border shadow-sm sm:col-span-2 lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Statut KYC
               </CardTitle>
               {isKycComplete ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-orange-500" />
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
               <Badge
                 variant={isKycComplete ? "default" : "secondary"}
-                className={isKycComplete ? "bg-green-500/10 text-green-600" : "bg-orange-500/10 text-orange-600"}
+                className={`text-xs ${isKycComplete ? "bg-green-500/10 text-green-600" : "bg-orange-500/10 text-orange-600"}`}
               >
                 {isKycComplete ? "Complété" : "Incomplet"}
               </Badge>
               <Button
                 variant="link"
-                className="p-0 h-auto text-primary mt-2 block"
+                className="p-0 h-auto text-primary mt-2 block text-xs sm:text-sm"
                 onClick={() => navigate("/profile")}
               >
-                {isKycComplete ? "Voir mon profil" : "Compléter mon profil"} <ArrowRight className="ml-1 h-4 w-4 inline" />
+                {isKycComplete ? "Voir mon profil" : "Compléter mon profil"} <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4 inline" />
               </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Compatible Shipments Section */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <section className="bg-card rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div>
-              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
-                Demandes d'expédition compatibles
+              <h2 className="text-base sm:text-xl font-bold text-foreground flex items-center gap-2">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Demandes compatibles
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Proposez vos services pour ces demandes
               </p>
             </div>

@@ -346,7 +346,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           description="Aucun colis ne correspond exactement à tes dates, destinations ou capacité de poids actuelle."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {shipmentsToDisplay.map(({ shipment, matchingTrip }) => {
             const currentStatus = matchStatuses[shipment.id]; // On récupère le statut (undefined, pending, accepted, rejected)
 
@@ -354,36 +354,35 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
               <div
                 key={shipment.id}
                 id={`shipment-${shipment.id}`}
-                className={`p-4 border rounded-lg bg-card hover:shadow-md transition-all duration-500 relative overflow-hidden`}
+                className={`p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-all duration-500 relative overflow-hidden`}
               >
-                <div className="absolute top-0 right-0 bg-green-500/10 text-green-600 text-xs px-2 py-1 rounded-bl-lg font-medium">
-                  Compatible avec votre voyage du {format(new Date(matchingTrip.departure_date), "d MMM")}
+                <div className="absolute top-0 right-0 bg-green-500/10 text-green-600 text-[10px] sm:text-xs px-2 py-1 rounded-bl-lg font-medium">
+                  Compatible • {format(new Date(matchingTrip.departure_date), "d MMM")}
                 </div>
 
-                <div className="flex items-start justify-between mb-3 mt-2">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-5 h-5 text-primary" />
-                    <div>
-                      <h3 className="font-semibold">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3 mt-5 sm:mt-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-base truncate">
                         {shipment.from_city} → {shipment.to_city}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Expéditeur : {shipment.profiles?.full_name || "Anonyme"}
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        {shipment.profiles?.full_name || "Anonyme"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 p-3 rounded-md mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm bg-muted/30 p-2 sm:p-3 rounded-md mb-3 sm:mb-4">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>
-                      Livraison : {format(new Date(shipment.earliest_date), "d MMM")} -{" "}
-                      {format(new Date(shipment.latest_date), "d MMM")}
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">
+                      {format(new Date(shipment.earliest_date), "d MMM")} - {format(new Date(shipment.latest_date), "d MMM")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Weight className="w-4 h-4 text-muted-foreground" />
+                    <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
                     <span className={shipment.weight_kg > matchingTrip.max_weight_kg ? "text-red-500" : ""}>
                       {shipment.weight_kg} kg (Dispo: {matchingTrip.max_weight_kg}kg)
                     </span>
@@ -391,13 +390,14 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                 </div>
 
                 {shipment.notes && (
-                  <p className="text-sm text-muted-foreground mb-4 italic line-clamp-2">{shipment.notes}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic line-clamp-2">{shipment.notes}</p>
                 )}
 
                 <Button
-                  className={`w-full transition-all duration-300 ${getButtonStyle(currentStatus)}`}
+                  className={`w-full transition-all duration-300 text-xs sm:text-sm h-8 sm:h-9 ${getButtonStyle(currentStatus)}`}
                   onClick={() => handlePropose(shipment.id, matchingTrip.id)}
                   disabled={!!currentStatus} // Désactivé si un statut existe déjà
+                  size="sm"
                 >
                   {getButtonContent(currentStatus, matchingTrip.departure_date)}
                 </Button>

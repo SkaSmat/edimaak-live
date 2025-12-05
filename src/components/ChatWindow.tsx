@@ -203,18 +203,18 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   }
 
   return (
-    <div className="flex flex-col h-[600px]">
+    <div className="flex flex-col h-[calc(100vh-16rem)] sm:h-[500px] md:h-[600px]">
       {/* Header with other user info */}
       {otherUser && (
-        <div className="mb-4 p-4 bg-card rounded-lg border shadow-sm">
-          <div className="flex items-center gap-3">
-            <UserAvatar fullName={otherUser.full_name} avatarUrl={otherUser.avatar_url} size="md" />
-            <div className="flex-1">
+        <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-card rounded-lg border shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <UserAvatar fullName={otherUser.full_name} avatarUrl={otherUser.avatar_url} size="sm" className="sm:w-10 sm:h-10" />
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-foreground">{otherUser.full_name}</p>
+                <p className="font-semibold text-foreground text-sm sm:text-base truncate">{otherUser.full_name}</p>
                 <VerifiedBadge isVerified={isOtherUserVerified} size="sm" />
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
                 <ActivityBadge isActive={true} role={otherUser.role as "traveler" | "sender"} />
               </div>
             </div>
@@ -224,16 +224,16 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
 
       {/* Match details */}
       {matchDetails && matchDetails.trips && (
-        <div className="mb-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Plane className="w-4 h-4 text-blue-600" />
-              <span className="font-medium">
+        <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
+              <span className="font-medium truncate">
                 {(matchDetails.trips as any).from_city} → {(matchDetails.trips as any).to_city}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Package className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">{(matchDetails.shipment_requests as any).item_type}</span>
             </div>
           </div>
@@ -241,11 +241,11 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+      <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 p-3 sm:p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
-            <Send className="w-8 h-8 mb-2" />
-            <p>Dites bonjour pour démarrer la discussion !</p>
+            <Send className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
+            <p className="text-xs sm:text-sm">Dites bonjour pour démarrer la discussion !</p>
           </div>
         ) : (
           messages.map((message: any) => {
@@ -255,17 +255,17 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
             return (
               <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[75%] rounded-2xl p-3 px-4 ${
+                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-2.5 sm:p-3 px-3 sm:px-4 ${
                     isOwn
                       ? "bg-primary text-primary-foreground rounded-br-sm"
                       : "bg-white dark:bg-slate-800 border shadow-sm rounded-bl-sm"
                   }`}
                 >
                   {!isOwn && (
-                    <p className="text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider">{senderName}</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider truncate">{senderName}</p>
                   )}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                  <p className={`text-[10px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}>
+                  <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <p className={`text-[9px] sm:text-[10px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}>
                     {format(new Date(message.created_at), "HH:mm", { locale: fr })}
                   </p>
                 </div>
@@ -277,15 +277,15 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="flex gap-2 mt-4">
+      <form onSubmit={handleSend} className="flex gap-2 mt-3 sm:mt-4">
         <Input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Écrivez votre message..."
           disabled={sending}
-          className="flex-1"
+          className="flex-1 text-sm h-9 sm:h-10"
         />
-        <Button type="submit" disabled={sending || !newMessage.trim()} size="icon">
+        <Button type="submit" disabled={sending || !newMessage.trim()} size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
           <Send className="w-4 h-4" />
         </Button>
       </form>

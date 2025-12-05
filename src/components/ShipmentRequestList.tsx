@@ -97,45 +97,45 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
       {requests.map((request) => (
         <div
           key={request.id}
-          className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
+          className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
         >
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-accent" />
-              <h3 className="font-semibold">
-                {request.from_city} ({request.from_country}) → {request.to_city} ({request.to_country})
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-accent flex-shrink-0" />
+              <h3 className="font-semibold text-sm sm:text-base truncate">
+                {request.from_city} → {request.to_city}
               </h3>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={request.status === "open" ? "default" : "secondary"}>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <Badge variant={request.status === "open" ? "default" : "secondary"} className="text-xs">
                 {request.status === "open" ? "Ouvert" : request.status === "matched" ? "Associé" : "Fermé"}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)}>
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0">
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              <span>
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">
                 {format(new Date(request.earliest_date), "d MMM", { locale: fr })} -{" "}
                 {format(new Date(request.latest_date), "d MMM yyyy", { locale: fr })}
               </span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Weight className="w-4 h-4" />
+              <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
               <span>{request.weight_kg} kg</span>
             </div>
           </div>
 
-          <div className="mt-3">
-            <Badge variant="outline">{request.item_type}</Badge>
+          <div className="mt-2 sm:mt-3">
+            <Badge variant="outline" className="text-xs">{request.item_type}</Badge>
           </div>
 
           {request.notes && (
-            <p className="mt-3 text-sm text-muted-foreground border-t pt-3">{request.notes}</p>
+            <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground border-t pt-2 sm:pt-3 line-clamp-2">{request.notes}</p>
           )}
         </div>
       ))}

@@ -99,7 +99,7 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
   }
 
   return (
-    <div className="space-y-2 p-2">
+    <div className="space-y-1.5 sm:space-y-2 p-2">
       {matches.map((match) => {
         const isUserTraveler = match.trips?.traveler_id === userId;
         const otherUser = isUserTraveler
@@ -109,36 +109,32 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
         const route = match.trips ? `${match.trips.from_city} → ${match.trips.to_city}` : "Trajet inconnu";
 
         const isSelected = selectedMatchId === match.id;
-        const isUnread = unreadIds.includes(match.id); // VRAI SI LA CONVERSATION EST DANS LE STORAGE
+        const isUnread = unreadIds.includes(match.id);
 
         return (
           <button
             key={match.id}
             onClick={() => onSelectMatch(match.id)}
             className={cn(
-              "w-full text-left p-4 rounded-xl border transition-all duration-200 relative group flex items-center gap-3",
-              // Style si SELECTIONNÉ
+              "w-full text-left p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-200 relative group flex items-center gap-2 sm:gap-3",
               isSelected
                 ? "bg-orange-50 border-orange-500 shadow-md ring-1 ring-orange-200"
-                : // Style si NON LU
-                  isUnread
+                : isUnread
                   ? "bg-red-50/70 border-red-200 shadow-sm font-semibold"
                   : "bg-card hover:bg-gray-50 border-transparent hover:border-gray-200 shadow-sm",
             )}
           >
-            {/* INDICATEUR DE SÉLECTION (Barre orange à gauche) */}
             {isSelected && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-orange-500 rounded-r-full" />
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 sm:h-8 w-1 bg-orange-500 rounded-r-full" />
             )}
 
-            {/* PASTILLE ROUGE SI NON LU ET NON SELECTIONNÉ */}
             {isUnread && !isSelected && (
-              <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse border-2 border-red-100" />
+              <span className="absolute top-2 right-2 h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-500 animate-pulse border-2 border-red-100" />
             )}
 
             <div
               className={cn(
-                "p-2.5 rounded-full transition-colors shrink-0",
+                "p-2 sm:p-2.5 rounded-full transition-colors shrink-0",
                 isSelected
                   ? "bg-orange-100 text-orange-600"
                   : isUnread
@@ -146,13 +142,13 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
                     : "bg-gray-100 text-gray-500 group-hover:bg-white",
               )}
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
 
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
-                  "font-semibold truncate",
+                  "font-semibold truncate text-sm sm:text-base",
                   isSelected ? "text-orange-900" : isUnread ? "text-red-800" : "text-gray-900",
                 )}
               >
@@ -160,7 +156,7 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
               </p>
               <p
                 className={cn(
-                  "text-xs truncate font-medium",
+                  "text-[11px] sm:text-xs truncate font-medium",
                   isUnread ? "text-red-700 font-bold" : "text-muted-foreground",
                 )}
               >
@@ -170,7 +166,7 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
 
             <ChevronRight
               className={cn(
-                "w-4 h-4 transition-transform",
+                "w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform flex-shrink-0",
                 isSelected ? "text-orange-500" : "text-gray-300 group-hover:text-gray-400 group-hover:translate-x-1",
               )}
             />

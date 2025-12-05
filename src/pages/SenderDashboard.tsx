@@ -103,71 +103,71 @@ const SenderDashboard = () => {
 
   return (
     <DashboardLayout role="sender" fullName={profile?.full_name}>
-      <div className="space-y-8">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between relative overflow-hidden">
+      <div className="space-y-6 sm:space-y-8">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Mes demandes d'expédition</h3>
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Mes demandes d'expédition</h3>
               <Package className="w-4 h-4 text-primary" />
             </div>
-            <div className="text-2xl font-bold">{stats.activeRequests}</div>
-            <div className="mt-4 flex items-center justify-between">
+            <div className="text-xl sm:text-2xl font-bold">{stats.activeRequests}</div>
+            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <Button
                 onClick={() => navigate("/dashboard/sender/shipments")}
                 variant="link"
-                className="p-0 h-auto text-primary text-sm flex items-center gap-1"
+                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
               >
-                Gérer <ChevronRight className="w-4 h-4" />
+                Gérer <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <Button
                 size="sm"
                 onClick={() => navigate("/dashboard/sender/shipments#new")}
-                className="gap-1 rounded-full h-8 px-3"
+                className="gap-1 rounded-full h-7 sm:h-8 px-2.5 sm:px-3 text-xs"
               >
-                <Plus className="w-4 h-4" /> Nouvelle
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" /> Nouvelle
               </Button>
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between">
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Matches acceptés</h3>
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Matches acceptés</h3>
               <Handshake className="w-4 h-4 text-green-600" />
             </div>
-            <div className="text-2xl font-bold">{stats.acceptedMatches}</div>
-            <div className="mt-4">
+            <div className="text-xl sm:text-2xl font-bold">{stats.acceptedMatches}</div>
+            <div className="mt-3 sm:mt-4">
               <Button
                 onClick={() => navigate("/dashboard/sender/matches")}
                 variant="link"
-                className="p-0 h-auto text-primary text-sm flex items-center gap-1"
+                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
               >
-                Voir mes contacts <ChevronRight className="w-4 h-4" />
+                Voir mes contacts <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between">
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium text-muted-foreground">Mon Profil</h3>
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Mon Profil</h3>
               <User className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="text-sm font-medium mt-2">
+            <div className="text-xs sm:text-sm font-medium mt-2">
               Statut :{" "}
-              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Expéditeur vérifié</span>
+              <span className="bg-blue-100 text-blue-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">Expéditeur vérifié</span>
             </div>
-            <div className="mt-4">
+            <div className="mt-3 sm:mt-4">
               <Button
                 onClick={() => navigate("/profile")}
                 variant="link"
-                className="p-0 h-auto text-primary text-sm flex items-center gap-1"
+                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
               >
-                Voir mon profil <ChevronRight className="w-4 h-4" />
+                Voir mon profil <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="pt-4">
+        <div className="pt-2 sm:pt-4">
           <SenderShipments embedded={true} />
         </div>
       </div>
