@@ -25,17 +25,39 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
   const [pendingMatchCount, setPendingMatchCount] = useState(0); // NOUVEAU : Matchs
   const location = useLocation();
 
-  // --- GESTION COMPTEURS LOCALSTORAGE ---
+  // --- GESTION COMPTEURS ---
   const updateCountsFromStorage = () => {
     // Messages
     const msgStorage = localStorage.getItem("unreadMatches");
     const msgList = msgStorage ? JSON.parse(msgStorage) : [];
     setUnreadCount(msgList.length);
+  };
 
-    // Matchs (NOUVEAU)
-    const matchStorage = localStorage.getItem("newMatches");
-    const matchList = matchStorage ? JSON.parse(matchStorage) : [];
-    setPendingMatchCount(matchList.length);
+  // Fetch pending matches count from database
+  const fetchPendingMatchCount = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Get user's shipment IDs first
+      const { data: shipments } = await supabase
+        .from("shipment_requests")
+        .select("id")
+        .eq("sender_id", session.user.id);
+
+      if (shipments && shipments.length > 0) {
+        const shipmentIds = shipments.map(s => s.id);
+        const { count } = await supabase
+          .from("matches")
+          .select("*", { count: "exact", head: true })
+          .in("shipment_request_id", shipmentIds)
+          .eq("status", "pending");
+        
+        setPendingMatchCount(count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching pending match count:", error);
+    }
   };
 
   const handleInternalLogout = async () => {
@@ -51,14 +73,15 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
 
   useEffect(() => {
     updateCountsFromStorage();
+    fetchPendingMatchCount();
 
-    // On écoute les deux types d'événements
-    window.addEventListener("unread-change", updateCountsFromStorage); // Pour les messages
-    window.addEventListener("match-change", updateCountsFromStorage); // Pour les matchs
+    // On écoute les événements
+    window.addEventListener("unread-change", updateCountsFromStorage);
+    window.addEventListener("match-change", fetchPendingMatchCount);
 
     return () => {
       window.removeEventListener("unread-change", updateCountsFromStorage);
-      window.removeEventListener("match-change", updateCountsFromStorage);
+      window.removeEventListener("match-change", fetchPendingMatchCount);
     };
   }, []);
 
