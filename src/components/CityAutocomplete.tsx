@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-// --- BASES DE DONNÉES VILLES (Exportées pour être utilisées dans les formulaires) ---
-
 export const CITIES_FRANCE = [
   "Paris",
   "Marseille",
@@ -28,35 +26,6 @@ export const CITIES_FRANCE = [
   "Angers",
   "Nîmes",
   "Villeurbanne",
-  "Saint-Denis",
-  "Le Mans",
-  "Aix-en-Provence",
-  "Clermont-Ferrand",
-  "Brest",
-  "Limoges",
-  "Tours",
-  "Amiens",
-  "Perpignan",
-  "Metz",
-  "Besançon",
-  "Boulogne-Billancourt",
-  "Orléans",
-  "Mulhouse",
-  "Rouen",
-  "Caen",
-  "Nancy",
-  "Argenteuil",
-  "Montreuil",
-  "Roubaix",
-  "Dunkerque",
-  "Tourcoing",
-  "Avignon",
-  "Nanterre",
-  "Poitiers",
-  "Créteil",
-  "Versailles",
-  "Courbevoie",
-  "Pau",
 ].sort();
 
 export const CITIES_ALGERIA = [
@@ -80,24 +49,6 @@ export const CITIES_ALGERIA = [
   "Béchar",
   "Mostaganem",
   "Bordj Bou Arreridj",
-  "Chlef",
-  "Souk Ahras",
-  "Médéa",
-  "El Eulma",
-  "Touggourt",
-  "Ghardaïa",
-  "Saïda",
-  "Laghouat",
-  "M'Sila",
-  "Jijel",
-  "Relizane",
-  "Guelma",
-  "Ain Beida",
-  "Khenchela",
-  "Bousaada",
-  "Mascara",
-  "Tindouf",
-  "Tizi Ouzou",
 ].sort();
 
 export const CITIES_CANADA = [
@@ -110,22 +61,8 @@ export const CITIES_CANADA = [
   "Laval",
   "Longueuil",
   "Sherbrooke",
-  "Saguenay",
-  "Lévis",
-  "Trois-Rivières",
-  "Terrebonne",
-  "Saint-Jean-sur-Richelieu",
-  "Repentigny",
-  "Drummondville",
-  "Saint-Jérôme",
-  "Granby",
-  "Blainville",
-  "Saint-Hyacinthe",
   "Calgary",
   "Edmonton",
-  "Winnipeg",
-  "Halifax",
-  "Mississauga",
 ].sort();
 
 export const CITIES_SPAIN = [
@@ -140,22 +77,6 @@ export const CITIES_SPAIN = [
   "Las Palmas",
   "Bilbao",
   "Alicante",
-  "Cordoue",
-  "Valladolid",
-  "Vigo",
-  "Gijón",
-  "L'Hospitalet",
-  "La Corogne",
-  "Grenade",
-  "Vitoria-Gasteiz",
-  "Elche",
-  "Oviedo",
-  "Badalone",
-  "Carthagène",
-  "Terrassa",
-  "Jerez de la Frontera",
-  "Sabadell",
-  "Santa Cruz de Tenerife",
 ].sort();
 
 export const CITIES_UK = [
@@ -169,34 +90,15 @@ export const CITIES_UK = [
   "Leeds",
   "Bristol",
   "Édimbourg",
-  "Leicester",
-  "Coventry",
-  "Bradford",
-  "Cardiff",
-  "Belfast",
-  "Nottingham",
-  "Kingston-upon-Hull",
-  "Stoke-on-Trent",
-  "Southampton",
-  "Reading",
-  "Derby",
-  "Portsmouth",
-  "Luton",
-  "Wolverhampton",
-  "Plymouth",
-  "Norwich",
 ].sort();
-
-// Liste combinée pour "Le reste du monde" (Hors Algérie)
-export const CITIES_INTERNATIONAL = [...CITIES_FRANCE, ...CITIES_CANADA, ...CITIES_SPAIN, ...CITIES_UK].sort();
 
 interface CityAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  // On ajoute les nouveaux pays au type
-  limitToCountry?: "France" | "Algérie" | "Canada" | "Espagne" | "Royaume-Uni" | "International" | null;
+  // On accepte n'importe quelle string pour être flexible
+  limitToCountry?: string | null;
 }
 
 export function CityAutocomplete({
@@ -210,7 +112,6 @@ export function CityAutocomplete({
 
   let cities: string[] = [];
 
-  // Logique de sélection de la liste
   switch (limitToCountry) {
     case "France":
       cities = CITIES_FRANCE;
@@ -227,11 +128,8 @@ export function CityAutocomplete({
     case "Royaume-Uni":
       cities = CITIES_UK;
       break;
-    case "International":
-      cities = CITIES_INTERNATIONAL;
-      break; // Tous sauf Algérie
     default:
-      cities = [...CITIES_ALGERIA, ...CITIES_INTERNATIONAL].sort(); // Absolument tout
+      cities = [...CITIES_ALGERIA, ...CITIES_FRANCE, ...CITIES_SPAIN].sort();
   }
 
   return (
@@ -249,11 +147,9 @@ export function CityAutocomplete({
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
-          <CommandInput placeholder={limitToCountry ? `Ville (${limitToCountry})...` : "Rechercher une ville..."} />
+          <CommandInput placeholder={limitToCountry ? `Ville (${limitToCountry})...` : "Rechercher..."} />
           <CommandList>
-            <CommandEmpty>
-              <div className="py-2 px-4 text-sm text-muted-foreground">Ville introuvable.</div>
-            </CommandEmpty>
+            <CommandEmpty>Ville introuvable.</CommandEmpty>
             <CommandGroup>
               {cities.map((city) => (
                 <CommandItem
