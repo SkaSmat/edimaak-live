@@ -58,10 +58,14 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     setLoading(true);
 
     try {
+      // 1. Validation STRICTE des pays
+      if (formData.fromCountry === formData.toCountry) {
+        throw new Error("Le pays de départ et d'arrivée doivent être différents (Transport international uniquement).");
+      }
+
       if (parseFloat(formData.weightKg) <= 0) throw new Error("Le poids doit être positif");
       if (formData.latestDate < formData.earliestDate) throw new Error("La date limite est avant la date de début");
-      if (formData.fromCountry === formData.toCountry && formData.fromCity === formData.toCity)
-        throw new Error("Départ et arrivée identiques.");
+      if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
 
       let imageUrl: string | null = null;
       if (imageFile) {
@@ -124,7 +128,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <CityAutocomplete
             value={formData.fromCity}
             onChange={(val) => setFormData({ ...formData, fromCity: val })}
-            limitToCountry={formData.fromCountry}
+            limitToCountry={formData.fromCountry as any}
             placeholder={`Départ (${formData.fromCountry})`}
           />
         </div>
@@ -150,13 +154,11 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <CityAutocomplete
             value={formData.toCity}
             onChange={(val) => setFormData({ ...formData, toCity: val })}
-            limitToCountry={formData.toCountry}
+            limitToCountry={formData.toCountry as any}
             placeholder={`Arrivée (${formData.toCountry})`}
           />
         </div>
 
-        {/* ... Reste du formulaire (Dates, Poids, Image) identique à avant ... */}
-        {/* Je raccourcis ici pour la lisibilité, mais tu gardes les champs date/poids/image/notes du code précédent */}
         <div className="space-y-2">
           <Label>Dispo à partir du *</Label>
           <Input
@@ -225,7 +227,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         ) : (
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-muted/40">
             <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">Ajouter une photo</span>
+            <span className="text-sm text-muted-foreground">Ajouter une photo (Max 5Mo)</span>
             <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
           </label>
         )}
