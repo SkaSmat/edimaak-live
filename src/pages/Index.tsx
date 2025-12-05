@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   Bell,
   MessageCircle,
-} from "lucide-react";
+  ArrowRightLeft,
+} from "lucide-react"; // Ajout ArrowRightLeft
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -22,17 +23,13 @@ import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
-import { PublicProfileModal } from "@/components/PublicProfileModal";
 import { toast } from "sonner";
-// IMPORTS MODULAIRES AJOUTÉS
-import { useAuth, UserRole } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
 import { SkeletonCard } from "@/components/SkeletonCard";
 
-// ============================================================================
-// TYPES
-// On utilise les types ShipmentRequest de base pour le composant
+// Types
 interface ShipmentRequest {
   id: string;
   from_city: string;
@@ -59,37 +56,45 @@ const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Utilisation des hooks modulaires
   const { session, userRole, isLoading: authLoading } = useAuth();
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
 
-  // States Locaux pour le formulaire
+  // --- NOUVEAU : GESTION DU SENS ---
+  const [direction, setDirection] = useState<"fr-dz" | "dz-fr">("fr-dz");
+
   const [localFromCity, setLocalFromCity] = useState(searchParams.get("from") || "");
   const [localToCity, setLocalToCity] = useState(searchParams.get("to") || "");
   const [localSearchDate, setLocalSearchDate] = useState(searchParams.get("date") || "");
 
-  // States de Données et UI
   const [shipmentRequests, setShipmentRequests] = useState<ShipmentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
-  // Valeurs réelles des filtres lues de l'URL
   const currentFromCity = searchParams.get("from") || "";
   const currentToCity = searchParams.get("to") || "";
   const currentSearchDate = searchParams.get("date") || "";
-  const highlightedShipmentId = searchParams.get("highlight") || "";
   const isSearching = currentFromCity || currentToCity || currentSearchDate;
 
-  // --- FONCTIONS UTILITAIRES ---
-  const getDashboardPath = (userRole: UserRole): string => {
-    if (userRole === "sender") return "/dashboard/sender";
-    if (userRole === "admin") return "/admin";
+  // --- FONCTION POUR INVERSER LE SENS ---
+  const toggleDirection = () => {
+    setDirection((prev) => (prev === "fr-dz" ? "dz-fr" : "fr-dz"));
+    // On vide les champs villes car elles ne correspondent plus au pays
+    setLocalFromCity("");
+    setLocalToCity("");
+  };
+
+  const getDashboardPath = (role: string | null): string => {
+    if (role === "sender") return "/dashboard/sender";
+    if (role === "admin") return "/admin";
     return "/dashboard/traveler";
   };
 
-  // --- CHARGEMENT DES DONNÉES ---
+  const handleDashboardClick = useCallback(() => {
+    resetUnreadCount();
+    navigate(getDashboardPath(userRole));
+  }, [userRole, navigate, resetUnreadCount]);
+
   useEffect(() => {
     fetchShipmentRequests();
   }, []);
@@ -101,16 +106,7 @@ const Index = () => {
     try {
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
-        .select(
-          `
-          *,
-          profiles!sender_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `,
-        )
+        .select(`*, profiles!sender_id (id, full_name, avatar_url)`)
         .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(20);
@@ -121,14 +117,10 @@ const Index = () => {
         const senderIds = [...new Set(data.map((r) => r.sender_id))];
 
         if (senderIds.length > 0) {
-          const { data: counts, error: countError } = await supabase
+          const { data: counts } = await supabase
             .from("shipment_requests")
             .select("sender_id")
             .in("sender_id", senderIds);
-
-          if (countError) {
-            console.warn("Erreur lors du comptage des annonces:", countError);
-          }
 
           const countMap: Record<string, number> = (counts || []).reduce(
             (acc, item) => {
@@ -149,58 +141,25 @@ const Index = () => {
         }
       }
     } catch (err) {
-      console.error("Erreur de chargement:", err);
-      setError("Impossible de charger les annonces. Veuillez réessayer.");
-      toast.error("Erreur de chargement des annonces");
+      console.error("Erreur chargement", err);
+      setError("Impossible de charger les annonces.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- FILTRAGE DYNAMIQUE BASÉ SUR L'URL ---
   const filteredRequests = useMemo(() => {
     let filtered = shipmentRequests;
-
-    if (currentFromCity) {
+    if (currentFromCity)
       filtered = filtered.filter((req) => req.from_city.toLowerCase().includes(currentFromCity.toLowerCase().trim()));
-    }
-    if (currentToCity) {
+    if (currentToCity)
       filtered = filtered.filter((req) => req.to_city.toLowerCase().includes(currentToCity.toLowerCase().trim()));
-    }
-    if (currentSearchDate) {
-      filtered = filtered.filter((req) => isDateInRange(req, currentSearchDate));
-    }
-
-    // Si un shipment est highlighté, le mettre en premier
-    if (highlightedShipmentId) {
-      const highlightedIndex = filtered.findIndex((req) => req.id === highlightedShipmentId);
-      if (highlightedIndex > 0) {
-        const [highlighted] = filtered.splice(highlightedIndex, 1);
-        filtered = [highlighted, ...filtered];
-      }
-    }
-
+    if (currentSearchDate) filtered = filtered.filter((req) => isDateInRange(req, currentSearchDate));
     return filtered;
-  }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate, highlightedShipmentId]);
+  }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate]);
 
-  // Auto-open highlighted shipment modal after login
-  useEffect(() => {
-    if (highlightedShipmentId && filteredRequests.length > 0 && !selectedShipment) {
-      const highlighted = filteredRequests.find((req) => req.id === highlightedShipmentId);
-      if (highlighted) {
-        setSelectedShipment(highlighted);
-        // Clear highlight from URL
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete("highlight");
-        setSearchParams(newParams, { replace: true });
-      }
-    }
-  }, [highlightedShipmentId, filteredRequests, selectedShipment]);
-
-  // --- LOGIQUE DE REDIRECTION DU BOUTON RECHERCHE ---
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
-
     const newParams: Record<string, string> = {};
     if (localFromCity.trim()) newParams.from = localFromCity.trim();
     if (localToCity.trim()) newParams.to = localToCity.trim();
@@ -216,12 +175,6 @@ const Index = () => {
     }
   };
 
-  // --- HANDLERS D'INPUTS ---
-  const handleFromCityChange = (val: string) => setLocalFromCity(val);
-  const handleToCityChange = (val: string) => setLocalToCity(val);
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => setLocalSearchDate(e.target.value);
-
-  // --- HANDLERS CLICS CARTE ---
   const handleShipmentClick = useCallback((shipment: ShipmentRequest) => {
     setSelectedShipment(shipment);
   }, []);
@@ -240,14 +193,6 @@ const Index = () => {
     }
   }, [selectedShipment, navigate]);
 
-  const handleDashboardClick = useCallback(() => {
-    resetUnreadCount();
-    navigate(getDashboardPath(userRole));
-  }, [userRole, navigate, resetUnreadCount]);
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* HEADER */}
@@ -262,10 +207,7 @@ const Index = () => {
               <Button onClick={handleDashboardClick} className="rounded-full font-medium relative overflow-visible">
                 Mon Dashboard
                 {unreadCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50"
-                    aria-label={`${unreadCount} message${unreadCount > 1 ? "s" : ""} non lu${unreadCount > 1 ? "s" : ""}`}
-                  >
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -302,45 +244,60 @@ const Index = () => {
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE */}
+      {/* BARRE DE RECHERCHE INTELLIGENTE */}
       <form onSubmit={handleSearchClick}>
         <div className="relative md:sticky md:top-20 z-40 py-4 sm:py-6 mt-[-1rem]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-            <div className="bg-white dark:bg-card rounded-3xl shadow-xl border border-border/40 p-3 sm:p-2 flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
+            <div className="bg-white dark:bg-card rounded-3xl shadow-xl border border-border/40 p-3 sm:p-2 flex flex-col sm:flex-row gap-3 items-center">
+              {/* DÉPART */}
+              <div className="flex-1 w-full flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
                 <div className="w-full">
                   <CityAutocomplete
-                    placeholder="Départ (ex: Paris)"
+                    placeholder={direction === "fr-dz" ? "Départ (France)" : "Départ (Algérie)"}
                     value={localFromCity}
-                    onChange={handleFromCityChange}
+                    onChange={setLocalFromCity}
+                    limitToCountry={direction === "fr-dz" ? "France" : "Algérie"} // Restriction stricte
                   />
                 </div>
               </div>
 
-              <div className="w-px h-8 bg-gray-200 my-auto hidden sm:block" />
+              {/* BOUTON INVERSION */}
+              <div className="shrink-0 flex items-center justify-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleDirection}
+                  className="rounded-full hover:bg-gray-100 h-8 w-8 text-primary"
+                  title="Inverser le sens du voyage"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                </Button>
+              </div>
 
-              <div className="flex-1 flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
+              {/* ARRIVÉE */}
+              <div className="flex-1 w-full flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
                 <div className="w-full">
                   <CityAutocomplete
-                    placeholder="Arrivée (ex: Alger)"
+                    placeholder={direction === "fr-dz" ? "Arrivée (Algérie)" : "Arrivée (France)"}
                     value={localToCity}
-                    onChange={handleToCityChange}
+                    onChange={setLocalToCity}
+                    limitToCountry={direction === "fr-dz" ? "Algérie" : "France"} // Restriction stricte
                   />
                 </div>
               </div>
 
               <div className="w-px h-8 bg-gray-200 my-auto hidden sm:block" />
 
-              <div className="flex-1 flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
+              <div className="flex-1 w-full flex items-center px-4 py-3 gap-3 border border-border/50 rounded-xl bg-gray-50/50 sm:bg-transparent sm:border-0 transition-colors hover:bg-gray-50">
                 <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
                 <Input
                   type="date"
                   value={localSearchDate}
-                  onChange={handleDateChange}
+                  onChange={(e) => setLocalSearchDate(e.target.value)}
                   className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground w-full p-0 h-auto cursor-pointer"
-                  aria-label="Date de voyage"
                 />
               </div>
 
@@ -357,36 +314,23 @@ const Index = () => {
         </div>
       </form>
 
-      {/* CONTENU PRINCIPAL */}
+      {/* CONTENU PRINCIPAL (Cartes...) */}
       <main className="container mx-auto px-4 max-w-7xl pb-20 pt-8" id="results-section">
         <div className="mb-8">
           {isSearching ? (
             <h2 className="text-2xl font-bold text-gray-900">
-              Résultats pour votre recherche
+              Résultats de recherche
               <span className="text-muted-foreground font-normal text-lg ml-2">
                 ({filteredRequests.length} annonce{filteredRequests.length > 1 ? "s" : ""})
               </span>
             </h2>
           ) : (
             <>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dernières annonces publiées</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dernières annonces</h2>
               <p className="text-gray-500">Trouvez un colis à transporter et rentabilisez votre voyage.</p>
             </>
           )}
         </div>
-
-        {/* État d'erreur */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-3">
-            <Bell className="w-5 h-5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium">{error}</p>
-              <button onClick={fetchShipmentRequests} className="text-sm underline mt-1 hover:text-red-900">
-                Réessayer
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* État de chargement */}
         {isLoading && (
@@ -403,45 +347,32 @@ const Index = () => {
             <div className="bg-primary/10 p-4 rounded-full mb-4">
               <Bell className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun trajet ne correspond (pour l'instant)</h3>
-            <p className="text-gray-500 max-w-md mb-8">
-              Ne repartez pas les mains vides ! Créez une alerte voyageur et nous vous préviendrons dès qu'un colis
-              correspondant est publié.
-            </p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun trajet ne correspond</h3>
+            <p className="text-gray-500 max-w-md mb-8">Créez une alerte voyageur et nous vous préviendrons.</p>
             <Button
               onClick={() => navigate("/auth?role=traveler")}
               size="lg"
               className="rounded-full px-8 text-base shadow-lg shadow-primary/20"
             >
-              Créer une alerte voyageur
+              Créer une alerte
             </Button>
           </div>
         )}
 
-        {/* Grille de cartes */}
+        {/* Grille */}
         {!isLoading && filteredRequests.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredRequests.map((request) => (
               <div
                 key={request.id}
                 role="button"
-                tabIndex={0}
-                aria-label={`Voir l'annonce de ${
-                  request.profiles?.full_name || "Utilisateur"
-                } pour transporter un colis de ${request.from_city} à ${request.to_city}`}
-                className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col focus:outline-none"
                 onClick={() => handleShipmentClick(request)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleShipmentClick(request);
-                  }
-                }}
               >
                 <div className="aspect-[4/3] overflow-hidden relative bg-gray-100">
                   <img
                     src={getShipmentImageUrl(request.image_url, request.item_type)}
-                    alt={`Photo de ${request.item_type}`}
+                    alt={request.item_type}
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -458,12 +389,8 @@ const Index = () => {
                       <p className="text-sm text-gray-500">Depuis {request.from_city}</p>
                     </div>
                     {(request.sender_request_count || 0) > 2 && (
-                      <div
-                        className="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"
-                        aria-label="Expéditeur fiable"
-                      >
-                        <ShieldCheck className="w-3 h-3" />
-                        FIABLE
+                      <div className="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" /> FIABLE
                       </div>
                     )}
                   </div>
@@ -483,39 +410,15 @@ const Index = () => {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (session) {
-                          setSelectedProfileId(request.sender_id);
-                        } else {
-                          toast.info("Connectez-vous pour voir le profil");
-                        }
-                      }}
-                      className="hover:opacity-80 transition-opacity"
-                    >
-                      <UserAvatar
-                        fullName={request.profiles?.full_name || ""}
-                        avatarUrl={request.profiles?.avatar_url}
-                        size="sm"
-                      />
-                    </button>
+                    <UserAvatar
+                      fullName={request.profiles?.full_name || ""}
+                      avatarUrl={request.profiles?.avatar_url}
+                      size="sm"
+                    />
                     <div className="flex-1 min-w-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (session) {
-                            setSelectedProfileId(request.sender_id);
-                          } else {
-                            toast.info("Connectez-vous pour voir le profil");
-                          }
-                        }}
-                        className="text-sm font-medium text-gray-900 truncate hover:text-primary transition-colors text-left"
-                      >
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
-                      </button>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -525,24 +428,12 @@ const Index = () => {
         )}
       </main>
 
-      {/* FOOTER */}
       <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-center md:text-left text-sm text-gray-400">
-            © 2025 EDIM3AK. La plateforme de confiance.
-          </div>
-          <div className="flex gap-6 text-sm">
-            <button onClick={() => navigate("/legal")} className="text-gray-400 hover:text-primary transition-colors">
-              Conditions Générales (CGU)
-            </button>
-            <button onClick={() => navigate("/legal")} className="text-gray-400 hover:text-primary transition-colors">
-              Confidentialité
-            </button>
-          </div>
+        <div className="container mx-auto px-4 text-center text-sm text-gray-400">
+          © 2025 EDIM3AK. La plateforme de confiance.
         </div>
       </footer>
 
-      {/* MODAL DE DÉTAIL */}
       {selectedShipment && (
         <ShipmentDetailModal
           isOpen={!!selectedShipment}
@@ -551,19 +442,6 @@ const Index = () => {
           isAuthenticated={!!session}
           onSignUp={handleSignUp}
           onLogin={handleLogin}
-          onViewProfile={(userId) => {
-            setSelectedShipment(null);
-            setSelectedProfileId(userId);
-          }}
-        />
-      )}
-
-      {/* MODAL PROFIL PUBLIC */}
-      {selectedProfileId && (
-        <PublicProfileModal
-          isOpen={!!selectedProfileId}
-          onClose={() => setSelectedProfileId(null)}
-          userId={selectedProfileId}
         />
       )}
     </div>
