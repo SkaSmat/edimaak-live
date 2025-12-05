@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Lock } from "lucide-react"; // Ajout de Lock
+import { Loader2, Lock } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 import { useUserStats, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
@@ -32,6 +32,15 @@ interface PrivateInfoData {
   id_expiry_date: string | null;
 }
 
+const COUNTRY_CODES = [
+  { code: "+33", label: "FR (+33)" },
+  { code: "+213", label: "DZ (+213)" },
+  { code: "+216", label: "TN (+216)" },
+  { code: "+212", label: "MA (+212)" },
+  { code: "+32", label: "BE (+32)" },
+  { code: "+1", label: "CA (+1)" },
+];
+
 const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -41,18 +50,20 @@ const Profile = () => {
 
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingKyc, setSavingKyc] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false); // Nouvel état
+  const [savingPassword, setSavingPassword] = useState(false);
 
   // Form states
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [countryOfResidence, setCountryOfResidence] = useState("");
 
-  // Password Reset state
-  const [newPassword, setNewPassword] = useState(""); // Nouveau champ
+  // Password
+  const [newPassword, setNewPassword] = useState("");
 
   // KYC states
-  const [phone, setPhone] = useState("");
+  const [phoneCode, setPhoneCode] = useState("+33");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
   const [addressLine1, setAddressLine1] = useState("");
   const [addressCity, setAddressCity] = useState("");
   const [addressPostalCode, setAddressPostalCode] = useState("");
@@ -65,14 +76,6 @@ const Profile = () => {
 
   useEffect(() => {
     checkAuth();
-
-    // Vérifier si on vient d'un reset password (hash dans l'url type #access_token=...)
-    supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        // Optionnel : Afficher un toast pour dire "Veuillez changer votre mot de passe ci-dessous"
-        toast.info("Vous pouvez maintenant définir votre nouveau mot de passe.");
-      }
-    });
   }, []);
 
   const checkAuth = async () => {
@@ -86,10 +89,9 @@ const Profile = () => {
 
     setUser(session.user);
 
-    // Fetch profile data
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, role, avatar_url, first_name, last_name, country_of_residence")
+      .select("*")
       .eq("id", session.user.id)
       .single();
 
@@ -103,7 +105,7 @@ const Profile = () => {
     setLastName(profileData.last_name || "");
     setCountryOfResidence(profileData.country_of_residence || "");
 
-    // Fetch private_info data
+    // Fetch private info
     const { data: privateData } = await supabase
       .from("private_info")
       .select("*")
@@ -112,7 +114,19 @@ const Profile = () => {
 
     if (privateData) {
       setPrivateInfo(privateData as PrivateInfoData);
-      setPhone(privateData.phone || "");
+
+      // Découpage du numéro si présent
+      if (privateData.phone) {
+        // On essaie de deviner l'indicatif
+        const foundCode = COUNTRY_CODES.find((c) => privateData.phone!.startsWith(c.code));
+        if (foundCode) {
+          setPhoneCode(foundCode.code);
+          setPhoneNumber(privateData.phone!.replace(foundCode.code, ""));
+        } else {
+          setPhoneNumber(privateData.phone!);
+        }
+      }
+
       setAddressLine1(privateData.address_line1 || "");
       setAddressCity(privateData.address_city || "");
       setAddressPostalCode(privateData.address_postal_code || "");
@@ -126,32 +140,29 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
+    // On laisse le Layout gérer mais au cas où
     await supabase.auth.signOut();
-    navigate("/");
-    toast.success("Déconnexion réussie");
+    localStorage.clear();
+    window.location.href = "/";
   };
 
   const handleAvatarUpdated = (newUrl: string | null) => {
     if (profile) setProfile({ ...profile, avatar_url: newUrl });
   };
 
-  // NOUVELLE FONCTION : Mise à jour du mot de passe
   const handleUpdatePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       toast.error("Le mot de passe doit contenir au moins 6 caractères");
       return;
     }
-
     setSavingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
-
       if (error) throw error;
-
       toast.success("Mot de passe mis à jour avec succès !");
-      setNewPassword(""); // Reset le champ
+      setNewPassword("");
     } catch (error: any) {
-      console.error("Erreur password:", error);
+      console.error(error);
       toast.error("Impossible de mettre à jour le mot de passe");
     } finally {
       setSavingPassword(false);
@@ -178,9 +189,9 @@ const Profile = () => {
       if (profile) {
         setProfile({
           ...profile,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          country_of_residence: countryOfResidence || null,
+          first_name: firstName,
+          last_name: lastName,
+          country_of_residence: countryOfResidence,
         });
       }
     }
@@ -190,18 +201,19 @@ const Profile = () => {
   const saveKycInfo = async () => {
     if (!user) return;
 
-    if (!phone.trim()) {
+    if (!phoneNumber.trim()) {
       setPhoneError("Le numéro de téléphone est obligatoire");
-      toast.error("Le numéro de téléphone est obligatoire");
       return;
     }
     setPhoneError("");
 
     setSavingKyc(true);
 
+    const fullPhone = `${phoneCode}${phoneNumber.replace(/^0+/, "")}`;
+
     const kycData = {
       id: user.id,
-      phone: phone || null,
+      phone: fullPhone,
       address_line1: addressLine1 || null,
       address_city: addressCity || null,
       address_postal_code: addressPostalCode || null,
@@ -224,18 +236,8 @@ const Profile = () => {
   };
 
   const stats = useUserStats(user?.id);
-
-  const isVerified = Boolean(phone?.trim() && idType?.trim() && idNumber?.trim());
-
-  const getKycStatus = () => {
-    const kycFields = [phone, idType, idNumber, idExpiryDate];
-    const filledFields = kycFields.filter((f) => f && String(f).trim() !== "").length;
-    if (filledFields === 0) return "not_filled";
-    if (filledFields < kycFields.length) return "partial";
-    return "complete";
-  };
-
-  const kycStatus = getKycStatus();
+  const isVerified = Boolean(phoneNumber?.trim() && idType?.trim() && idNumber?.trim());
+  const kycStatus = isVerified ? "complete" : "not_filled";
 
   const isActive =
     profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
@@ -253,7 +255,7 @@ const Profile = () => {
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Mon profil</h1>
 
-        {/* Section: Aperçu */}
+        {/* Aperçu */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <ProfileAvatarUpload
@@ -271,20 +273,19 @@ const Profile = () => {
               </div>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <ActivityBadge isActive={isActive} role={profile.role as "traveler" | "sender"} />
+                <ActivityBadge isActive={isActive} role={profile.role} />
                 <KycBadge status={kycStatus} />
               </div>
             </div>
           </div>
         </section>
 
-        {/* NOUVELLE SECTION : SÉCURITÉ (Changement de mot de passe) */}
+        {/* Sécurité */}
         <section className="bg-card rounded-2xl shadow-sm border p-6 border-l-4 border-l-primary/50">
           <div className="flex items-center gap-2 mb-4">
             <Lock className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Sécurité</h2>
           </div>
-
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="newPassword">Nouveau mot de passe</Label>
@@ -296,9 +297,6 @@ const Profile = () => {
                 placeholder="Entrez votre nouveau mot de passe"
                 className="max-w-md"
               />
-              <p className="text-sm text-muted-foreground">
-                Utilisez ce champ pour modifier votre mot de passe ou en définir un nouveau après une réinitialisation.
-              </p>
             </div>
             <Button onClick={handleUpdatePassword} disabled={savingPassword || !newPassword} variant="secondary">
               {savingPassword ? (
@@ -312,50 +310,23 @@ const Profile = () => {
           </div>
         </section>
 
-        {/* Section: Statistiques */}
-        <section className="bg-card rounded-2xl shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Activité</h2>
-          {stats.isLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : (
-            <ProfileStats
-              tripsCount={stats.tripsCount}
-              shipmentsCount={stats.shipmentsCount}
-              matchesCount={stats.matchesCount}
-            />
-          )}
-        </section>
-
-        {/* Section: Informations personnelles */}
+        {/* Infos Perso */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Informations personnelles</h2>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Jean"
-                />
+                <Label>Prénom</Label>
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Jean" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Dupont"
-                />
+                <Label>Nom</Label>
+                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dupont" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="countryOfResidence">Pays de résidence</Label>
+              <Label>Pays de résidence</Label>
               <Input
-                id="countryOfResidence"
                 value={countryOfResidence}
                 onChange={(e) => setCountryOfResidence(e.target.value)}
                 placeholder="France"
@@ -373,116 +344,67 @@ const Profile = () => {
           </div>
         </section>
 
-        {/* Section: KYC */}
+        {/* KYC */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Vérification KYC</h2>
             <VerifiedBadge isVerified={isVerified} showLabel />
           </div>
 
-          <p className="text-sm text-muted-foreground mb-6">
-            Ces informations sont confidentielles et permettent de sécuriser les échanges.
-          </p>
-
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">
+              <Label>
                 Numéro de téléphone <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value);
-                  if (phoneError) setPhoneError("");
-                }}
-                placeholder="+33 6 12 34 56 78"
-                className={phoneError ? "border-destructive" : ""}
-              />
-              {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
-            </div>
-
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-medium text-foreground mb-3">Adresse</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine1">Adresse</Label>
-                  <Input
-                    id="addressLine1"
-                    value={addressLine1}
-                    onChange={(e) => setAddressLine1(e.target.value)}
-                    placeholder="123 rue de la Paix"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="addressCity">Ville</Label>
-                    <Input
-                      id="addressCity"
-                      value={addressCity}
-                      onChange={(e) => setAddressCity(e.target.value)}
-                      placeholder="Paris"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="addressPostalCode">Code postal</Label>
-                    <Input
-                      id="addressPostalCode"
-                      value={addressPostalCode}
-                      onChange={(e) => setAddressPostalCode(e.target.value)}
-                      placeholder="75001"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="addressCountry">Pays</Label>
-                    <Input
-                      id="addressCountry"
-                      value={addressCountry}
-                      onChange={(e) => setAddressCountry(e.target.value)}
-                      placeholder="France"
-                    />
-                  </div>
-                </div>
+              <div className="flex gap-2">
+                <select
+                  className="w-24 h-10 px-2 border border-input rounded-md bg-background text-sm"
+                  value={phoneCode}
+                  onChange={(e) => setPhoneCode(e.target.value)}
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    if (phoneError) setPhoneError("");
+                  }}
+                  placeholder="6 12 34 56 78"
+                  className={`flex-1 ${phoneError ? "border-destructive" : ""}`}
+                />
               </div>
+              {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
             </div>
 
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-medium text-foreground mb-3">Pièce d'identité</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="idType">Type de pièce</Label>
+                  <Label>Type de pièce</Label>
                   <select
-                    id="idType"
                     value={idType}
                     onChange={(e) => setIdType(e.target.value)}
-                    className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm"
                   >
                     <option value="">Sélectionner...</option>
                     <option value="carte_identite">Carte d'identité</option>
                     <option value="passeport">Passeport</option>
-                    <option value="permis_conduire">Permis de conduire</option>
-                    <option value="titre_sejour">Titre de séjour</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="idNumber">Numéro de pièce</Label>
-                    <Input
-                      id="idNumber"
-                      value={idNumber}
-                      onChange={(e) => setIdNumber(e.target.value)}
-                      placeholder="123456789"
-                    />
+                    <Label>Numéro de pièce</Label>
+                    <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="idExpiryDate">Date d'expiration</Label>
-                    <Input
-                      id="idExpiryDate"
-                      type="date"
-                      value={idExpiryDate}
-                      onChange={(e) => setIdExpiryDate(e.target.value)}
-                    />
+                    <Label>Date d'expiration</Label>
+                    <Input type="date" value={idExpiryDate} onChange={(e) => setIdExpiryDate(e.target.value)} />
                   </div>
                 </div>
               </div>
