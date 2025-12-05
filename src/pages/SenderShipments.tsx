@@ -8,7 +8,7 @@ import ShipmentRequestList from "@/components/ShipmentRequestList";
 import { Button } from "@/components/ui/button";
 import { Plus, X, Loader2 } from "lucide-react";
 
-// C'EST ICI QUE LA MAGIE OPÈRE : On déclare que ce composant accepte "embedded"
+// 1. On définit que cette page peut recevoir une option "embedded" (embarqué)
 interface SenderShipmentsProps {
   embedded?: boolean;
 }
@@ -32,8 +32,7 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        // Si on n'est pas en mode "embarqué", on redirige.
-        // Sinon, on laisse le parent gérer.
+        // Redirection seulement si on est sur la page seule (pas dans le dashboard)
         if (!embedded) navigate("/auth");
         return;
       }
@@ -42,7 +41,6 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
 
       const { data: profileData } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
 
-      // Sécurité : On vérifie le rôle seulement si on est sur la page dédiée
       if (profileData?.role !== "sender" && !embedded) {
         navigate("/auth");
         return;
@@ -78,14 +76,13 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
 
   if (!user) return null;
 
-  // --- LE CONTENU (Sans le Layout autour) ---
+  // --- LE CŒUR DE LA PAGE (Liste + Formulaire) ---
   const Content = (
     <div className="space-y-6">
-      {/* On adapte le style selon si on est "embedded" ou pas */}
       <section className={`bg-card rounded-2xl border p-6 ${embedded ? "shadow-none border-0 p-0" : "shadow-sm"}`}>
         <div className="flex items-center justify-between mb-6">
           <div>
-            {/* Si embedded, on cache le titre car le Dashboard l'a déjà. Sinon on l'affiche. */}
+            {/* Si on est dans le dashboard (embedded), on cache le titre car le Dashboard l'affiche déjà au-dessus */}
             {!embedded && (
               <>
                 <h2 className="text-xl font-bold text-foreground">Mes demandes d'expédition</h2>
@@ -93,7 +90,6 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
               </>
             )}
           </div>
-
           <Button
             onClick={() => setShowRequestForm(!showRequestForm)}
             variant={showRequestForm ? "outline" : "default"}
@@ -123,14 +119,16 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
     </div>
   );
 
-  // --- LOGIQUE DE RETOUR ---
+  // --- LOGIQUE D'AFFICHAGE CRITIQUE ---
 
-  // Cas 1 : Appelé depuis le Dashboard -> On renvoie juste le contenu
+  // CAS A : On est DANS le Dashboard (via SenderDashboard)
+  // => On renvoie seulement le contenu (pas de menu, pas de header, pas de "Bonjour")
   if (embedded) {
     return Content;
   }
 
-  // Cas 2 : Appelé via l'URL directe -> On met le Layout autour
+  // CAS B : On est sur la page seule (/dashboard/sender/shipments)
+  // => On met le Layout complet autour
   return (
     <DashboardLayout
       role="sender"
