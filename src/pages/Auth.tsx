@@ -115,14 +115,22 @@ const Auth = () => {
   };
 
   useEffect(() => {
+    // 1. Vérif session classique
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) handleSmartRedirect(session.user.id);
     });
 
+    // 2. Écouteur d'événements (C'est ici qu'on gère le cas Mobile)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) handleSmartRedirect(session.user.id);
+      if (event === "SIGNED_IN" && session) {
+        handleSmartRedirect(session.user.id);
+      }
+      // AJOUT : Si c'est une récupération de mot de passe, on file direct au profil
+      if (event === "PASSWORD_RECOVERY") {
+        navigate("/profile");
+      }
     });
 
     return () => subscription.unsubscribe();
