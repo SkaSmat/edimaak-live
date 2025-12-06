@@ -133,7 +133,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: window.location.origin + "/profile",
+        redirectTo: window.location.origin,
       });
       if (error) throw error;
       toast.success("Email de réinitialisation envoyé !");
