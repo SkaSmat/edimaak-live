@@ -32,9 +32,15 @@ const TravelerDashboard = () => {
 
     setUser(session.user);
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
+    const { data: profileData } = await supabase.from("profiles");
+    select(`
+        *,
+        private_info (
+          phone,
+          id_number,
+          id_type
+        )
+      `)
       .eq("id", session.user.id)
       .single();
 
@@ -56,28 +62,21 @@ const TravelerDashboard = () => {
   if (!user || !profile) return null;
 
   const kycStatus = getKycStatus(profile);
-  const isKycComplete = kycStatus === "complete";
+  const privateInfo = profile?.private_info;
+  const isKycComplete = Boolean(privateInfo?.phone && privateInfo?.id_number && privateInfo?.id_type);
 
   return (
-    <DashboardLayout
-      role="traveler"
-      fullName={profile.full_name}
-      onLogout={handleLogout}
-    >
+    <DashboardLayout role="traveler" fullName={profile.full_name} onLogout={handleLogout}>
       <div className="space-y-4 sm:space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Card className="bg-card border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-                Voyages actifs
-              </CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Voyages actifs</CardTitle>
               <Plane className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </CardHeader>
             <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
-                {statsLoading ? "..." : tripsCount}
-              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">{statsLoading ? "..." : tripsCount}</div>
               <Button
                 variant="link"
                 className="p-0 h-auto text-primary mt-2 text-xs sm:text-sm"
@@ -90,9 +89,7 @@ const TravelerDashboard = () => {
 
           <Card className="bg-card border shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-                Matches acceptés
-              </CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Matches acceptés</CardTitle>
               <Handshake className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </CardHeader>
             <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
@@ -111,9 +108,7 @@ const TravelerDashboard = () => {
 
           <Card className="bg-card border shadow-sm sm:col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-                Statut KYC
-              </CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Statut KYC</CardTitle>
               {isKycComplete ? (
                 <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
               ) : (
@@ -132,7 +127,8 @@ const TravelerDashboard = () => {
                 className="p-0 h-auto text-primary mt-2 block text-xs sm:text-sm"
                 onClick={() => navigate("/profile")}
               >
-                {isKycComplete ? "Voir mon profil" : "Compléter mon profil"} <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4 inline" />
+                {isKycComplete ? "Voir mon profil" : "Compléter mon profil"}{" "}
+                <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4 inline" />
               </Button>
             </CardContent>
           </Card>
@@ -146,9 +142,7 @@ const TravelerDashboard = () => {
                 <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Demandes compatibles
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                Proposez vos services pour ces demandes
-              </p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Proposez vos services pour ces demandes</p>
             </div>
           </div>
           <CompatibleShipments userId={user.id} />
