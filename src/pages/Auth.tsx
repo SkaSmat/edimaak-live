@@ -140,11 +140,20 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: window.location.origin + "/auth",
+      // On utilise "signInWithOtp" (Magic Link) au lieu de resetPassword
+      // Cela connecte l'utilisateur directement.
+      const { error } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+        options: {
+          // Une fois connecté, on l'envoie sur son profil pour qu'il puisse changer son mot de passe
+          emailRedirectTo: window.location.origin + "/profile",
+        },
       });
+
       if (error) throw error;
-      toast.success("Email de réinitialisation envoyé !");
+
+      toast.success("Lien de connexion envoyé par email !");
+      toast.info("Cliquez sur le lien reçu pour accéder directement à votre profil.");
       setView("login");
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de l'envoi");
@@ -206,12 +215,14 @@ const Auth = () => {
   };
 
   const getTitle = () => {
-    if (view === "reset_password") return "Réinitialisation";
+    // MODIFICATION ICI
+    if (view === "reset_password") return "Connexion sans mot de passe";
     return view === "login" ? "Connexion" : "Créer mon compte";
   };
 
   const getDescription = () => {
-    if (view === "reset_password") return "Entrez votre email pour recevoir un lien.";
+    // MODIFICATION ICI
+    if (view === "reset_password") return "Recevez un lien magique par email pour vous connecter instantanément.";
     return view === "login" ? "Connecte-toi à ton compte EdiM3ak." : "Un seul compte pour voyager et expédier.";
   };
 
