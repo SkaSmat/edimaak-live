@@ -200,20 +200,19 @@ const Profile = () => {
     // 1. Validation du Téléphone (Doit contenir au moins 8 chiffres, pas de lettres)
     // On nettoie les espaces et tirets pour vérifier
     const cleanPhone = phoneNumber.replace(/[\s\-\.]/g, "");
+    // Regex : Doit contenir entre 8 et 15 chiffres
     if (!/^\d{8,15}$/.test(cleanPhone)) {
-      setPhoneError("Numéro invalide (8 chiffres minimum, sans lettres)");
-      toast.error("Numéro de téléphone invalide");
+      toast.error("Numéro de téléphone invalide (chiffres uniquement)");
+      setPhoneError("Format incorrect");
       return;
     }
     setPhoneError("");
 
-    // 2. Validation de la Pièce d'Identité (Min 5 caractères)
+    // VALIDATION IDENTITÉ
     if (!idNumber || idNumber.trim().length < 5) {
-      toast.error("Numéro de pièce d'identité trop court ou invalide");
+      toast.error("Numéro de pièce d'identité trop court");
       return;
     }
-
-    // 3. Validation du Type de pièce
     if (!idType) {
       toast.error("Veuillez sélectionner un type de pièce");
       return;
