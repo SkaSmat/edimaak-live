@@ -197,15 +197,31 @@ const Profile = () => {
   const saveKycInfo = async () => {
     if (!user) return;
 
-    if (!phoneNumber.trim()) {
-      setPhoneError("Le numéro de téléphone est obligatoire");
+    // 1. Validation du Téléphone (Doit contenir au moins 8 chiffres, pas de lettres)
+    // On nettoie les espaces et tirets pour vérifier
+    const cleanPhone = phoneNumber.replace(/[\s\-\.]/g, "");
+    if (!/^\d{8,15}$/.test(cleanPhone)) {
+      setPhoneError("Numéro invalide (8 chiffres minimum, sans lettres)");
+      toast.error("Numéro de téléphone invalide");
       return;
     }
     setPhoneError("");
 
+    // 2. Validation de la Pièce d'Identité (Min 5 caractères)
+    if (!idNumber || idNumber.trim().length < 5) {
+      toast.error("Numéro de pièce d'identité trop court ou invalide");
+      return;
+    }
+
+    // 3. Validation du Type de pièce
+    if (!idType) {
+      toast.error("Veuillez sélectionner un type de pièce");
+      return;
+    }
+
     setSavingKyc(true);
 
-    const fullPhone = `${phoneCode}${phoneNumber.replace(/^0+/, "")}`;
+    const fullPhone = `${phoneCode}${cleanPhone.replace(/^0+/, "")}`;
 
     const kycData = {
       id: user.id,
@@ -225,7 +241,7 @@ const Profile = () => {
       console.error("KYC save error:", error);
       toast.error("Erreur lors de la sauvegarde KYC");
     } else {
-      toast.success("Informations KYC enregistrées");
+      toast.success("Informations KYC enregistrées et valides !");
       setPrivateInfo(kycData as PrivateInfoData);
     }
     setSavingKyc(false);
