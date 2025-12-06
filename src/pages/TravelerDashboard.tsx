@@ -33,7 +33,7 @@ const TravelerDashboard = () => {
     setUser(session.user);
 
     const { data: profileData } = await supabase.from("profiles");
-    select(`
+    .select(`
         *,
         private_info (
           phone,
