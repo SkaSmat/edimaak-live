@@ -259,7 +259,8 @@ const Auth = () => {
                 />
               </div>
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Envoyer le lien"}
+                {/* C'EST ICI QUE ÇA CHANGE */}
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "M'envoyer un lien magique"}
               </Button>
             </form>
           ) : (
