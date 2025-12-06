@@ -8,7 +8,7 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
 */
 
 @layer base {
-  :root {
+:root {
     --background: 40 30% 97%;
     --foreground: 20 15% 15%;
 
@@ -41,6 +41,16 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
 
     --radius: 0.75rem;
 
+    /* Sidebar - using card colors for consistent styling */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 20 15% 15%;
+    --sidebar-primary: 14 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 20% 92%;
+    --sidebar-accent-foreground: 20 15% 15%;
+    --sidebar-border: 40 15% 88%;
+    --sidebar-ring: 14 80% 55%;
+
     --gradient-hero: linear-gradient(135deg, hsl(14 80% 55%), hsl(24 85% 60%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(40 30% 97%));
     
@@ -52,7 +62,7 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dark {
+.dark {
     --background: 20 20% 8%;
     --foreground: 40 20% 95%;
 
@@ -82,6 +92,16 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
     --border: 20 15% 20%;
     --input: 20 15% 20%;
     --ring: 14 80% 55%;
+
+    /* Sidebar dark mode */
+    --sidebar-background: 20 15% 12%;
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-primary: 14 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 20 15% 18%;
+    --sidebar-accent-foreground: 40 20% 95%;
+    --sidebar-border: 20 15% 20%;
+    --sidebar-ring: 14 80% 55%;
 
     --gradient-hero: linear-gradient(135deg, hsl(14 80% 50%), hsl(24 85% 55%));
     --gradient-card: linear-gradient(180deg, hsl(20 15% 12%), hsl(20 20% 8%));
