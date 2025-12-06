@@ -32,15 +32,18 @@ const TravelerDashboard = () => {
 
     setUser(session.user);
 
-    const { data: profileData } = await supabase.from("profiles");
-    .select(`
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select(
+        `
         *,
         private_info (
           phone,
           id_number,
           id_type
         )
-      `)
+      `,
+      )
       .eq("id", session.user.id)
       .single();
 
