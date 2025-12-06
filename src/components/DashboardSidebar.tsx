@@ -87,14 +87,14 @@ export const DashboardSidebar = ({
     });
   }
   const isActive = (path: string) => location.pathname === path;
-  return <Sidebar collapsible="icon" className="border-r border-border/50 bg-background z-50 h-full">
-      <SidebarHeader className="p-4 bg-background">
+  return <Sidebar collapsible="icon" className="border-r border-border/50 bg-card z-50 h-full">
+      <SidebarHeader className="p-4 bg-card">
         <button onClick={() => handleNavigation("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <LogoEdiM3ak iconSize={collapsed ? "sm" : "md"} className={collapsed ? "justify-center" : ""} />
         </button>
       </SidebarHeader>
 
-      <SidebarContent className="bg-background">
+      <SidebarContent className="bg-card">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -138,7 +138,7 @@ export const DashboardSidebar = ({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2 bg-background">
+      <SidebarFooter className="p-2 bg-card">
         <Separator className="mb-2" />
         <FeedbackButton variant="sidebar" collapsed={collapsed} />
         <SidebarMenuButton onClick={onLogout} tooltip="Déconnexion" className="text-muted-foreground hover:text-destructive hover:bg-red-500/10 transition-colors">

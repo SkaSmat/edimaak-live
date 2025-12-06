@@ -40,9 +40,16 @@ interface UserStats {
   completedMatchesCount: number;
 }
 
+interface PrivateInfoForVerification {
+  phone: string | null;
+  id_type: string | null;
+  id_number: string | null;
+}
+
 export const PublicProfileModal = ({ isOpen, onClose, userId }: PublicProfileModalProps) => {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [stats, setStats] = useState<UserStats>({ shipmentsCount: 0, tripsCount: 0, completedMatchesCount: 0 });
+  const [isKycVerified, setIsKycVerified] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,6 +70,21 @@ export const PublicProfileModal = ({ isOpen, onClose, userId }: PublicProfileMod
 
       if (profileError) throw profileError;
       setProfile(profileData);
+
+      // Fetch private_info to check KYC status
+      const { data: privateData } = await supabase
+        .from("private_info")
+        .select("phone, id_type, id_number")
+        .eq("id", userId)
+        .maybeSingle();
+
+      // Vérifier si le KYC est réellement complété
+      const isVerified = Boolean(
+        privateData?.phone?.trim() &&
+        privateData?.id_type?.trim() &&
+        privateData?.id_number?.trim()
+      );
+      setIsKycVerified(isVerified);
 
       // Fetch stats
       const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([
@@ -224,9 +246,11 @@ export const PublicProfileModal = ({ isOpen, onClose, userId }: PublicProfileMod
 
               {/* Trust indicators */}
               <div className="border-t pt-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4 text-primary" />
-                  <span>Profil vérifié par EDIM3AK</span>
+                <div className="flex items-center gap-2 text-sm">
+                  <Shield className={`w-4 h-4 ${isKycVerified ? "text-green-500" : "text-muted-foreground"}`} />
+                  <span className={isKycVerified ? "text-green-700" : "text-muted-foreground"}>
+                    {isKycVerified ? "Utilisateur vérifié" : "Utilisateur non vérifié"}
+                  </span>
                 </div>
               </div>
             </div>
