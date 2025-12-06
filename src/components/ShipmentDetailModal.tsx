@@ -85,7 +85,7 @@ export const ShipmentDetailModal = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Info Expéditeur */}
+          {/* Info Expéditeur - Visible pour les utilisateurs connectés */}
           <button
             type="button"
             onClick={handleProfileClick}
@@ -97,18 +97,19 @@ export const ShipmentDetailModal = ({
             <div className="flex items-center gap-3">
               <UserAvatar fullName={shipment.profiles?.full_name || ""} avatarUrl={shipment.profiles?.avatar_url} />
               <div>
-                <p className="font-medium text-foreground">{shipment.profiles?.full_name || "Utilisateur"}</p>
-                <p className="text-sm text-muted-foreground">Expéditeur</p>
+                <p className="font-medium text-foreground">
+                  {isAuthenticated 
+                    ? (shipment.profiles?.full_name || "Utilisateur") 
+                    : "Expéditeur"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isAuthenticated ? "Cliquez pour voir le profil" : "Connectez-vous pour voir le profil"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {isAuthenticated && (
-                <>
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Vérifié
-                  </Badge>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               )}
             </div>
           </button>

@@ -151,7 +151,9 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           const latest = shipment.latest_date;
           if (!(tripDate >= earliest && tripDate <= latest)) return false;
 
-          if (trip.max_weight_kg < shipment.weight_kg) return false;
+          // Le poids est optionnel côté voyageur - on ne bloque pas si max_weight_kg est 0 ou null
+          // Seulement si le voyageur a spécifié une limite et que le colis dépasse
+          if (trip.max_weight_kg && trip.max_weight_kg > 0 && trip.max_weight_kg < shipment.weight_kg) return false;
 
           return true;
         });

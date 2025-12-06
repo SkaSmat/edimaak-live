@@ -25,11 +25,48 @@ const Legal = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
+        {/* Navigation Mobile (Tabs horizontaux) */}
+        <div className="md:hidden flex gap-2 overflow-x-auto pb-4 mb-4 border-b border-border scrollbar-hide">
+          <button
+            onClick={() => setActiveTab("cgu")}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === "cgu" 
+                ? "bg-primary/10 text-primary" 
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <Scale className="w-4 h-4" />
+            CGU
+          </button>
+          <button
+            onClick={() => setActiveTab("privacy")}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === "privacy" 
+                ? "bg-primary/10 text-primary" 
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <Lock className="w-4 h-4" />
+            Confidentialité
+          </button>
+          <button
+            onClick={() => setActiveTab("mentions")}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === "mentions" 
+                ? "bg-primary/10 text-primary" 
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Mentions
+          </button>
+        </div>
+
         <div className="grid md:grid-cols-[250px_1fr] gap-8">
           
-          {/* Navigation Latérale (Tabs) */}
-          <nav className="space-y-2 sticky top-24 h-fit">
+          {/* Navigation Latérale Desktop */}
+          <nav className="hidden md:block space-y-2 sticky top-24 h-fit">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4 px-2">
               Documents
             </p>

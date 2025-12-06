@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -535,20 +536,25 @@ const Index = () => {
                 </div>
 
                 <div className="p-3 sm:p-4 flex flex-col flex-1">
-                  <div className="flex items-start justify-between mb-2 sm:mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight truncate">
-                        {request.to_city}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-500 truncate">Depuis {request.from_city}</p>
-                    </div>
+                  {/* Type d'objet en premier */}
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs">
+                      {request.item_type}
+                    </Badge>
                     {(request.sender_request_count || 0) > 2 && (
-                      <div className="bg-green-50 text-green-700 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ml-2">
+                      <div className="bg-green-50 text-green-700 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                         <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         <span className="hidden sm:inline">FIABLE</span>
                         <span className="sm:hidden">✓</span>
                       </div>
                     )}
+                  </div>
+
+                  {/* Trajet en dessous */}
+                  <div className="mb-2 sm:mb-3">
+                    <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight truncate">
+                      {request.from_city} → {request.to_city}
+                    </h3>
                   </div>
 
                   <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
