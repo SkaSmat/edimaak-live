@@ -54,7 +54,13 @@ const TravelerTrips = () => {
   const handleTripCreated = () => {
     setShowTripForm(false);
     setRefreshKey((prev) => prev + 1);
-    toast.success("Voyage créé avec succès !");
+    toast.success("Voyage créé avec succès !", {
+      description: "Consultez votre Dashboard pour voir les demandes d'expédition compatibles.",
+      action: {
+        label: "Voir",
+        onClick: () => navigate("/dashboard/traveler"),
+      },
+    });
   };
 
   if (!user || !profile) return null;
