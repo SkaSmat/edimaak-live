@@ -13,7 +13,7 @@ export default {
         md: "768px", // Tablette
         lg: "1024px", // Desktop
         xl: "1280px", // Desktop large
-        "2xl": "1400px", // Votre breakpoint personnalisé
+        "2xl": "1400px",
       },
     },
     extend: {
