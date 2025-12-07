@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ShieldCheck, AlertCircle, Clock, Loader2, Search, Ban, CheckCircle } from "lucide-react";
+import { ShieldCheck, AlertCircle, Clock, Loader2, Search, Ban, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getKycStatus } from "@/hooks/useUserStats";
 
@@ -16,6 +16,12 @@ interface Profile {
   role: string;
   created_at: string;
   is_active: boolean;
+  private_info?: {
+    phone: string;
+    id_type: string;
+    id_number: string;
+    kyc_status: string;
+  };
 }
 
 interface PrivateInfo {
@@ -39,9 +45,19 @@ const AdminUsers = () => {
   const fetchProfiles = async () => {
     try {
       // Fetch profiles
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, created_at, is_active")
+        .select(
+          `
+          *,
+          private_info (
+            phone,
+            id_type,
+            id_number,
+            kyc_status
+          )
+        `,
+        )
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -66,6 +82,7 @@ const AdminUsers = () => {
       const sanitizedProfiles = (profilesData || []).map((p) => ({
         ...p,
         is_active: p.is_active === null ? true : p.is_active,
+        private_info: p.private_info?.[0] || p.private_info,
       }));
 
       setProfiles(sanitizedProfiles);
@@ -74,6 +91,18 @@ const AdminUsers = () => {
       toast.error("Erreur lors du chargement des utilisateurs");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKycAction = async (userId: string, status: "verified" | "rejected") => {
+    try {
+      const { error } = await supabase.from("private_info").update({ kyc_status: status }).eq("id", userId);
+
+      if (error) throw error;
+      toast.success(status === "verified" ? "Utilisateur vérifié ✅" : "Dossier rejeté ❌");
+      fetchProfiles(); // On recharge la liste
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
@@ -176,13 +205,12 @@ const AdminUsers = () => {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Statut</TableHead>
               <TableHead>Nom</TableHead>
               <TableHead>Rôle</TableHead>
-              <TableHead>KYC</TableHead>
               <TableHead>Téléphone</TableHead>
-              <TableHead>Inscrit le</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Document</TableHead> {/* Nouveau */}
+              <TableHead>Statut KYC</TableHead> {/* Nouveau */}
+              <TableHead className="text-right">Actions </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -197,46 +225,59 @@ const AdminUsers = () => {
                 const privateInfo = privateInfoMap.get(profile.id);
                 return (
                   <TableRow key={profile.id} className={!profile.is_active ? "bg-red-50/50" : ""}>
+                    {/* Nom et Rôle (Inchangés) */}
+                    <TableCell className="font-medium">{profile.full_name}</TableCell>
+                    <TableCell>{/* Ton code pour le badge rôle existant */}</TableCell>
+
+                    {/* --- NOUVELLES CELLULES --- */}
+
+                    {/* 1. Téléphone (depuis private_info) */}
+                    <TableCell>{profile.private_info?.phone || "-"}</TableCell>
+
+                    {/* 2. Document d'identité */}
                     <TableCell>
-                      {profile.is_active ? (
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-green-500 block" />
+                      {profile.private_info?.id_number ? (
+                        <div className="flex flex-col text-xs">
+                          <span className="font-bold uppercase text-muted-foreground">
+                            {profile.private_info.id_type}
+                          </span>
+                          <span className="font-mono">{profile.private_info.id_number}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-red-500 block" />
-                        </div>
+                        "-"
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {profile.full_name}
-                      {!profile.is_active && <span className="ml-2 text-xs text-red-500 font-bold">(Banni)</span>}
-                    </TableCell>
-                    <TableCell>{getRoleBadge(profile.role)}</TableCell>
-                    <TableCell>{getKycBadge(profile.id)}</TableCell>
-                    <TableCell>{privateInfo?.phone || "-"}</TableCell>
-                    <TableCell>{format(new Date(profile.created_at), "d MMM yyyy", { locale: fr })}</TableCell>
+
+                    {/* 3. Le Badge de statut */}
+                    <TableCell>{getKycBadge(profile.private_info?.kyc_status)}</TableCell>
+
+                    {/* 4. Les Boutons d'Action (Valider / Rejeter) */}
                     <TableCell className="text-right">
-                      <Button
-                        variant={profile.is_active ? "ghost" : "outline"}
-                        size="sm"
-                        onClick={() => handleToggleStatus(profile.id, profile.is_active)}
-                        className={
-                          profile.is_active
-                            ? "text-red-500 hover:text-red-700 hover:bg-red-50"
-                            : "text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
-                        }
-                      >
-                        {profile.is_active ? (
-                          <>
-                            <Ban className="h-4 w-4 mr-1" /> Bannir
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-1" /> Activer
-                          </>
-                        )}
-                      </Button>
+                      {profile.private_info?.kyc_status === "pending" ? (
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0"
+                            onClick={() => handleKycAction(profile.id, "verified")}
+                            title="Valider le dossier"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleKycAction(profile.id, "rejected")}
+                            title="Rejeter le dossier"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        // Si pas en attente, on garde ton ancien bouton "Bannir" s'il y était
+                        // ou on affiche rien
+                        <span className="text-xs text-muted-foreground">Aucune action</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
