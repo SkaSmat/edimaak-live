@@ -16,6 +16,7 @@ import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import Legal from "./pages/Legal";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
