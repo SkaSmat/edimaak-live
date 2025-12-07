@@ -122,8 +122,3 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
     @apply bg-background text-foreground;
   }
 }
-[data-sidebar="menu-button"] span {
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
