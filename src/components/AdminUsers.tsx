@@ -60,7 +60,7 @@ const AdminUsers = () => {
         )
         .order("created_at", { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
 
       // Fetch private_info for KYC status (admin has access via RLS)
       const { data: privateData, error: privateError } = await supabase
