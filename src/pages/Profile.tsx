@@ -47,7 +47,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [privateInfo, setPrivateInfo] = useState<PrivateInfoData | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [kycStatus, setKycStatus] = useState<string>("not_submitted");
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingKyc, setSavingKyc] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -113,6 +113,7 @@ const Profile = () => {
 
     if (privateData) {
       setPrivateInfo(privateData as PrivateInfoData);
+      setKycStatus(privateData.kyc_status || "not_submitted");
 
       if (privateData.phone) {
         const foundCode = COUNTRY_CODES.find((c) => privateData.phone!.startsWith(c.code));
@@ -243,24 +244,40 @@ const Profile = () => {
     } else {
       toast.success("Informations KYC enregistrées et valides !");
       setPrivateInfo(kycData as PrivateInfoData);
+      setKycStatus("pending");
     }
     setSavingKyc(false);
   };
 
-  const stats = useUserStats(user?.id);
-  const isVerified = Boolean(phoneNumber?.trim() && idType?.trim() && idNumber?.trim());
-  const kycStatus = isVerified ? "complete" : "not_filled";
+  // Le badge bleu "Vérifié" ne s'affiche que si c'est validé par l'admin
+  const isVerified = kycStatus === "verified";
 
-  const isActive =
-    profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
-
-  if (loading || !profile) {
+  // Fonction pour afficher le bon badge en bas
+  const renderKycBadge = () => {
+    if (kycStatus === "verified")
+      return (
+        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full border border-green-200">
+          Dossier Validé ✅
+        </span>
+      );
+    if (kycStatus === "pending")
+      return (
+        <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full border border-orange-200">
+          En attente de validation ⏳
+        </span>
+      );
+    if (kycStatus === "rejected")
+      return (
+        <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full border border-red-200">
+          Dossier Rejeté ❌
+        </span>
+      );
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full border border-gray-200">
+        Non soumis
+      </span>
     );
-  }
+  };
 
   return (
     <DashboardLayout role={profile.role} fullName={profile.full_name} onLogout={handleLogout}>
@@ -361,7 +378,7 @@ const Profile = () => {
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Vérification KYC</h2>
-            <VerifiedBadge isVerified={isVerified} showLabel />
+            {renderKycBadge()}
           </div>
 
           <div className="space-y-4">
