@@ -182,7 +182,9 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
 
           <header className="hidden md:flex items-center justify-between px-6 py-4 bg-card/50 border-b border-border/30 sticky top-0 z-10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-foreground pl-[60px] pb-px pr-[10px]">Bonjour, {firstName}</h1>
+              <h1 className="text-xl font-semibold text-foreground pl-4 md:pl-[60px] pb-px pr-2 md:pr-[10px]">
+                Bonjour, {firstName}
+              </h1>
               <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
                 {roleLabel}
               </Badge>
@@ -194,7 +196,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
                   variant="outline"
                   size="sm"
                   onClick={switchRole}
-                  className="gap-1.5 lg:gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm text-xs lg:text-sm px-2 lg:px-4"
+                  className="gap-1.5 lg:gap-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-sm text-sm px-3 lg:px-4 min-h-[44px]"
                   title={`Cliquez pour passer au mode ${role === "traveler" ? "Expéditeur" : "Voyageur"}`}
                 >
                   <RefreshCw className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
@@ -217,7 +219,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
           </header>
 
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+            <div className="mx-auto max-w-6xl px-2 sm:px-4 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
               {children}
             </div>
           </main>
