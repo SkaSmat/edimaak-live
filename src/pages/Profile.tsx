@@ -232,6 +232,7 @@ const Profile = () => {
       id_type: idType || null,
       id_number: idNumber || null,
       id_expiry_date: idExpiryDate || null,
+      kyc_status: "pending",
     };
 
     const { error } = await supabase.from("private_info").upsert(kycData, { onConflict: "id" });
