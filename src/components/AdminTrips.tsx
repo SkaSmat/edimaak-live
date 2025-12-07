@@ -138,7 +138,89 @@ const AdminTrips = () => {
         />
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filteredTrips.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {searchQuery ? "Aucun voyage trouvé" : "Aucun voyage"}
+          </div>
+        ) : (
+          filteredTrips.map((trip: any) => (
+            <div key={trip.id} className="bg-card rounded-lg border p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground truncate">{trip.profiles?.full_name || "-"}</p>
+                  <p className="text-sm text-muted-foreground">{trip.from_city} → {trip.to_city}</p>
+                </div>
+                {getStatusBadge(trip.status)}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Départ:</span>
+                  <p className="font-medium">{format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Capacité:</span>
+                  <p className="font-medium">{trip.max_weight_kg} kg</p>
+                </div>
+              </div>
+              
+              {trip.status !== "matched" && (
+                <div className="pt-2 border-t">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`w-full h-8 ${trip.status === "closed" ? "text-green-600 border-green-200" : "text-orange-600 border-orange-200"}`}
+                        disabled={toggling === trip.id}
+                      >
+                        {toggling === trip.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : trip.status === "closed" ? (
+                          <>
+                            <Eye className="h-4 w-4 mr-1" />
+                            Remettre en ligne
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="h-4 w-4 mr-1" />
+                            Masquer
+                          </>
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {trip.status === "closed" 
+                            ? "Remettre en ligne ce voyage ?" 
+                            : "Masquer ce voyage ?"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {trip.status === "closed"
+                            ? "Le voyage sera à nouveau visible pour les correspondances."
+                            : "Le voyage ne sera plus visible pour les correspondances."}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
+                        <AlertDialogAction className="w-full sm:w-auto" onClick={() => handleToggleVisibility(trip.id, trip.status)}>
+                          {trip.status === "closed" ? "Remettre en ligne" : "Masquer"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">

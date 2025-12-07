@@ -65,12 +65,12 @@ export const AdminStats = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-card rounded-xl border p-4 animate-pulse">
-            <div className="h-10 w-10 bg-muted rounded-lg mb-3" />
-            <div className="h-8 w-16 bg-muted rounded mb-1" />
-            <div className="h-4 w-24 bg-muted rounded" />
+          <div key={i} className="bg-card rounded-xl border p-3 sm:p-4 animate-pulse">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted rounded-lg mb-2 sm:mb-3" />
+            <div className="h-6 sm:h-8 w-12 sm:w-16 bg-muted rounded mb-1" />
+            <div className="h-3 sm:h-4 w-16 sm:w-24 bg-muted rounded" />
           </div>
         ))}
       </div>
@@ -118,17 +118,17 @@ export const AdminStats = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       {statItems.map((item, index) => (
         <div
           key={index}
-          className="bg-card rounded-xl border p-4 hover:shadow-sm transition-shadow"
+          className="bg-card rounded-xl border p-3 sm:p-4 hover:shadow-sm transition-shadow"
         >
-          <div className={`h-10 w-10 ${item.bgColor} rounded-lg flex items-center justify-center mb-3`}>
-            <item.icon className={`h-5 w-5 ${item.color}`} />
+          <div className={`h-8 w-8 sm:h-10 sm:w-10 ${item.bgColor} rounded-lg flex items-center justify-center mb-2 sm:mb-3`}>
+            <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${item.color}`} />
           </div>
-          <p className="text-2xl font-bold text-foreground">{item.value}</p>
-          <p className="text-sm text-muted-foreground">{item.label}</p>
+          <p className="text-xl sm:text-2xl font-bold text-foreground">{item.value}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">{item.label}</p>
         </div>
       ))}
     </div>
