@@ -201,22 +201,83 @@ const AdminUsers = () => {
         />
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filteredProfiles.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">Aucun résultat</div>
+        ) : (
+          filteredProfiles.map((profile) => {
+            const privateInfo = privateInfoMap.get(profile.id);
+            return (
+              <div 
+                key={profile.id} 
+                className={`bg-card rounded-lg border p-4 space-y-3 ${!profile.is_active ? "bg-red-50/50 border-red-200" : ""}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">{profile.full_name}</p>
+                    <p className="text-sm text-muted-foreground">{profile.private_info?.phone || "-"}</p>
+                  </div>
+                  {getRoleBadge(profile.role)}
+                </div>
+                
+                {profile.private_info?.id_number && (
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-bold uppercase">{profile.private_info.id_type}</span>
+                    <span className="font-mono ml-2">{profile.private_info.id_number}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div>{getKycBadge(profile.private_info?.kyc_status)}</div>
+                  
+                  {profile.private_info?.kyc_status === "pending" ? (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0"
+                        onClick={() => handleKycAction(profile.id, "verified")}
+                        title="Valider"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleKycAction(profile.id, "rejected")}
+                        title="Rejeter"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Aucune action</span>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Nom</TableHead>
               <TableHead>Rôle</TableHead>
               <TableHead>Téléphone</TableHead>
-              <TableHead>Document</TableHead> {/* Nouveau */}
-              <TableHead>Statut KYC</TableHead> {/* Nouveau */}
-              <TableHead className="text-right">Actions </TableHead>
+              <TableHead>Document</TableHead>
+              <TableHead>Statut KYC</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredProfiles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   Aucun résultat
                 </TableCell>
               </TableRow>
@@ -225,16 +286,9 @@ const AdminUsers = () => {
                 const privateInfo = privateInfoMap.get(profile.id);
                 return (
                   <TableRow key={profile.id} className={!profile.is_active ? "bg-red-50/50" : ""}>
-                    {/* Nom et Rôle (Inchangés) */}
                     <TableCell className="font-medium">{profile.full_name}</TableCell>
-                    <TableCell>{/* Ton code pour le badge rôle existant */}</TableCell>
-
-                    {/* --- NOUVELLES CELLULES --- */}
-
-                    {/* 1. Téléphone (depuis private_info) */}
+                    <TableCell>{getRoleBadge(profile.role)}</TableCell>
                     <TableCell>{profile.private_info?.phone || "-"}</TableCell>
-
-                    {/* 2. Document d'identité */}
                     <TableCell>
                       {profile.private_info?.id_number ? (
                         <div className="flex flex-col text-xs">
@@ -247,11 +301,7 @@ const AdminUsers = () => {
                         "-"
                       )}
                     </TableCell>
-
-                    {/* 3. Le Badge de statut */}
                     <TableCell>{getKycBadge(profile.private_info?.kyc_status)}</TableCell>
-
-                    {/* 4. Les Boutons d'Action (Valider / Rejeter) */}
                     <TableCell className="text-right">
                       {profile.private_info?.kyc_status === "pending" ? (
                         <div className="flex justify-end gap-2">
@@ -274,8 +324,6 @@ const AdminUsers = () => {
                           </Button>
                         </div>
                       ) : (
-                        // Si pas en attente, on garde ton ancien bouton "Bannir" s'il y était
-                        // ou on affiche rien
                         <span className="text-xs text-muted-foreground">Aucune action</span>
                       )}
                     </TableCell>

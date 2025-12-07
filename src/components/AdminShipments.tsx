@@ -140,7 +140,96 @@ const AdminShipments = () => {
         />
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filteredShipments.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {searchQuery ? "Aucune demande trouvée" : "Aucune demande"}
+          </div>
+        ) : (
+          filteredShipments.map((shipment: any) => (
+            <div key={shipment.id} className="bg-card rounded-lg border p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground truncate">{shipment.profiles?.full_name || "-"}</p>
+                  <p className="text-sm text-muted-foreground">{shipment.from_city} → {shipment.to_city}</p>
+                </div>
+                {getStatusBadge(shipment.status)}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Type:</span>
+                  <p className="font-medium">{shipment.item_type}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Poids:</span>
+                  <p className="font-medium">{shipment.weight_kg} kg</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Période:</span>
+                  <p className="font-medium">
+                    {format(new Date(shipment.earliest_date), "d MMM", { locale: fr })} -{" "}
+                    {format(new Date(shipment.latest_date), "d MMM", { locale: fr })}
+                  </p>
+                </div>
+              </div>
+              
+              {shipment.status !== "matched" && (
+                <div className="pt-2 border-t">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`w-full h-8 ${shipment.status === "closed" ? "text-green-600 border-green-200" : "text-orange-600 border-orange-200"}`}
+                        disabled={toggling === shipment.id}
+                      >
+                        {toggling === shipment.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : shipment.status === "closed" ? (
+                          <>
+                            <Eye className="h-4 w-4 mr-1" />
+                            Remettre en ligne
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="h-4 w-4 mr-1" />
+                            Masquer
+                          </>
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {shipment.status === "closed" 
+                            ? "Remettre en ligne cette demande ?" 
+                            : "Masquer cette demande ?"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {shipment.status === "closed"
+                            ? "La demande sera à nouveau visible pour les voyageurs."
+                            : "La demande ne sera plus visible pour les voyageurs."}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
+                        <AlertDialogAction className="w-full sm:w-auto" onClick={() => handleToggleVisibility(shipment.id, shipment.status)}>
+                          {shipment.status === "closed" ? "Remettre en ligne" : "Masquer"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">

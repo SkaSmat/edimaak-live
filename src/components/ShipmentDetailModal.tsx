@@ -62,52 +62,54 @@ export const ShipmentDetailModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden gap-0">
+      <DialogContent className="max-w-[95vw] sm:max-w-[600px] p-0 overflow-hidden gap-0 max-h-[90vh] overflow-y-auto">
         {/* Header Image */}
-        <div className="relative h-48 w-full bg-muted">
+        <div className="relative h-40 sm:h-48 w-full bg-muted">
           <img
             src={getShipmentImageUrl(shipment.image_url, shipment.item_type)}
             alt={shipment.item_type}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-4 left-4 right-4 text-white">
+          <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 text-white">
             <Badge
               variant="secondary"
-              className="mb-2 bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+              className="mb-1.5 sm:mb-2 bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs"
             >
               {shipment.item_type}
             </Badge>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              {shipment.from_city} <ArrowRight className="w-5 h-5" /> {shipment.to_city}
+            <h2 className="text-lg sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <span className="truncate max-w-[120px] sm:max-w-none">{shipment.from_city}</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="truncate max-w-[120px] sm:max-w-none">{shipment.to_city}</span>
             </h2>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Info Expéditeur - Visible pour les utilisateurs connectés */}
           <button
             type="button"
             onClick={handleProfileClick}
             disabled={!isAuthenticated}
-            className={`w-full flex items-center justify-between p-4 bg-muted/30 rounded-lg text-left transition-colors ${
+            className={`w-full flex items-center justify-between p-3 sm:p-4 bg-muted/30 rounded-lg text-left transition-colors ${
               isAuthenticated ? "hover:bg-muted/50 cursor-pointer" : ""
             }`}
           >
-            <div className="flex items-center gap-3">
-              <UserAvatar fullName={shipment.profiles?.full_name || ""} avatarUrl={shipment.profiles?.avatar_url} />
-              <div>
-                <p className="font-medium text-foreground">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <UserAvatar fullName={shipment.profiles?.full_name || ""} avatarUrl={shipment.profiles?.avatar_url} size="sm" className="flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="font-medium text-foreground text-sm sm:text-base truncate">
                   {isAuthenticated 
                     ? (shipment.profiles?.full_name || "Utilisateur") 
                     : "Expéditeur"}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {isAuthenticated ? "Cliquez pour voir le profil" : "Connectez-vous pour voir le profil"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {isAuthenticated && (
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               )}
@@ -115,32 +117,32 @@ export const ShipmentDetailModal = ({
           </button>
 
           {/* Détails du colis */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Calendar className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Dates souhaitées</span>
               </div>
-              <p className="font-medium">
+              <p className="font-medium text-sm sm:text-base">
                 {format(new Date(shipment.earliest_date), "d MMM", { locale: fr })} -{" "}
                 {format(new Date(shipment.latest_date), "d MMM yyyy", { locale: fr })}
               </p>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Weight className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+                <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Poids</span>
               </div>
-              <p className="font-medium">{shipment.weight_kg} kg</p>
+              <p className="font-medium text-sm sm:text-base">{shipment.weight_kg} kg</p>
             </div>
 
-            <div className="space-y-1 col-span-2">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <MapPin className="w-4 h-4" />
+            <div className="space-y-1 sm:col-span-2">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Trajet</span>
               </div>
-              <p className="font-medium">
+              <p className="font-medium text-sm sm:text-base break-words">
                 De {shipment.from_city} ({shipment.from_country}) vers {shipment.to_city} ({shipment.to_country})
               </p>
             </div>
@@ -148,12 +150,12 @@ export const ShipmentDetailModal = ({
 
           {/* Notes */}
           {shipment.notes && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg border border-amber-100 dark:border-amber-900/50">
+            <div className="bg-amber-50 dark:bg-amber-950/30 p-3 sm:p-4 rounded-lg border border-amber-100 dark:border-amber-900/50">
               <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-amber-600 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-amber-900 dark:text-amber-100 text-sm mb-1">Note de l'expéditeur</h4>
-                  <p className="text-sm text-amber-800 dark:text-amber-200/80 italic">"{shipment.notes}"</p>
+                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="font-medium text-amber-900 dark:text-amber-100 text-xs sm:text-sm mb-1">Note de l'expéditeur</h4>
+                  <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-200/80 italic break-words">"{shipment.notes}"</p>
                 </div>
               </div>
             </div>
@@ -163,20 +165,20 @@ export const ShipmentDetailModal = ({
           <div className="pt-2">
             {!isAuthenticated ? (
               <div className="space-y-3 text-center">
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                   Connectez-vous pour proposer votre voyage à cet expéditeur.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => handleAuthAction(onLogin)} className="w-full">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <Button variant="outline" onClick={() => handleAuthAction(onLogin)} className="w-full text-xs sm:text-sm h-9 sm:h-10">
                     Se connecter
                   </Button>
-                  <Button onClick={() => handleAuthAction(onSignUp)} className="w-full">
+                  <Button onClick={() => handleAuthAction(onSignUp)} className="w-full text-xs sm:text-sm h-9 sm:h-10">
                     Créer un compte
                   </Button>
                 </div>
               </div>
             ) : (
-              <Button className="w-full h-11 text-base" onClick={onSignUp}>
+              <Button className="w-full h-10 sm:h-11 text-sm sm:text-base" onClick={onSignUp}>
                 <Package className="w-4 h-4 mr-2" />
                 Proposer mon voyage
               </Button>
