@@ -214,7 +214,7 @@ const Index = () => {
             <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight px-2">
               Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
             </h1>
-            <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">​La 1ère plateforme au service de la communauté algérienne,  
+            <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">​La 1ère plateforme au service de la communauté algérienne,
 connectant voyageurs et expéditeurs pour le transport de colis.
           </p>
           </div>
