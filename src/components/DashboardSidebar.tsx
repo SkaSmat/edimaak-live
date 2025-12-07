@@ -149,24 +149,24 @@ export const DashboardSidebar = ({
 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
+                    <button
                       onClick={() => handleNavigation(item.path)}
-                      isActive={isActive(item.path)}
-                      tooltip={item.title}
                       className={cn(
-                        "transition-all duration-200 justify-between group relative",
+                        "w-full flex items-center justify-between gap-2 p-3 rounded-lg transition-all duration-200 text-left relative",
+                        "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                         isActive(item.path) && "bg-primary/10 text-primary font-medium",
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.title}</span> {/* 👈 LIGNE AJOUTÉE */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-sm truncate">{item.title}</span>
                       </div>
 
                       {showBadge && !collapsed && (
                         <Badge
                           variant="destructive"
-                          className="h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] animate-in zoom-in"
+                          className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full text-[10px] shrink-0"
                         >
                           {badgeCount}
                         </Badge>
@@ -175,7 +175,7 @@ export const DashboardSidebar = ({
                       {showBadge && collapsed && (
                         <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
                       )}
-                    </SidebarMenuButton>
+                    </button>
                   </SidebarMenuItem>
                 );
               })}
