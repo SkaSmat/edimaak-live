@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plane, Handshake, CheckCircle, AlertCircle, ArrowRight, Package } from "lucide-react";
+import { Plane, Handshake, CheckCircle, AlertCircle, ArrowRight, Package, Clock, XCircle } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useUserStats, getKycStatus } from "@/hooks/useUserStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +40,8 @@ const TravelerDashboard = () => {
         private_info (
           phone,
           id_number,
-          id_type
+          id_type,
+          kyc_status
         )
       `,
       )
@@ -64,9 +65,15 @@ const TravelerDashboard = () => {
 
   if (!user || !profile) return null;
 
-  const kycStatus = getKycStatus(profile);
-  const privateInfo = profile?.private_info;
-  const isKycComplete = Boolean(privateInfo?.phone && privateInfo?.id_number && privateInfo?.id_type);
+  // On récupère le vrai statut
+  const pInfo = profile?.private_info;
+  const infoObj = Array.isArray(pInfo) ? pInfo[0] : pInfo; // Sécurité format
+  const status = infoObj?.kyc_status || "not_submitted";
+
+  // Variables pour l'affichage
+  const isVerified = status === "verified";
+  const isPending = status === "pending";
+  const isRejected = status === "rejected";
 
   return (
     <DashboardLayout role="traveler" fullName={profile.full_name} onLogout={handleLogout}>
@@ -112,25 +119,41 @@ const TravelerDashboard = () => {
           <Card className="bg-card border shadow-sm sm:col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Statut KYC</CardTitle>
-              {isKycComplete ? (
+              {isVerified ? (
                 <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+              ) : isPending ? (
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+              ) : isRejected ? (
+                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
               ) : (
-                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               )}
             </CardHeader>
             <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-              <Badge
-                variant={isKycComplete ? "default" : "secondary"}
-                className={`text-xs ${isKycComplete ? "bg-green-500/10 text-green-600" : "bg-orange-500/10 text-orange-600"}`}
-              >
-                {isKycComplete ? "Complété" : "Incomplet"}
-              </Badge>
+              {isVerified ? (
+                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-0">
+                  Vérifié ✅
+                </Badge>
+              ) : isPending ? (
+                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-0">
+                  En attente ⏳
+                </Badge>
+              ) : isRejected ? (
+                <Badge variant="destructive" className="text-xs">
+                  Rejeté ❌
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-0">
+                  Incomplet
+                </Badge>
+              )}
+
               <Button
                 variant="link"
                 className="p-0 h-auto text-primary mt-2 block text-xs sm:text-sm"
                 onClick={() => navigate("/profile")}
               >
-                {isKycComplete ? "Voir mon profil" : "Compléter mon profil"}{" "}
+                {isVerified ? "Voir mon profil" : "Gérer mon dossier"}{" "}
                 <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4 inline" />
               </Button>
             </CardContent>
