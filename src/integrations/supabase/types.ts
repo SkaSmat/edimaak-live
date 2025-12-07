@@ -113,6 +113,7 @@ export type Database = {
           id_expiry_date: string | null
           id_number: string | null
           id_type: string | null
+          kyc_status: string | null
           phone: string | null
           updated_at: string | null
         }
@@ -126,6 +127,7 @@ export type Database = {
           id_expiry_date?: string | null
           id_number?: string | null
           id_type?: string | null
+          kyc_status?: string | null
           phone?: string | null
           updated_at?: string | null
         }
@@ -139,6 +141,7 @@ export type Database = {
           id_expiry_date?: string | null
           id_number?: string | null
           id_type?: string | null
+          kyc_status?: string | null
           phone?: string | null
           updated_at?: string | null
         }
