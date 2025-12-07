@@ -157,7 +157,7 @@ export const DashboardSidebar = ({
                     >
                       <div className="flex items-center gap-2">
                         <item.icon className="h-5 w-5" />
-                        <span>{item.title}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                       </div>
                       {showBadge && !collapsed && (
                         <Badge
