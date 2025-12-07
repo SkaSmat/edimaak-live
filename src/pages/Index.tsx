@@ -587,9 +587,4 @@ const Index = () => {
     </div>
   );
 };
-[data-sidebar="menu-button"] span {
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-};
 export default Index;
