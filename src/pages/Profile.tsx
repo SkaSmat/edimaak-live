@@ -248,6 +248,14 @@ const Profile = () => {
     }
     setSavingKyc(false);
   };
+  const stats = useUserStats(user?.id);
+
+  const isActive =
+    profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
+
+  // Correction pour le badge du haut (type strict)
+  const headerBadgeStatus: "complete" | "not_filled" | "partial" =
+    kycStatus === "verified" ? "complete" : kycStatus === "pending" ? "partial" : "not_filled";
 
   // Le badge bleu "Vérifié" ne s'affiche que si c'est validé par l'admin
   const isVerified = kycStatus === "verified";
@@ -304,7 +312,7 @@ const Profile = () => {
               <div className="flex flex-wrap items-center gap-2">
                 {/* LA CORRECTION EST ICI : On force le type pour éviter l'erreur TS */}
                 <ActivityBadge isActive={isActive} role={profile.role as "traveler" | "sender"} />
-                <KycBadge status={kycStatus} />
+                <KycBadge status={headerBadgeStatus} />
               </div>
             </div>
           </div>
