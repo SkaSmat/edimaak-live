@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Upload, FileText, X } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 import { useUserStats, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
@@ -30,6 +30,7 @@ interface PrivateInfoData {
   id_type: string | null;
   id_number: string | null;
   id_expiry_date: string | null;
+  id_document_url: string | null;
 }
 
 const COUNTRY_CODES = [
@@ -51,6 +52,7 @@ const Profile = () => {
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingKyc, setSavingKyc] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
 
   // Form states
   const [firstName, setFirstName] = useState("");
@@ -71,6 +73,7 @@ const Profile = () => {
   const [idType, setIdType] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [idExpiryDate, setIdExpiryDate] = useState("");
+  const [idDocumentUrl, setIdDocumentUrl] = useState<string | null>(null);
 
   const [phoneError, setPhoneError] = useState("");
 
@@ -132,6 +135,7 @@ const Profile = () => {
       setIdType(privateData.id_type || "");
       setIdNumber(privateData.id_number || "");
       setIdExpiryDate(privateData.id_expiry_date || "");
+      setIdDocumentUrl(privateData.id_document_url || null);
     }
 
     setLoading(false);
@@ -163,6 +167,84 @@ const Profile = () => {
       toast.error("Impossible de mettre à jour le mot de passe");
     } finally {
       setSavingPassword(false);
+    }
+  };
+
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Vérification du type de fichier
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Format non supporté. Utilisez PDF, JPG ou PNG.");
+      return;
+    }
+
+    // Vérification de la taille (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Le fichier est trop volumineux (max 5MB)");
+      return;
+    }
+
+    setUploadingDocument(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}_id_document_${Date.now()}.${fileExt}`;
+      const filePath = `kyc_documents/${fileName}`;
+
+      // Upload vers Supabase Storage
+      const { error: uploadError } = await supabase.storage.from("kyc-documents").upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Obtenir l'URL publique
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("kyc-documents").getPublicUrl(filePath);
+
+      // Mettre à jour la base de données
+      const { error: updateError } = await supabase.from("private_info").upsert({
+        id: user.id,
+        id_document_url: publicUrl,
+      });
+
+      if (updateError) throw updateError;
+
+      setIdDocumentUrl(publicUrl);
+      toast.success("Document uploadé avec succès !");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error("Erreur lors de l'upload du document");
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
+  const handleRemoveDocument = async () => {
+    if (!idDocumentUrl || !user) return;
+
+    try {
+      // Extraire le chemin du fichier depuis l'URL
+      const urlParts = idDocumentUrl.split("/kyc-documents/");
+      if (urlParts.length === 2) {
+        const filePath = `kyc_documents/${urlParts[1]}`;
+
+        // Supprimer du storage
+        await supabase.storage.from("kyc-documents").remove([filePath]);
+      }
+
+      // Mettre à jour la base de données
+      const { error } = await supabase.from("private_info").update({ id_document_url: null }).eq("id", user.id);
+
+      if (error) throw error;
+
+      setIdDocumentUrl(null);
+      toast.success("Document supprimé");
+    } catch (error: any) {
+      console.error("Remove error:", error);
+      toast.error("Erreur lors de la suppression");
     }
   };
 
@@ -198,10 +280,8 @@ const Profile = () => {
   const saveKycInfo = async () => {
     if (!user) return;
 
-    // 1. Validation du Téléphone (Doit contenir au moins 8 chiffres, pas de lettres)
-    // On nettoie les espaces et tirets pour vérifier
+    // 1. Validation du Téléphone
     const cleanPhone = phoneNumber.replace(/[\s\-\.]/g, "");
-    // Regex : Doit contenir entre 8 et 15 chiffres
     if (!/^\d{8,15}$/.test(cleanPhone)) {
       toast.error("Numéro de téléphone invalide (chiffres uniquement)");
       setPhoneError("Format incorrect");
@@ -219,48 +299,55 @@ const Profile = () => {
       return;
     }
 
+    // VALIDATION DOCUMENT
+    if (!idDocumentUrl) {
+      toast.error("Veuillez uploader une copie de votre pièce d'identité");
+      return;
+    }
+
     setSavingKyc(true);
 
-    const fullPhone = `${phoneCode}${cleanPhone.replace(/^0+/, "")}`;
+    const fullPhone = `${phoneCode}${phoneNumber}`;
 
-    const kycData = {
-      id: user.id,
-      phone: fullPhone,
-      address_line1: addressLine1 || null,
-      address_city: addressCity || null,
-      address_postal_code: addressPostalCode || null,
-      address_country: addressCountry || null,
-      id_type: idType || null,
-      id_number: idNumber || null,
-      id_expiry_date: idExpiryDate || null,
-      kyc_status: "pending",
-    };
-
-    const { error } = await supabase.from("private_info").upsert(kycData, { onConflict: "id" });
+    const { data: kycData, error } = await supabase
+      .from("private_info")
+      .upsert({
+        id: user.id,
+        phone: fullPhone,
+        address_line1: addressLine1 || null,
+        address_city: addressCity || null,
+        address_postal_code: addressPostalCode || null,
+        address_country: addressCountry || null,
+        id_type: idType,
+        id_number: idNumber,
+        id_expiry_date: idExpiryDate || null,
+        id_document_url: idDocumentUrl,
+        kyc_status: "pending",
+      })
+      .select()
+      .single();
 
     if (error) {
-      console.error("KYC save error:", error);
-      toast.error("Erreur lors de la sauvegarde KYC");
+      toast.error("Erreur lors de l'enregistrement");
     } else {
-      toast.success("Informations KYC enregistrées et valides !");
+      toast.success("Informations KYC enregistrées et soumises pour validation !");
       setPrivateInfo(kycData as PrivateInfoData);
       setKycStatus("pending");
     }
     setSavingKyc(false);
   };
+
   const stats = useUserStats(user?.id);
 
   const isActive =
     profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
 
-  // Correction pour le badge du haut (type strict)
+  // 🔧 FIX : Le badge "Vérifié" ne s'affiche que si KYC est "verified"
+  const isVerified = kycStatus === "verified";
+
   const headerBadgeStatus: "complete" | "not_filled" | "partial" =
     kycStatus === "verified" ? "complete" : kycStatus === "pending" ? "partial" : "not_filled";
 
-  // Le badge bleu "Vérifié" ne s'affiche que si c'est validé par l'admin
-  const isVerified = kycStatus === "verified";
-
-  // Fonction pour afficher le bon badge en bas
   const renderKycBadge = () => {
     if (kycStatus === "verified")
       return (
@@ -287,6 +374,18 @@ const Profile = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout role={profile?.role || "sender"} fullName={profile?.full_name || ""} onLogout={handleLogout}>
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!profile || !user) return null;
+
   return (
     <DashboardLayout role={profile.role} fullName={profile.full_name} onLogout={handleLogout}>
       <div className="max-w-3xl mx-auto space-y-6">
@@ -310,7 +409,6 @@ const Profile = () => {
               </div>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
               <div className="flex flex-wrap items-center gap-2">
-                {/* LA CORRECTION EST ICI : On force le type pour éviter l'erreur TS */}
                 <ActivityBadge isActive={isActive} role={profile.role as "traveler" | "sender"} />
                 <KycBadge status={headerBadgeStatus} />
               </div>
@@ -389,6 +487,14 @@ const Profile = () => {
             {renderKycBadge()}
           </div>
 
+          {kycStatus === "rejected" && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800">
+                ⚠️ Votre dossier a été rejeté. Veuillez vérifier vos informations et soumettre à nouveau.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>
@@ -399,6 +505,7 @@ const Profile = () => {
                   className="w-24 h-10 px-2 border border-input rounded-md bg-background text-sm"
                   value={phoneCode}
                   onChange={(e) => setPhoneCode(e.target.value)}
+                  disabled={kycStatus === "pending"}
                 >
                   {COUNTRY_CODES.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -415,6 +522,7 @@ const Profile = () => {
                   }}
                   placeholder="6 12 34 56 78"
                   className={`flex-1 ${phoneError ? "border-destructive" : ""}`}
+                  disabled={kycStatus === "pending"}
                 />
               </div>
               {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
@@ -429,6 +537,7 @@ const Profile = () => {
                     value={idType}
                     onChange={(e) => setIdType(e.target.value)}
                     className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm"
+                    disabled={kycStatus === "pending"}
                   >
                     <option value="">Sélectionner...</option>
                     <option value="carte_identite">Carte d'identité</option>
@@ -438,21 +547,93 @@ const Profile = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Numéro de pièce</Label>
-                    <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+                    <Input
+                      value={idNumber}
+                      onChange={(e) => setIdNumber(e.target.value)}
+                      disabled={kycStatus === "pending"}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Date d'expiration</Label>
-                    <Input type="date" value={idExpiryDate} onChange={(e) => setIdExpiryDate(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={idExpiryDate}
+                      onChange={(e) => setIdExpiryDate(e.target.value)}
+                      disabled={kycStatus === "pending"}
+                    />
                   </div>
+                </div>
+
+                {/* Upload de document */}
+                <div className="space-y-2">
+                  <Label>
+                    Document d'identité <span className="text-destructive">*</span>
+                  </Label>
+
+                  {idDocumentUrl ? (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <FileText className="w-5 h-5 text-green-600" />
+                      <span className="text-sm text-green-800 flex-1">Document uploadé</span>
+                      {kycStatus !== "pending" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveDocument}
+                          className="h-8 w-8 p-0 hover:bg-red-100"
+                        >
+                          <X className="w-4 h-4 text-red-600" />
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="id-document"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleDocumentUpload}
+                        className="hidden"
+                        disabled={uploadingDocument || kycStatus === "pending"}
+                      />
+                      <label
+                        htmlFor="id-document"
+                        className={`flex items-center justify-center gap-2 w-full h-24 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                          uploadingDocument || kycStatus === "pending"
+                            ? "bg-gray-50 border-gray-300 cursor-not-allowed"
+                            : "border-primary/30 hover:border-primary hover:bg-primary/5"
+                        }`}
+                      >
+                        {uploadingDocument ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                            <span className="text-sm text-muted-foreground">Upload en cours...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5 text-primary" />
+                            <span className="text-sm text-foreground">
+                              Cliquez pour uploader (PDF, JPG, PNG - max 5MB)
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Uploadez une copie lisible de votre carte d'identité ou passeport
+                  </p>
                 </div>
               </div>
             </div>
 
-            <Button onClick={saveKycInfo} disabled={savingKyc} className="mt-4">
+            <Button onClick={saveKycInfo} disabled={savingKyc || kycStatus === "pending"} className="mt-4">
               {savingKyc ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement...
                 </>
+              ) : kycStatus === "pending" ? (
+                "En attente de validation"
               ) : (
                 "Enregistrer les informations KYC"
               )}
