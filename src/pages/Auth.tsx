@@ -140,20 +140,14 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // On utilise "signInWithOtp" (Magic Link) au lieu de resetPassword
-      // Cela connecte l'utilisateur directement.
-      const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: {
-          // Une fois connecté, on l'envoie sur son profil pour qu'il puisse changer son mot de passe
-          emailRedirectTo: window.location.origin + "/profile",
-        },
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) throw error;
 
-      toast.success("Lien de connexion envoyé par email !");
-      toast.info("Cliquez sur le lien reçu pour accéder directement à votre profil.");
+      toast.success("📧 Lien de réinitialisation envoyé par email !");
+      toast.info("Cliquez sur le lien pour créer un nouveau mot de passe.", { duration: 5000 });
       setView("login");
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de l'envoi");
@@ -215,14 +209,12 @@ const Auth = () => {
   };
 
   const getTitle = () => {
-    // MODIFICATION ICI
-    if (view === "reset_password") return "Connexion sans mot de passe";
+    if (view === "reset_password") return "Mot de passe oublié ?";
     return view === "login" ? "Connexion" : "Créer mon compte";
   };
 
   const getDescription = () => {
-    // MODIFICATION ICI
-    if (view === "reset_password") return "Recevez un lien magique par email pour vous connecter instantanément.";
+    if (view === "reset_password") return "Entrez votre email pour recevoir un lien de réinitialisation.";
     return view === "login" ? "Connecte-toi à ton compte EdiM3ak." : "Un seul compte pour voyager et expédier.";
   };
 
@@ -259,8 +251,7 @@ const Auth = () => {
                 />
               </div>
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                {/* C'EST ICI QUE ÇA CHANGE */}
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "M'envoyer un lien magique"}
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Envoyer le lien de réinitialisation"}
               </Button>
             </form>
           ) : (
