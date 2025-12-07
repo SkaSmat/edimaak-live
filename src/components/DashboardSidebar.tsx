@@ -45,7 +45,9 @@ export const DashboardSidebar = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { state, isMobile, setOpenMobile } = useSidebar();
+
   const collapsed = state === "collapsed";
+
   const handleNavigation = (path: string) => {
     navigate(path);
     if (isMobile) setOpenMobile(false);
