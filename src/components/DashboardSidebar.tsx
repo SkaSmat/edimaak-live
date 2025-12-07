@@ -144,6 +144,7 @@ export const DashboardSidebar = ({
                 if (isMessagesLink) badgeCount = unreadCount;
                 if (isMatchesLink) badgeCount = pendingMatchCount;
                 const showBadge = badgeCount > 0;
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -157,8 +158,9 @@ export const DashboardSidebar = ({
                     >
                       <div className="flex items-center gap-2">
                         <item.icon className="h-5 w-5" />
-                        <span>{item.title}</span>
+                        <span>{item.title}</span> {/* 👈 LIGNE AJOUTÉE */}
                       </div>
+
                       {showBadge && !collapsed && (
                         <Badge
                           variant="destructive"
@@ -167,6 +169,7 @@ export const DashboardSidebar = ({
                           {badgeCount}
                         </Badge>
                       )}
+
                       {showBadge && collapsed && (
                         <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
                       )}
