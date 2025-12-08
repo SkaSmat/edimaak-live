@@ -136,7 +136,7 @@ const TravelerDashboard = () => {
                 </Badge>
               ) : isPending ? (
                 <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-0">
-                  En attente ⏳
+                  KYC en attente ⏳
                 </Badge>
               ) : isRejected ? (
                 <Badge variant="destructive" className="text-xs">
