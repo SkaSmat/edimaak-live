@@ -217,7 +217,7 @@ const Index = () => {
               <div className="h-8 sm:h-10 w-24 sm:w-32 bg-gray-200 rounded-full animate-pulse" />
             ) : session ? (
               <>
-                {/* <NotificationBell userId={session.user.id} /> */}
+                <NotificationBell userId={session.user.id} />
                 <Button
                   onClick={handleDashboardClick}
                   size="sm"
