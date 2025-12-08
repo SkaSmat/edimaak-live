@@ -343,16 +343,18 @@ const Profile = () => {
   const isActive =
     profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
 
-  //: Le badge "Vérifié" ne s'affiche que si KYC est "verified"
+  // Badge "Voyageur confirmé ✅" ne s'affiche QUE si vérifié
   const isVerified = kycStatus === "verified";
 
   // Mapping correct entre kyc_status (BDD) et headerBadgeStatus (UI)
-  const headerBadgeStatus: "complete" | "not_filled" | "partial" =
+  const headerBadgeStatus: "complete" | "not_filled" | "partial" | "rejected" =
     kycStatus === "verified"
-      ? "complete" // Vérifié → Badge vert
+      ? "complete" // Vérifié → Badge vert "KYC vérifié"
       : kycStatus === "pending"
-        ? "partial" // En attente → Badge orange
-        : "not_filled"; // Rejeté OU non soumis → Badge gris
+        ? "partial" // En attente → Badge orange "KYC partiel"
+        : kycStatus === "rejected"
+          ? "rejected" // Rejeté → Badge rouge "KYC rejeté"
+          : "not_filled"; // Non soumis → Badge gris "KYC non rempli"
 
   const renderKycBadge = () => {
     if (kycStatus === "verified")
