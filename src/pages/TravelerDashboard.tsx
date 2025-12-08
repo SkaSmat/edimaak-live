@@ -9,6 +9,7 @@ import { useUserStats, getKycStatus } from "@/hooks/useUserStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CompatibleShipments from "@/components/CompatibleShipments";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 
 const TravelerDashboard = () => {
   const navigate = useNavigate();
@@ -77,6 +78,7 @@ const TravelerDashboard = () => {
 
   return (
     <DashboardLayout role="traveler" fullName={profile.full_name} onLogout={handleLogout}>
+      <ProfileCompletionBanner />
       <div className="space-y-4 sm:space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -175,6 +177,7 @@ const TravelerDashboard = () => {
         </section>
       </div>
     </DashboardLayout>
+   
   );
 };
 

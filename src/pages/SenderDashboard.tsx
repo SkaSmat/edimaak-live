@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Package, Handshake, User, Plus, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 
 const SenderDashboard = () => {
   const navigate = useNavigate();
@@ -147,6 +148,7 @@ const SenderDashboard = () => {
 
   return (
     <DashboardLayout role="sender" fullName={profile?.full_name}>
+      <ProfileCompletionBanner />
       <div className="space-y-6 sm:space-y-8">
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">

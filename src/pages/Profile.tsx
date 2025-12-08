@@ -10,7 +10,8 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 import { useUserStats, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
 import { ActivityBadge, KycBadge, ProfileStats, VerifiedBadge } from "@/components/UserProfileBadges";
-
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import { ProfileProgressCard } from "@/components/ProfileProgressCard"; 
 interface ProfileData {
   id: string;
   full_name: string;
@@ -398,7 +399,7 @@ const Profile = () => {
     <DashboardLayout role={profile.role} fullName={profile.full_name} onLogout={handleLogout}>
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Mon profil</h1>
-
+<ProfileProgressCard />
         {/* Aperçu */}
         <section className="bg-card rounded-2xl shadow-sm border p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
