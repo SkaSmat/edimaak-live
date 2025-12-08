@@ -47,7 +47,7 @@ interface ShipmentRequest {
   sender_id: string;
   public_profiles?: {
     id: string;
-    first_name: string;
+    display_first_name: string;
     avatar_url: string | null;
   };
   sender_request_count?: number;
@@ -116,13 +116,13 @@ const Index = () => {
         .from("shipment_requests")
         .select(
           `
-  *,
-  public_profiles!sender_id (
-    id,
-    first_name,
-    avatar_url
-  )
-`,
+    *,
+    public_profiles!sender_id (
+      id,
+      display_first_name,
+      avatar_url
+    )
+  `,
         )
         .eq("status", "open")
         .neq("sender_id", session?.user?.id || "00000000-0000-0000-0000-000000000000") // Exclure ses propres annonces
@@ -217,7 +217,7 @@ const Index = () => {
               <div className="h-8 sm:h-10 w-24 sm:w-32 bg-gray-200 rounded-full animate-pulse" />
             ) : session ? (
               <>
-                <NotificationBell userId={session.user.id} />
+                {/* <NotificationBell userId={session.user.id} /> */}
                 <Button
                   onClick={handleDashboardClick}
                   size="sm"
@@ -562,8 +562,8 @@ const Index = () => {
 
                   <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
                     <UserAvatar
-                      fullName={session ? request.public_profiles?.first_name || "" : "Utilisateur"}
-                      avatarUrl={session ? request.profiles?.avatar_url : null}
+                      fullName={session ? request.public_profiles?.display_first_name || "" : "Utilisateur"}
+                      avatarUrl={session ? request.public_profiles?.avatar_url : null}
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
@@ -575,7 +575,7 @@ const Index = () => {
                           }}
                           className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left"
                         >
-                          {request.public_profiles?.first_name || "Utilisateur"}
+                          {request.public_profiles?.display_first_name || "Utilisateur"}
                         </button>
                       ) : (
                         <span className="text-xs sm:text-sm font-medium text-gray-500 truncate">

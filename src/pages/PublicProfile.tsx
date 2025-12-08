@@ -50,7 +50,7 @@ const PublicProfile = () => {
       // Utiliser la vue sécurisée public_profiles
       const { data: profileData, error: profileError } = await supabase
         .from("public_profiles")
-        .select("*")
+        .select("id, display_first_name, avatar_url, created_at")
         .eq("id", userId)
         .single();
 
@@ -65,10 +65,10 @@ const PublicProfile = () => {
       if (profileData) {
         setProfile({
           id: profileData.id,
-          full_name: profileData.first_name, // Prénom uniquement (sécurisé)
+          full_name: profileData.display_first_name,
           avatar_url: profileData.avatar_url,
           created_at: profileData.created_at,
-          private_info: profileData.is_verified ? { kyc_status: "verified" } : null,
+          private_info: null,
         });
 
         // Charger les statistiques publiques uniquement
