@@ -346,14 +346,13 @@ const Profile = () => {
   // 🔧 FIX : Le badge "Vérifié" ne s'affiche que si KYC est "verified"
   const isVerified = kycStatus === "verified";
 
+  // Mapping correct entre kyc_status (BDD) et headerBadgeStatus (UI)
   const headerBadgeStatus: "complete" | "not_filled" | "partial" =
     kycStatus === "verified"
-      ? "complete"
+      ? "complete" // Vérifié → Badge vert
       : kycStatus === "pending"
-        ? "partial"
-        : kycStatus === "rejected"
-          ? "not_filled"
-          : "not_filled";
+        ? "partial" // En attente → Badge orange
+        : "not_filled"; // Rejeté OU non soumis → Badge gris
 
   const renderKycBadge = () => {
     if (kycStatus === "verified")
