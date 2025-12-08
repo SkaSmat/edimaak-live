@@ -9,6 +9,7 @@ import {
   Handshake,
   ShieldCheck,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import { LogoEdiM3ak } from "./LogoEdiM3ak";
 import {
@@ -54,6 +55,11 @@ export const DashboardSidebar = ({
   };
   const travelerNavItems = [
     {
+      title: "Recherche",
+      icon: Search,
+      path: "/",
+    },
+    {
       title: "Dashboard",
       icon: LayoutDashboard,
       path: "/dashboard/traveler",
@@ -75,7 +81,13 @@ export const DashboardSidebar = ({
       hasBadge: true,
     },
   ];
+
   const senderNavItems = [
+    {
+      title: "Recherche",
+      icon: Search,
+      path: "/",
+    },
     {
       title: "Dashboard",
       icon: LayoutDashboard,

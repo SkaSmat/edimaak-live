@@ -159,7 +159,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
     });
   };
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background relative">
         <DashboardSidebar
           role={role === "admin" ? "traveler" : role}
