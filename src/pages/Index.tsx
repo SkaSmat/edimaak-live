@@ -557,9 +557,7 @@ const Index = () => {
 
                   <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
                     <UserAvatar
-                      fullName={session ? {request.public_user_profiles?.full_name
-  ? formatShortName(request.public_user_profiles.full_name)
-  : "Utilisateur"}
+                      fullName={session ? request.public_user_profiles?.full_name || "" : "Utilisateur"}
                       avatarUrl={session ? request.public_user_profiles?.avatar_url : null}
                       size="sm"
                     />
@@ -573,7 +571,7 @@ const Index = () => {
                           className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left"
                         >
                           {request.public_user_profiles?.full_name
-                            ? formatShortName(request.profiles.full_name)
+                            ? formatShortName(request.public_user_profiles.full_name)
                             : "Utilisateur"}
                         </button>
                       ) : (
