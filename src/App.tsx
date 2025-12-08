@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Legal from "./pages/Legal";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
+import PublicProfile from "./pages/PublicProfile";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/user/:userId" element={<PublicProfile />} />
           <Route path="/dashboard/traveler" element={<TravelerDashboard />} />
           <Route path="/dashboard/traveler/trips" element={<TravelerTrips />} />
           <Route path="/dashboard/traveler/matches" element={<TravelerMatches />} />
