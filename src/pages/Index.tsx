@@ -113,7 +113,16 @@ const Index = () => {
     try {
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
-        .select(`*, profiles!sender_id (id, full_name, avatar_url)`)
+        .select(
+          `
+    *,
+    profiles:sender_id (
+      id,
+      full_name,
+      avatar_url
+    )
+  `,
+        )
         .eq("status", "open")
         .order("created_at", {
           ascending: false,
