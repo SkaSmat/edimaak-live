@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, Upload, X } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
+import { z } from "zod";
 
 interface ShipmentRequestFormProps {
   userId: string;
@@ -14,6 +15,30 @@ interface ShipmentRequestFormProps {
 }
 
 const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
+const VALID_ITEM_TYPES = ["Documents", "Vêtements", "Médicaments", "Argent", "Autres"] as const;
+
+// Zod schema for shipment request validation
+const shipmentSchema = z.object({
+  fromCountry: z.string().min(1, "Pays d'origine requis"),
+  fromCity: z.string().min(1, "Ville d'origine requise").max(100, "Nom de ville trop long"),
+  toCountry: z.string().min(1, "Pays de destination requis"),
+  toCity: z.string().min(1, "Ville de destination requise").max(100, "Nom de ville trop long"),
+  earliestDate: z.string().min(1, "Date de début requise"),
+  latestDate: z.string().min(1, "Date limite requise"),
+  weightKg: z.string().min(1, "Poids requis").transform((val) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) throw new Error("Poids invalide");
+    return num;
+  }).refine((val) => val > 0 && val <= 100, "Le poids doit être entre 0.1 et 100 kg"),
+  itemType: z.enum(VALID_ITEM_TYPES, { errorMap: () => ({ message: "Type d'objet invalide" }) }),
+  notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
+}).refine((data) => data.fromCountry !== data.toCountry, {
+  message: "Le départ et l'arrivée ne peuvent pas être le même pays",
+  path: ["toCountry"],
+}).refine((data) => data.latestDate >= data.earliestDate, {
+  message: "La date limite ne peut pas être avant la date de début",
+  path: ["latestDate"],
+});
 
 const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -28,7 +53,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     earliestDate: "",
     latestDate: "",
     weightKg: "",
-    itemType: "",
+    itemType: "" as typeof VALID_ITEM_TYPES[number] | "",
     notes: "",
   });
 
@@ -49,6 +74,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         toast.error("L'image ne doit pas dépasser 5 Mo");
         return;
       }
+      // Validate MIME type
+      const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Format d'image non supporté. Utilisez JPG, PNG, WebP ou GIF.");
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
@@ -66,10 +97,8 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     setLoading(true);
 
     try {
-      if (parseFloat(formData.weightKg) <= 0) throw new Error("Le poids doit être positif");
-      if (formData.latestDate < formData.earliestDate) throw new Error("La date limite est avant la date de début");
-      if (formData.fromCountry === formData.toCountry) throw new Error("Départ et arrivée identiques.");
-      if (!formData.fromCity || !formData.toCity) throw new Error("Veuillez sélectionner les villes");
+      // Validate with zod
+      const validatedData = shipmentSchema.parse(formData);
 
       let imageUrl: string | null = null;
       if (imageFile) {
@@ -85,15 +114,15 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
       const { error } = await supabase.from("shipment_requests").insert({
         sender_id: userId,
-        from_country: formData.fromCountry,
-        from_city: formData.fromCity,
-        to_country: formData.toCountry,
-        to_city: formData.toCity,
-        earliest_date: formData.earliestDate,
-        latest_date: formData.latestDate,
-        weight_kg: parseFloat(formData.weightKg),
-        item_type: formData.itemType,
-        notes: formData.notes || null,
+        from_country: validatedData.fromCountry,
+        from_city: validatedData.fromCity,
+        to_country: validatedData.toCountry,
+        to_city: validatedData.toCity,
+        earliest_date: validatedData.earliestDate,
+        latest_date: validatedData.latestDate,
+        weight_kg: validatedData.weightKg,
+        item_type: validatedData.itemType,
+        notes: validatedData.notes || null,
         image_url: imageUrl,
         status: "open",
       });
@@ -102,7 +131,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
       toast.success("Demande créée avec succès");
       onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la création");
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast.error(firstError.message);
+      } else {
+        toast.error(error.message || "Erreur lors de la création");
+      }
     } finally {
       setLoading(false);
     }
@@ -194,11 +228,12 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           />
         </div>
         <div className="space-y-2">
-          <Label>Poids (kg) *</Label>
+          <Label>Poids (kg) * <span className="text-muted-foreground font-normal">(max 100kg)</span></Label>
           <Input
             type="number"
             step="0.1"
             min="0.1"
+            max="100"
             value={formData.weightKg}
             onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })}
             required
@@ -209,16 +244,14 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           <Label>Type d'objet *</Label>
           <select
             value={formData.itemType}
-            onChange={(e) => setFormData({ ...formData, itemType: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, itemType: e.target.value as typeof VALID_ITEM_TYPES[number] })}
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
           >
             <option value="">Sélectionner...</option>
-            <option value="Documents">Documents</option>
-            <option value="Vêtements">Vêtements</option>
-            <option value="Médicaments">Médicaments</option>
-            <option value="Argent">Argent</option>
-            <option value="Autres">Autres</option>
+            {VALID_ITEM_TYPES.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -241,8 +274,8 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         ) : (
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-muted/40">
             <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">Ajouter une photo (Max 5Mo)</span>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+            <span className="text-sm text-muted-foreground">Ajouter une photo (Max 5Mo, JPG/PNG/WebP/GIF)</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} className="hidden" />
           </label>
         )}
       </div>
