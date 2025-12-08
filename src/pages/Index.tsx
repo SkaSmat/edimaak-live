@@ -30,6 +30,7 @@ import { useAuth, UserRole } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
 import { SkeletonCard } from "@/components/SkeletonCard";
+import { NotificationBell } from "@/components/NotificationBell";
 interface ShipmentRequest {
   id: string;
   from_city: string;
@@ -215,19 +216,22 @@ const Index = () => {
             {authLoading ? (
               <div className="h-8 sm:h-10 w-24 sm:w-32 bg-gray-200 rounded-full animate-pulse" />
             ) : session ? (
-              <Button
-                onClick={handleDashboardClick}
-                size="sm"
-                className="rounded-full font-medium relative overflow-visible text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-10"
-              >
-                <span className="hidden sm:inline">Mon Dashboard</span>
-                <span className="sm:hidden">Dashboard</span>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[9px] sm:text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </Button>
+              <>
+                <NotificationBell userId={session.user.id} />
+                <Button
+                  onClick={handleDashboardClick}
+                  size="sm"
+                  className="rounded-full font-medium relative overflow-visible text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-10"
+                >
+                  <span className="hidden sm:inline">Mon Dashboard</span>
+                  <span className="sm:hidden">Dashboard</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[9px] sm:text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </>
             ) : (
               <>
                 <Button
@@ -556,9 +560,9 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
+               <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
                     <UserAvatar
-                      fullName={session ? request.profiles?.full_name || "" : "Utilisateur"}
+                      fullName={session ? (request.profiles?.full_name || "") : "Utilisateur"}
                       avatarUrl={session ? request.profiles?.avatar_url : null}
                       size="sm"
                     />
