@@ -347,7 +347,13 @@ const Profile = () => {
   const isVerified = kycStatus === "verified";
 
   const headerBadgeStatus: "complete" | "not_filled" | "partial" =
-    kycStatus === "verified" ? "complete" : kycStatus === "pending" ? "partial" : "not_filled";
+    kycStatus === "verified"
+      ? "complete"
+      : kycStatus === "pending"
+        ? "partial"
+        : kycStatus === "rejected"
+          ? "not_filled"
+          : "not_filled";
 
   const renderKycBadge = () => {
     if (kycStatus === "verified")
