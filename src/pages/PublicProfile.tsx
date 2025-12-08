@@ -47,29 +47,42 @@ const PublicProfile = () => {
 
       console.log("🔍 Chargement profil pour userId:", userId);
 
+      // Utiliser la vue sécurisée public_profiles
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select(
-          `
-    id,
-    full_name,
-    avatar_url,
-    created_at,
-    private_info (
-      kyc_status
-    )
-  `,
-        )
+        .from("public_profiles")
+        .select("*")
         .eq("id", userId)
         .single();
 
-      if (profileError) throw profileError;
-      setProfile(profileData);
+      if (profileError) {
+        console.error("❌ Erreur:", profileError);
+        throw profileError;
+      }
 
+      console.log("📊 Résultat:", profileData);
+
+      // Mapper les données de la vue vers notre interface
       if (profileData) {
+        setProfile({
+          id: profileData.id,
+          full_name: profileData.first_name, // Prénom uniquement (sécurisé)
+          avatar_url: profileData.avatar_url,
+          created_at: profileData.created_at,
+          private_info: profileData.is_verified ? { kyc_status: "verified" } : null,
+        });
+
+        // Charger les statistiques publiques uniquement
         const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([
-          supabase.from("shipment_requests").select("id", { count: "exact", head: true }).eq("sender_id", userId),
-          supabase.from("trips").select("id", { count: "exact", head: true }).eq("traveler_id", userId),
+          supabase
+            .from("shipment_requests")
+            .select("id", { count: "exact", head: true })
+            .eq("sender_id", userId)
+            .eq("status", "open"), // Seulement les annonces publiques
+          supabase
+            .from("trips")
+            .select("id", { count: "exact", head: true })
+            .eq("traveler_id", userId)
+            .eq("status", "open"), // Seulement les voyages publics
           supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "accepted"),
         ]);
 
