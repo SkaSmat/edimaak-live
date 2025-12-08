@@ -4,7 +4,7 @@ import { User } from "lucide-react";
 interface UserAvatarProps {
   fullName: string;
   avatarUrl?: string | null;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
@@ -32,6 +32,7 @@ export const UserAvatar = ({ fullName, avatarUrl, size = "md", className }: User
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-sm",
     lg: "w-12 h-12 text-base",
+    xl: "w-24 h-24 text-2xl",
   };
   
   if (avatarUrl) {
