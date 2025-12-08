@@ -48,29 +48,25 @@ const PublicProfile = () => {
       console.log("🔍 Chargement profil pour userId:", userId);
 
       const { data: profileData, error: profileError } = await supabase
-        .from("public_user_profiles")
-        .select("*")
+        .from("profiles")
+        .select(
+          `
+    id,
+    full_name,
+    avatar_url,
+    created_at,
+    private_info (
+      kyc_status
+    )
+  `,
+        )
         .eq("id", userId)
         .single();
 
-      if (profileError) {
-        console.error("❌ Erreur:", profileError);
-        throw profileError;
-      }
+      if (profileError) throw profileError;
+      setProfile(profileData);
 
-      console.log("📊 Résultat:", profileData);
-
-      // Mapper les données de la vue vers notre interface
       if (profileData) {
-        setProfile({
-          id: profileData.id,
-          full_name: profileData.full_name,
-          avatar_url: profileData.avatar_url,
-          created_at: profileData.created_at,
-          private_info: profileData.kyc_status ? { kyc_status: profileData.kyc_status } : null,
-        });
-
-        // Charger les statistiques
         const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([
           supabase.from("shipment_requests").select("id", { count: "exact", head: true }).eq("sender_id", userId),
           supabase.from("trips").select("id", { count: "exact", head: true }).eq("traveler_id", userId),
