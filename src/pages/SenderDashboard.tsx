@@ -17,6 +17,7 @@ const SenderDashboard = () => {
   const [stats, setStats] = useState({
     activeRequests: 0,
     acceptedMatches: 0,
+    pendingMatches: 0,
   });
 
   useEffect(() => {
@@ -92,10 +93,22 @@ const SenderDashboard = () => {
 
         if (!matchError && count !== null) acceptedCount = count;
       }
+      let pendingCount = 0;
+      if (myShipmentIds && myShipmentIds.length > 0) {
+        const ids = myShipmentIds.map((s) => s.id);
 
+        const { count, error: pendingError } = await supabase
+          .from("matches")
+          .select("*", { count: "exact", head: true })
+          .in("shipment_request_id", ids)
+          .eq("status", "pending");
+
+        if (!pendingError && count !== null) pendingCount = count;
+      }
       setStats({
         activeRequests: openCount || 0,
         acceptedMatches: acceptedCount || 0,
+        pendingMatches: pendingCount || 0,
       });
     } catch (error) {
       console.error("Erreur dashboard:", error);
@@ -151,41 +164,38 @@ const SenderDashboard = () => {
       <ProfileCompletionBanner />
       <div className="space-y-6 sm:space-y-8">
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Carte 1 : Demandes de match reçues */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">
-                Mes demandes d'expédition
-              </h3>
-              <Package className="w-4 h-4 text-primary" />
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Demandes de match</h3>
+              <Handshake className="w-4 h-4 text-orange-600" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold">{stats.activeRequests}</div>
-            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="text-xl sm:text-2xl font-bold">{stats.pendingMatches}</div>
+            <p className="text-xs text-muted-foreground mt-1">Voyageurs intéressés par vos colis</p>
+            <div className="mt-3 sm:mt-4">
               <Button
-                onClick={() => navigate("/dashboard/sender/shipments")}
+                onClick={() => navigate("/dashboard/sender/matches?filter=pending")}
                 variant="link"
                 className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
               >
-                Gérer <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate("/dashboard/sender/shipments#new")}
-                className="gap-1 rounded-full h-7 sm:h-8 px-2.5 sm:px-3 text-xs"
-              >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4" /> Nouvelle
+                Voir les demandes <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
 
+          {/* Carte 2 : Matches acceptés */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Matches acceptés</h3>
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">
+                Transporteurs confirmés
+              </h3>
               <Handshake className="w-4 h-4 text-green-600" />
             </div>
             <div className="text-xl sm:text-2xl font-bold">{stats.acceptedMatches}</div>
+            <p className="text-xs text-muted-foreground mt-1">Colis en cours de transport</p>
             <div className="mt-3 sm:mt-4">
               <Button
-                onClick={() => navigate("/dashboard/sender/matches")}
+                onClick={() => navigate("/dashboard/sender/matches?filter=accepted")}
                 variant="link"
                 className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
               >
