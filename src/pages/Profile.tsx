@@ -343,7 +343,7 @@ const Profile = () => {
   const isActive =
     profile?.role === "traveler" ? isActiveTraveler(stats.tripsCount) : isActiveSender(stats.shipmentsCount);
 
-  // 🔧 FIX : Le badge "Vérifié" ne s'affiche que si KYC est "verified"
+  //: Le badge "Vérifié" ne s'affiche que si KYC est "verified"
   const isVerified = kycStatus === "verified";
 
   // Mapping correct entre kyc_status (BDD) et headerBadgeStatus (UI)

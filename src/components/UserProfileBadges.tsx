@@ -15,13 +15,7 @@ export const ActivityBadge = ({ isActive, role, className }: ActivityBadgeProps)
   const Icon = role === "traveler" ? Plane : Package;
 
   return (
-    <Badge 
-      variant="secondary" 
-      className={cn(
-        "bg-primary/10 text-primary border-0 gap-1",
-        className
-      )}
-    >
+    <Badge variant="secondary" className={cn("bg-primary/10 text-primary border-0 gap-1", className)}>
       <Icon className="w-3 h-3" />
       {label}
     </Badge>
@@ -41,12 +35,12 @@ export const VerifiedBadge = ({ isVerified, showLabel = false, size = "md", clas
 
   if (isVerified) {
     return (
-      <Badge 
-        variant="default" 
+      <Badge
+        variant="default"
         className={cn(
           "bg-green-500 hover:bg-green-600 text-white border-0 gap-1",
           size === "sm" && "text-xs px-1.5 py-0",
-          className
+          className,
         )}
       >
         <BadgeCheck className={iconSize} />
@@ -56,12 +50,12 @@ export const VerifiedBadge = ({ isVerified, showLabel = false, size = "md", clas
   }
 
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={cn(
         "text-muted-foreground gap-1 border-muted-foreground/30",
         size === "sm" && "text-xs px-1.5 py-0",
-        className
+        className,
       )}
     >
       <XCircle className={iconSize} />
@@ -78,15 +72,13 @@ interface VerifiedIconProps {
 
 export const VerifiedIcon = ({ isVerified, className }: VerifiedIconProps) => {
   if (isVerified) {
-    return (
-      <BadgeCheck className={cn("w-4 h-4 text-green-500", className)} />
-    );
+    return <BadgeCheck className={cn("w-4 h-4 text-green-500", className)} />;
   }
   return null;
 };
 
 interface KycBadgeProps {
-  status: "complete" | "partial" | "not_filled";
+  status: "complete" | "partial" | "not_filled" | "rejected";
   showLabel?: boolean;
   size?: "sm" | "md";
   className?: string;
@@ -97,12 +89,12 @@ export const KycBadge = ({ status, showLabel = true, size = "md", className }: K
 
   if (status === "complete") {
     return (
-      <Badge 
-        variant="default" 
+      <Badge
+        variant="default"
         className={cn(
           "bg-green-500/90 hover:bg-green-500 text-white border-0 gap-1",
           size === "sm" && "text-xs px-1.5 py-0",
-          className
+          className,
         )}
       >
         <ShieldCheck className={iconSize} />
@@ -113,12 +105,12 @@ export const KycBadge = ({ status, showLabel = true, size = "md", className }: K
 
   if (status === "partial") {
     return (
-      <Badge 
-        variant="secondary" 
+      <Badge
+        variant="secondary"
         className={cn(
           "bg-yellow-500/20 text-yellow-700 border-0 gap-1",
           size === "sm" && "text-xs px-1.5 py-0",
-          className
+          className,
         )}
       >
         <Clock className={iconSize} />
@@ -127,14 +119,26 @@ export const KycBadge = ({ status, showLabel = true, size = "md", className }: K
     );
   }
 
+  if (status === "rejected") {
+    return (
+      <Badge
+        variant="destructive"
+        className={cn(
+          "bg-red-500/90 hover:bg-red-500 text-white border-0 gap-1",
+          size === "sm" && "text-xs px-1.5 py-0",
+          className,
+        )}
+      >
+        <XCircle className={iconSize} />
+        {showLabel && "KYC rejeté"}
+      </Badge>
+    );
+  }
+
   return (
-    <Badge 
-      variant="outline" 
-      className={cn(
-        "text-muted-foreground gap-1",
-        size === "sm" && "text-xs px-1.5 py-0",
-        className
-      )}
+    <Badge
+      variant="outline"
+      className={cn("text-muted-foreground gap-1", size === "sm" && "text-xs px-1.5 py-0", className)}
     >
       <AlertCircle className={iconSize} />
       {showLabel && "KYC non rempli"}
@@ -149,9 +153,7 @@ interface KycIconProps {
 
 export const KycIcon = ({ status, className }: KycIconProps) => {
   if (status === "complete") {
-    return (
-      <ShieldCheck className={cn("w-4 h-4 text-green-500", className)} />
-    );
+    return <ShieldCheck className={cn("w-4 h-4 text-green-500", className)} />;
   }
   return null;
 };
@@ -166,9 +168,7 @@ interface StatCardProps {
 export const StatCard = ({ icon, value, label, className }: StatCardProps) => {
   return (
     <div className={cn("bg-muted/30 rounded-lg p-4 text-center", className)}>
-      <div className="flex justify-center mb-2 text-primary">
-        {icon}
-      </div>
+      <div className="flex justify-center mb-2 text-primary">{icon}</div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
       <p className="text-sm text-muted-foreground">{label}</p>
     </div>
@@ -185,21 +185,9 @@ interface ProfileStatsProps {
 export const ProfileStats = ({ tripsCount, shipmentsCount, matchesCount, className }: ProfileStatsProps) => {
   return (
     <div className={cn("grid grid-cols-3 gap-4", className)}>
-      <StatCard
-        icon={<Plane className="w-5 h-5" />}
-        value={tripsCount}
-        label="Voyages"
-      />
-      <StatCard
-        icon={<Package className="w-5 h-5" />}
-        value={shipmentsCount}
-        label="Expéditions"
-      />
-      <StatCard
-        icon={<Users className="w-5 h-5" />}
-        value={matchesCount}
-        label="Matches"
-      />
+      <StatCard icon={<Plane className="w-5 h-5" />} value={tripsCount} label="Voyages" />
+      <StatCard icon={<Package className="w-5 h-5" />} value={shipmentsCount} label="Expéditions" />
+      <StatCard icon={<Users className="w-5 h-5" />} value={matchesCount} label="Matches" />
     </div>
   );
 };
