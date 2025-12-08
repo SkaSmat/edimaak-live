@@ -124,6 +124,7 @@ const Index = () => {
   `,
         )
         .eq("status", "open")
+        .neq("sender_id", session?.user?.id || "00000000-0000-0000-0000-000000000000") // Exclure ses propres annonces
         .order("created_at", { ascending: false })
         .limit(20);
       if (fetchError) throw fetchError;
