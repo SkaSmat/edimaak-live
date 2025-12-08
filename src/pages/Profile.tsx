@@ -30,7 +30,8 @@ interface PrivateInfoData {
   id_type: string | null;
   id_number: string | null;
   id_expiry_date: string | null;
-  id_document_url: string | null;
+  id_document_url?: string | null;
+  kyc_status?: string | null;
 }
 
 const COUNTRY_CODES = [

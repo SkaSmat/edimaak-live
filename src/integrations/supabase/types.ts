@@ -110,6 +110,7 @@ export type Database = {
           address_postal_code: string | null
           created_at: string | null
           id: string
+          id_document_url: string | null
           id_expiry_date: string | null
           id_number: string | null
           id_type: string | null
@@ -124,6 +125,7 @@ export type Database = {
           address_postal_code?: string | null
           created_at?: string | null
           id: string
+          id_document_url?: string | null
           id_expiry_date?: string | null
           id_number?: string | null
           id_type?: string | null
@@ -138,6 +140,7 @@ export type Database = {
           address_postal_code?: string | null
           created_at?: string | null
           id?: string
+          id_document_url?: string | null
           id_expiry_date?: string | null
           id_number?: string | null
           id_type?: string | null
