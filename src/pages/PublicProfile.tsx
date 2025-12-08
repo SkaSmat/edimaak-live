@@ -47,7 +47,8 @@ const PublicProfile = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select(`
+        .select(
+          `
           id,
           full_name,
           avatar_url,
@@ -55,7 +56,8 @@ const PublicProfile = () => {
           private_info (
             kyc_status
           )
-        `)
+        `,
+        )
         .eq("id", userId)
         .maybeSingle();
 
@@ -66,7 +68,7 @@ const PublicProfile = () => {
         const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([
           supabase.from("shipment_requests").select("id", { count: "exact", head: true }).eq("sender_id", userId),
           supabase.from("trips").select("id", { count: "exact", head: true }).eq("traveler_id", userId),
-          supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "accepted")
+          supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "accepted"),
         ]);
 
         setStats({
@@ -128,37 +130,29 @@ const PublicProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour
         </Button>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
           <div className="md:col-span-2 space-y-6">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-start gap-6">
-                  <UserAvatar
-                    fullName={profile.full_name}
-                    avatarUrl={profile.avatar_url}
-                    size="xl"
-                  />
-                  
+                  <UserAvatar fullName={profile.full_name} avatarUrl={profile.avatar_url} size="xl" />
+
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h1 className="text-3xl font-bold text-foreground mb-1 flex items-center gap-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 flex flex-wrap items-center gap-2">
                           {profile.full_name}
-                          {isVerified && (
-                            <CheckCircle className="w-6 h-6 text-green-500" />
-                          )}
+                          {isVerified && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0" />}
                         </h1>
                         {isVerified && (
-                          <Badge className="bg-green-100 text-green-800 border-0">
-                            Identité vérifiée
-                          </Badge>
+                          <Badge className="bg-green-100 text-green-800 border-0">Identité vérifiée</Badge>
                         )}
                       </div>
                     </div>
@@ -175,21 +169,21 @@ const PublicProfile = () => {
             <Card>
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold text-foreground mb-4">Activité sur EdiM3ak</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <Package className="w-6 h-6 mx-auto mb-2 text-primary" />
-                    <div className="text-2xl font-bold text-foreground">{stats?.shipmentsCount || 0}</div>
-                    <div className="text-sm text-muted-foreground">Envois</div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                  <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+                    <Package className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.shipmentsCount || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Envois</div>
                   </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <Plane className="w-6 h-6 mx-auto mb-2 text-primary" />
-                    <div className="text-2xl font-bold text-foreground">{stats?.tripsCount || 0}</div>
-                    <div className="text-sm text-muted-foreground">Voyages</div>
+                  <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+                    <Package className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.shipmentsCount || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Envois</div>
                   </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <Shield className="w-6 h-6 mx-auto mb-2 text-primary" />
-                    <div className="text-2xl font-bold text-foreground">{stats?.matchesCount || 0}</div>
-                    <div className="text-sm text-muted-foreground">Matches</div>
+                  <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+                    <Package className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.shipmentsCount || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Envois</div>
                   </div>
                 </div>
               </CardContent>
@@ -206,9 +200,7 @@ const PublicProfile = () => {
                       <span className="text-muted-foreground">({stats.reviewsCount} avis)</span>
                     </div>
                   </div>
-                  <p className="text-muted-foreground text-center py-8">
-                    Les avis seront bientôt disponibles
-                  </p>
+                  <p className="text-muted-foreground text-center py-8">Les avis seront bientôt disponibles</p>
                 </CardContent>
               </Card>
             )}
@@ -232,7 +224,7 @@ const PublicProfile = () => {
                       </>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <span className="text-sm">Email vérifié</span>

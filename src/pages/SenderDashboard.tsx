@@ -81,7 +81,7 @@ const SenderDashboard = () => {
 
       let acceptedCount = 0;
       if (myShipmentIds && myShipmentIds.length > 0) {
-        const ids = myShipmentIds.map((s) => s.id);
+        const ids = myShipmentIds.map((s) => s.id);"
 
         const { count, error: matchError } = await supabase
           .from("matches")
@@ -106,7 +106,7 @@ const SenderDashboard = () => {
   const getKycBadge = () => {
     if (kycStatus === "verified") {
       return (
-        <span className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+        <span className="bg-green-100 text-green-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
           Expéditeur vérifié ✅
         </span>
       );
@@ -114,7 +114,7 @@ const SenderDashboard = () => {
 
     if (kycStatus === "pending") {
       return (
-        <span className="bg-orange-100 text-orange-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+        <span className="bg-orange-100 text-orange-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
           KYC en attente ⏳
         </span>
       );
@@ -122,14 +122,14 @@ const SenderDashboard = () => {
 
     if (kycStatus === "rejected") {
       return (
-        <span className="bg-red-100 text-red-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+        <span className="bg-red-100 text-red-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
           KYC rejeté ❌
         </span>
       );
     }
 
     return (
-      <span className="bg-gray-100 text-gray-600 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+      <span className="bg-gray-100 text-gray-600 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
         KYC non rempli
       </span>
     );
