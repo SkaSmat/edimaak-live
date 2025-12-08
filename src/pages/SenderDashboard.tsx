@@ -81,7 +81,7 @@ const SenderDashboard = () => {
 
       let acceptedCount = 0;
       if (myShipmentIds && myShipmentIds.length > 0) {
-        const ids = myShipmentIds.map((s) => s.id);"
+        const ids = myShipmentIds.map((s) => s.id);
 
         const { count, error: matchError } = await supabase
           .from("matches")
