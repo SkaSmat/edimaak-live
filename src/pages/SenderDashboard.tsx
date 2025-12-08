@@ -11,6 +11,7 @@ const SenderDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [kycStatus, setKycStatus] = useState<string>("not_submitted");
 
   const [stats, setStats] = useState({
     activeRequests: 0,
@@ -49,6 +50,17 @@ const SenderDashboard = () => {
         return;
       }
       setProfile(profileData);
+
+      // 🔧 Récupération du statut KYC
+      const { data: privateData } = await supabase
+        .from("private_info")
+        .select("kyc_status")
+        .eq("id", session.user.id)
+        .single();
+
+      if (privateData) {
+        setKycStatus(privateData.kyc_status || "not_submitted");
+      }
 
       const userId = session.user.id;
 
@@ -90,6 +102,38 @@ const SenderDashboard = () => {
       setLoading(false);
     }
   };
+  // 🔧 Fonction pour obtenir le badge de statut KYC
+  const getKycBadge = () => {
+    if (kycStatus === "verified") {
+      return (
+        <span className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+          Expéditeur vérifié ✅
+        </span>
+      );
+    }
+
+    if (kycStatus === "pending") {
+      return (
+        <span className="bg-orange-100 text-orange-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+          KYC en attente ⏳
+        </span>
+      );
+    }
+
+    if (kycStatus === "rejected") {
+      return (
+        <span className="bg-red-100 text-red-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+          KYC rejeté ❌
+        </span>
+      );
+    }
+
+    return (
+      <span className="bg-gray-100 text-gray-600 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+        KYC non rempli
+      </span>
+    );
+  };
 
   if (loading) {
     return (
@@ -107,7 +151,9 @@ const SenderDashboard = () => {
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Mes demandes d'expédition</h3>
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">
+                Mes demandes d'expédition
+              </h3>
               <Package className="w-4 h-4 text-primary" />
             </div>
             <div className="text-xl sm:text-2xl font-bold">{stats.activeRequests}</div>
@@ -151,10 +197,7 @@ const SenderDashboard = () => {
               <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Mon Profil</h3>
               <User className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="text-xs sm:text-sm font-medium mt-2">
-              Statut :{" "}
-              <span className="bg-blue-100 text-blue-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">Expéditeur vérifié</span>
-            </div>
+            <div className="text-xs sm:text-sm font-medium mt-2">Statut : {getKycBadge()}</div>
             <div className="mt-3 sm:mt-4">
               <Button
                 onClick={() => navigate("/profile")}
