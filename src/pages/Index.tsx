@@ -116,7 +116,7 @@ const Index = () => {
         .select(
           `
     *,
-    profiles:sender_id (
+    public_user_profiles!sender_id (
       id,
       full_name,
       avatar_url
@@ -124,9 +124,7 @@ const Index = () => {
   `,
         )
         .eq("status", "open")
-        .order("created_at", {
-          ascending: false,
-        })
+        .order("created_at", { ascending: false })
         .limit(20);
       if (fetchError) throw fetchError;
       if (data) {
@@ -572,7 +570,9 @@ const Index = () => {
                           }}
                           className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left"
                         >
-                          {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
+                          {request.public_user_profiles?.full_name
+                            ? formatShortName(request.profiles.full_name)
+                            : "Utilisateur"}
                         </button>
                       ) : (
                         <span className="text-xs sm:text-sm font-medium text-gray-500 truncate">

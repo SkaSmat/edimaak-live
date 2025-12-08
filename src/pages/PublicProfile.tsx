@@ -46,18 +46,8 @@ const PublicProfile = () => {
       setIsLoading(true);
 
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select(
-          `
-          id,
-          full_name,
-          avatar_url,
-          created_at,
-          private_info (
-            kyc_status
-          )
-        `,
-        )
+        .from("public_user_profiles") // ← Utilisez la vue au lieu de profiles
+        .select("*")
         .eq("id", userId)
         .maybeSingle();
 
