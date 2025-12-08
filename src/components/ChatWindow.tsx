@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ interface OtherUserPrivateInfo {
 }
 
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [matchDetails, setMatchDetails] = useState<any | null>(null);
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
@@ -183,8 +185,8 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   // Check if user is verified (phone + ID)
   const isOtherUserVerified = Boolean(
     otherUserPrivateInfo?.phone?.trim() &&
-    otherUserPrivateInfo?.id_type?.trim() &&
-    otherUserPrivateInfo?.id_number?.trim()
+      otherUserPrivateInfo?.id_type?.trim() &&
+      otherUserPrivateInfo?.id_number?.trim(),
   );
 
   if (loading) {
@@ -208,18 +210,28 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       {/* Header with other user info */}
       {otherUser && (
         <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-card rounded-lg border shadow-sm">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <UserAvatar fullName={otherUser.full_name} avatarUrl={otherUser.avatar_url} size="sm" className="sm:w-10 sm:h-10" />
-            <div className="flex-1 min-w-0">
+          <button
+            onClick={() => navigate(`/user/${otherUser.id}`)}
+            className="flex items-center gap-2 sm:gap-3 w-full hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors group"
+          >
+            <UserAvatar
+              fullName={otherUser.full_name}
+              avatarUrl={otherUser.avatar_url}
+              size="sm"
+              className="sm:w-10 sm:h-10"
+            />
+            <div className="flex-1 min-w-0 text-left">
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-foreground text-sm sm:text-base truncate">{otherUser.full_name}</p>
+                <p className="font-semibold text-foreground text-sm sm:text-base truncate group-hover:text-primary transition-colors">
+                  {otherUser.full_name}
+                </p>
                 <VerifiedBadge isVerified={isOtherUserVerified} size="sm" />
               </div>
               <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
                 <ActivityBadge isActive={true} role={otherUser.role as "traveler" | "sender"} />
               </div>
             </div>
-          </div>
+          </button>
         </div>
       )}
 
@@ -263,10 +275,14 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
                   }`}
                 >
                   {!isOwn && (
-                    <p className="text-[9px] sm:text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider truncate">{senderName}</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider truncate">
+                      {senderName}
+                    </p>
                   )}
                   <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                  <p className={`text-[9px] sm:text-[10px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}>
+                  <p
+                    className={`text-[9px] sm:text-[10px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}
+                  >
                     {format(new Date(message.created_at), "HH:mm", { locale: fr })}
                   </p>
                 </div>
