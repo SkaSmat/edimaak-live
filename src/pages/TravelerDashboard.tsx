@@ -140,7 +140,7 @@ const TravelerDashboard = () => {
                 </Badge>
               ) : isRejected ? (
                 <Badge variant="destructive" className="text-xs">
-                  Rejeté ❌
+                  KYC rejeté ❌
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-0">
