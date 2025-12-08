@@ -74,9 +74,11 @@ const AdminUsers = () => {
 
       // Create a map of private info by user id
       const infoMap = new Map<string, PrivateInfo>();
-      (privateData || []).forEach((info: PrivateInfo) => {
-        infoMap.set(info.id, info);
-      });
+      if (privateData) {
+        (privateData as unknown as PrivateInfo[]).forEach((info) => {
+          infoMap.set(info.id, info);
+        });
+      }
       setPrivateInfoMap(infoMap);
 
       // Protection : si la colonne est vide (null), on considère l'user comme actif
@@ -138,6 +140,35 @@ const AdminUsers = () => {
     });
   }, [profiles, privateInfoMap, searchQuery]);
 
+  const getKycStatusBadge = (kycStatus: string | null | undefined) => {
+    switch (kycStatus) {
+      case "verified":
+        return (
+          <Badge className="bg-green-500/90 border-0 gap-1">
+            <ShieldCheck className="w-3 h-3" /> Vérifié
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge variant="secondary" className="bg-orange-500/20 text-orange-700 border-0 gap-1">
+            <Clock className="w-3 h-3" /> En attente
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge variant="destructive" className="gap-1">
+            <XCircle className="w-3 h-3" /> Rejeté
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-muted-foreground gap-1">
+            <AlertCircle className="w-3 h-3" /> Non soumis
+          </Badge>
+        );
+    }
+  };
+
   const getKycBadge = (profileId: string) => {
     const privateInfo = privateInfoMap.get(profileId);
     const status = getKycStatus({
@@ -147,34 +178,6 @@ const AdminUsers = () => {
       id_expiry_date: privateInfo?.id_expiry_date,
       id_document_url: privateInfo?.id_document_url,
     });
-    const getKycStatusBadge = (kycStatus: string | null | undefined) => {
-      switch (kycStatus) {
-        case "verified":
-          return (
-            <Badge className="bg-green-500/90 border-0 gap-1">
-              <ShieldCheck className="w-3 h-3" /> Vérifié
-            </Badge>
-          );
-        case "pending":
-          return (
-            <Badge variant="secondary" className="bg-orange-500/20 text-orange-700 border-0 gap-1">
-              <Clock className="w-3 h-3" /> En attente
-            </Badge>
-          );
-        case "rejected":
-          return (
-            <Badge variant="destructive" className="gap-1">
-              <XCircle className="w-3 h-3" /> Rejeté
-            </Badge>
-          );
-        default:
-          return (
-            <Badge variant="outline" className="text-muted-foreground gap-1">
-              <AlertCircle className="w-3 h-3" /> Non soumis
-            </Badge>
-          );
-      }
-    };
 
     switch (status) {
       case "complete":
