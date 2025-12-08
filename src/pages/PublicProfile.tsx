@@ -46,20 +46,28 @@ const PublicProfile = () => {
       setIsLoading(true);
 
       const { data: profileData, error: profileError } = await supabase
-        .from("public_user_profiles") // ← Utilisez la vue au lieu de profiles
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
+  .from("public_user_profiles")
+  .select("*")
+  .eq("id", userId)
+  .single();
 
-      if (profileError) throw profileError;
-      setProfile(profileData);
+if (profileError) {
+  console.error("❌ Erreur:", profileError);
+  throw profileError;
+}
 
-      if (profileData) {
-        const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([
-          supabase.from("shipment_requests").select("id", { count: "exact", head: true }).eq("sender_id", userId),
-          supabase.from("trips").select("id", { count: "exact", head: true }).eq("traveler_id", userId),
-          supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "accepted"),
-        ]);
+console.log("📊 Résultat:", profileData);
+
+// Mapper les données de la vue vers notre interface
+if (profileData) {
+  setProfile({
+    id: profileData.id,
+    full_name: profileData.full_name,
+    avatar_url: profileData.avatar_url,
+    created_at: profileData.created_at,
+    private_info: profileData.kyc_status ? { kyc_status: profileData.kyc_status } : null
+  });
+}
 
         setStats({
           shipmentsCount: shipmentsRes.count || 0,

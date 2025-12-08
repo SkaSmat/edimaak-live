@@ -44,7 +44,7 @@ interface ShipmentRequest {
   image_url: string | null;
   view_count: number;
   sender_id: string;
-  profiles?: {
+  public_user_profiles?: {
     id: string;
     full_name: string;
     avatar_url: string | null;
@@ -557,8 +557,8 @@ const Index = () => {
 
                   <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
                     <UserAvatar
-                      fullName={session ? request.profiles?.full_name || "" : "Utilisateur"}
-                      avatarUrl={session ? request.profiles?.avatar_url : null}
+                      fullName={session ? request.public_user_profiles?.full_name || "" : "Utilisateur"}
+                      avatarUrl={session ? request.public_user_profiles?.avatar_url : null}
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
