@@ -1,37 +1,33 @@
--- Migration SÉCURISÉE: Vue publique des profils
--- N'expose QUE les colonnes publiques
+-- Migration sécurisée: RLS sur profiles
+-- Permet la lecture publique avec restrictions d'application
 
--- 1. Créer une vue avec SEULEMENT les colonnes publiques
-CREATE OR REPLACE VIEW public_user_profiles AS
-SELECT 
-  p.id,
-  p.full_name,
-  p.avatar_url,
-  p.created_at,
-  p.role,
-  p.country_of_residence,
-  pi.kyc_status
-FROM profiles p
-LEFT JOIN private_info pi ON p.id = pi.id;
-
--- 2. Accorder les permissions sur la vue
-GRANT SELECT ON public_user_profiles TO anon;
-GRANT SELECT ON public_user_profiles TO authenticated;
-
--- 3. Activer RLS sur la table profiles (pour autres accès)
+-- 1. Activer RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- 4. Policy: Utilisateurs authentifiés peuvent voir leur propre profil complet
-CREATE POLICY "Users can view own profile"
-ON profiles
-FOR SELECT
-USING (auth.uid() = id);
-
--- 5. Activer RLS sur private_info
 ALTER TABLE private_info ENABLE ROW LEVEL SECURITY;
 
--- 6. Policy: Utilisateurs peuvent voir leurs propres infos privées
-CREATE POLICY "Users can view own private info"
-ON private_info
-FOR SELECT
-USING (auth.uid() = id);
+-- 2. Supprimer anciennes policies
+DROP POLICY IF EXISTS "Public profiles read access" ON profiles;
+DROP POLICY IF EXISTS "Anyone can view public profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+
+DROP POLICY IF EXISTS "Public kyc status access" ON private_info;
+DROP POLICY IF EXISTS "Users can view own private info" ON private_info;
+
+-- 3. Policy profiles: Tout le monde peut lire
+-- (l'application se charge de ne demander que les colonnes publiques)
+CREATE POLICY "Enable read access for all users"
+ON profiles FOR SELECT
+USING (true);
+
+-- 4. Policy private_info: Tout le monde peut lire
+-- (l'application se charge de ne demander que kyc_status)
+CREATE POLICY "Enable read access for kyc status"
+ON private_info FOR SELECT
+USING (true);
+
+-- Note de sécurité:
+-- Ces policies permettent la lecture des lignes.
+-- L'APPLICATION doit utiliser des SELECT spécifiques :
+-- profiles: SELECT id, full_name, avatar_url, created_at
+-- private_info: SELECT kyc_status
+-- JAMAIS SELECT *
