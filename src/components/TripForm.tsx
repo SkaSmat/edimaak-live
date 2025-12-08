@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, ArrowRightLeft } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
+import { z } from "zod";
 
 interface TripFormProps {
   userId: string;
@@ -14,6 +15,31 @@ interface TripFormProps {
 }
 
 const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
+
+// Zod schema for trip form validation
+const tripSchema = z.object({
+  fromCountry: z.string().min(1, "Pays de départ requis"),
+  fromCity: z.string().min(1, "Ville de départ requise").max(100, "Nom de ville trop long"),
+  toCountry: z.string().min(1, "Pays d'arrivée requis"),
+  toCity: z.string().min(1, "Ville d'arrivée requise").max(100, "Nom de ville trop long"),
+  departureDate: z.string().min(1, "Date de départ requise"),
+  arrivalDate: z.string().optional(),
+  maxWeightKg: z.string().optional().transform((val) => {
+    if (!val || val === "") return 0;
+    const num = parseFloat(val);
+    return isNaN(num) ? 0 : num;
+  }).refine((val) => val >= 0 && val <= 500, "Le poids doit être entre 0 et 500 kg"),
+  notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
+}).refine((data) => data.fromCountry !== data.toCountry, {
+  message: "Le départ et l'arrivée ne peuvent pas être le même pays",
+  path: ["toCountry"],
+}).refine((data) => {
+  if (!data.arrivalDate) return true;
+  return data.arrivalDate >= data.departureDate;
+}, {
+  message: "La date d'arrivée ne peut pas être avant la date de départ",
+  path: ["arrivalDate"],
+});
 
 const TripForm = ({ userId, onSuccess }: TripFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -55,35 +81,31 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
     setLoading(true);
 
     try {
-      if (formData.arrivalDate && formData.arrivalDate < formData.departureDate) {
-        throw new Error("La date d'arrivée ne peut pas être avant la date de départ");
-      }
-      if (!formData.fromCity || !formData.toCity) {
-        throw new Error("Veuillez sélectionner les villes");
-      }
-      if (formData.fromCountry === formData.toCountry) {
-        throw new Error("Le départ et l'arrivée ne peuvent pas être le même pays.");
-      }
-
-      const weightToSend = formData.maxWeightKg ? parseFloat(formData.maxWeightKg) : 0;
+      // Validate with zod
+      const validatedData = tripSchema.parse(formData);
 
       const { error } = await supabase.from("trips").insert({
         traveler_id: userId,
-        from_country: formData.fromCountry,
-        from_city: formData.fromCity,
-        to_country: formData.toCountry,
-        to_city: formData.toCity,
-        departure_date: formData.departureDate,
-        arrival_date: formData.arrivalDate || null,
-        max_weight_kg: weightToSend,
-        notes: formData.notes || null,
+        from_country: validatedData.fromCountry,
+        from_city: validatedData.fromCity,
+        to_country: validatedData.toCountry,
+        to_city: validatedData.toCity,
+        departure_date: validatedData.departureDate,
+        arrival_date: validatedData.arrivalDate || null,
+        max_weight_kg: validatedData.maxWeightKg,
+        notes: validatedData.notes || null,
       });
 
       if (error) throw error;
       toast.success("Voyage créé avec succès !");
       onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "Une erreur est survenue.");
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast.error(firstError.message);
+      } else {
+        toast.error(error.message || "Une erreur est survenue.");
+      }
     } finally {
       setLoading(false);
     }
@@ -192,12 +214,13 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>
-              Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span>
+              Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel, max 500kg)</span>
             </Label>
             <Input
               type="number"
               step="0.5"
               min="0"
+              max="500"
               value={formData.maxWeightKg}
               onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
               placeholder="Ex: 23"
