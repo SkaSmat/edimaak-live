@@ -63,34 +63,32 @@ export const ProfileCompletionBanner = () => {
         missing.push("KYC vérifié");
       }
 
-      // Localisation (15%)
-      if (profile.city && profile.country) {
-        percentage += 15;
-      } else {
-        missing.push("Localisation");
-      }
+// Localisation (15%)
+if (profile.country_of_residence) {
+  percentage += 15;
+} else {
+  missing.push("Localisation");
+}
 
-      // Bio (15%)
-      if (profile.bio && profile.bio.length > 20) {
-        percentage += 15;
-      } else {
-        missing.push("Bio");
-      }
+// Téléphone rempli (15%) - remplace Bio
+const privateInfo = Array.isArray(profile.private_info) 
+  ? profile.private_info[0] 
+  : profile.private_info;
 
-      setCompletion({
-        percentage,
-        missingItems: missing,
-        hasAvatar: !!profile.avatar_url,
-        hasKyc: privateInfo?.kyc_status === "verified",
-        hasLocation: !!(profile.city && profile.country),
-        hasBio: !!(profile.bio && profile.bio.length > 20),
-      });
-    } catch (error) {
-      console.error("Erreur calcul complétion:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+if (privateInfo?.phone) {
+  percentage += 15;
+} else {
+  missing.push("Téléphone");
+}
+
+setCompletion({
+  percentage,
+  missingItems: missing,
+  hasAvatar: !!profile.avatar_url,
+  hasKyc: privateInfo?.kyc_status === "verified",
+  hasLocation: !!profile.country_of_residence,
+  hasBio: !!privateInfo?.phone,
+});
 
   // Ne rien afficher si profil complet ou si fermé
   if (loading || !completion || completion.percentage >= 80 || dismissed) {

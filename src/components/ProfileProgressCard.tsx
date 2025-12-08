@@ -23,17 +23,21 @@ export const ProfileProgressCard = () => {
 
   const checkProfileCompletion = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select(`
+        .select(
+          `
           *,
           private_info (
             kyc_status
           )
-        `)
+        `,
+        )
         .eq("id", session.user.id)
         .single();
 
@@ -61,9 +65,7 @@ export const ProfileProgressCard = () => {
       if (hasAvatar) percentage += 20;
 
       // KYC vérifié (30%)
-      const privateInfo = Array.isArray(profile.private_info) 
-        ? profile.private_info[0] 
-        : profile.private_info;
+      const privateInfo = Array.isArray(profile.private_info) ? profile.private_info[0] : profile.private_info;
       const kycVerified = privateInfo?.kyc_status === "verified";
       items.push({
         label: "KYC vérifié",
@@ -73,23 +75,23 @@ export const ProfileProgressCard = () => {
       if (kycVerified) percentage += 30;
 
       // Localisation (15%)
-      const hasLocation = !!(profile.city && profile.country);
+      const hasLocation = !!profile.country_of_residence;
       items.push({
         label: "Localisation",
         completed: hasLocation,
-        description: "Indiquez votre ville et pays",
+        description: "Indiquez votre pays de résidence",
       });
       if (hasLocation) percentage += 15;
 
-      // Bio (15%)
-      const hasBio = !!(profile.bio && profile.bio.length > 20);
+      // Téléphone (15%)
+      const hasPhone = !!privateInfo?.phone;
       items.push({
-        label: "Bio",
-        completed: hasBio,
-        description: "Présentez-vous en quelques mots",
+        label: "Téléphone",
+        completed: hasPhone,
+        description: "Ajoutez votre numéro de téléphone",
       });
-      if (hasBio) percentage += 15;
 
+      if (hasPhone) percentage += 15;
       setCompletion({ percentage, items });
     } catch (error) {
       console.error("Erreur calcul complétion:", error);
@@ -107,20 +109,22 @@ export const ProfileProgressCard = () => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Complétion du profil</span>
-          <span className={`text-2xl font-bold ${
-            completion.percentage === 100 
-              ? "text-green-500" 
-              : completion.percentage >= 50 
-                ? "text-orange-500" 
-                : "text-red-500"
-          }`}>
+          <span
+            className={`text-2xl font-bold ${
+              completion.percentage === 100
+                ? "text-green-500"
+                : completion.percentage >= 50
+                  ? "text-orange-500"
+                  : "text-red-500"
+            }`}
+          >
             {completion.percentage}%
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Progress value={completion.percentage} className="mb-6" />
-        
+
         <div className="space-y-3">
           {completion.items.map((item) => (
             <div key={item.label} className="flex items-start gap-3">
@@ -130,9 +134,7 @@ export const ProfileProgressCard = () => {
                 <XCircle className="w-5 h-5 text-gray-300 flex-shrink-0 mt-0.5" />
               )}
               <div className="flex-1">
-                <p className={`font-medium ${item.completed ? "text-gray-900" : "text-gray-500"}`}>
-                  {item.label}
-                </p>
+                <p className={`font-medium ${item.completed ? "text-gray-900" : "text-gray-500"}`}>{item.label}</p>
                 <p className="text-xs text-gray-500">{item.description}</p>
               </div>
             </div>
@@ -141,9 +143,7 @@ export const ProfileProgressCard = () => {
 
         {completion.percentage === 100 && (
           <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-800 font-medium">
-              🎉 Félicitations ! Votre profil est complet !
-            </p>
+            <p className="text-sm text-green-800 font-medium">🎉 Félicitations ! Votre profil est complet !</p>
           </div>
         )}
       </CardContent>
