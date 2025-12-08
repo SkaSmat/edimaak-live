@@ -550,20 +550,26 @@ const Index = () => {
 
                   <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
                     <UserAvatar
-                      fullName={request.profiles?.full_name || ""}
-                      avatarUrl={request.profiles?.avatar_url}
+                      fullName={session ? request.profiles?.full_name || "" : "Utilisateur"}
+                      avatarUrl={session ? request.profiles?.avatar_url : null}
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/user/${request.sender_id}`);
-                        }}
-                        className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left"
-                      >
-                        {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
-                      </button>
+                      {session ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/user/${request.sender_id}`);
+                          }}
+                          className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left"
+                        >
+                          {request.profiles?.full_name ? formatShortName(request.profiles.full_name) : "Utilisateur"}
+                        </button>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                          Utilisateur anonyme
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
