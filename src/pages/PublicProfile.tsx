@@ -176,14 +176,14 @@ const PublicProfile = () => {
                     <div className="text-xs sm:text-sm text-muted-foreground">Envois</div>
                   </div>
                   <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
-                    <Package className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
-                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.shipmentsCount || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Envois</div>
+                    <Plane className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.tripsCount || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Voyages</div>
                   </div>
                   <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
-                    <Package className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
-                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.shipmentsCount || 0}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Envois</div>
+                    <Shield className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-primary" />
+                    <div className="text-xl sm:text-2xl font-bold text-foreground">{stats?.matchesCount || 0}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Matches</div>
                   </div>
                 </div>
               </CardContent>
