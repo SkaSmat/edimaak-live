@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { X, CheckCircle, AlertCircle } from "lucide-react";
+import { X, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileCompletion {
@@ -25,18 +25,23 @@ export const ProfileCompletionBanner = () => {
 
   const checkProfileCompletion = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       // Charger le profil + private_info
       const { data: profile } = await supabase
         .from("profiles")
-        .select(`
+        .select(
+          `
           *,
           private_info (
-            kyc_status
+            kyc_status,
+            phone
           )
-        `)
+        `,
+        )
         .eq("id", session.user.id)
         .single();
 
@@ -53,42 +58,42 @@ export const ProfileCompletionBanner = () => {
       }
 
       // KYC vérifié (30%)
-      const privateInfo = Array.isArray(profile.private_info) 
-        ? profile.private_info[0] 
-        : profile.private_info;
-      
+      const privateInfo = Array.isArray(profile.private_info) ? profile.private_info[0] : profile.private_info;
+
       if (privateInfo?.kyc_status === "verified") {
         percentage += 30;
       } else {
         missing.push("KYC vérifié");
       }
 
-// Localisation (15%)
-if (profile.country_of_residence) {
-  percentage += 15;
-} else {
-  missing.push("Localisation");
-}
+      // Localisation (15%)
+      if (profile.country_of_residence) {
+        percentage += 15;
+      } else {
+        missing.push("Localisation");
+      }
 
-// Téléphone rempli (15%) - remplace Bio
-const privateInfo = Array.isArray(profile.private_info) 
-  ? profile.private_info[0] 
-  : profile.private_info;
+      // Téléphone rempli (15%)
+      if (privateInfo?.phone) {
+        percentage += 15;
+      } else {
+        missing.push("Téléphone");
+      }
 
-if (privateInfo?.phone) {
-  percentage += 15;
-} else {
-  missing.push("Téléphone");
-}
-
-setCompletion({
-  percentage,
-  missingItems: missing,
-  hasAvatar: !!profile.avatar_url,
-  hasKyc: privateInfo?.kyc_status === "verified",
-  hasLocation: !!profile.country_of_residence,
-  hasBio: !!privateInfo?.phone,
-});
+      setCompletion({
+        percentage,
+        missingItems: missing,
+        hasAvatar: !!profile.avatar_url,
+        hasKyc: privateInfo?.kyc_status === "verified",
+        hasLocation: !!profile.country_of_residence,
+        hasBio: !!privateInfo?.phone,
+      });
+    } catch (error) {
+      console.error("Erreur calcul complétion:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Ne rien afficher si profil complet ou si fermé
   if (loading || !completion || completion.percentage >= 80 || dismissed) {
@@ -97,21 +102,16 @@ setCompletion({
 
   return (
     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6 relative">
-      <button
-        onClick={() => setDismissed(true)}
-        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-      >
+      <button onClick={() => setDismissed(true)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
         <X className="w-4 h-4" />
       </button>
 
       <div className="flex items-start gap-3">
         <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-        
+
         <div className="flex-1">
-          <h3 className="font-bold text-gray-900 mb-1">
-            Profil complété à {completion.percentage}%
-          </h3>
-          
+          <h3 className="font-bold text-gray-900 mb-1">Profil complété à {completion.percentage}%</h3>
+
           <p className="text-sm text-gray-600 mb-3">
             Complétez votre profil pour augmenter votre visibilité et gagner la confiance des autres utilisateurs.
           </p>
@@ -136,11 +136,7 @@ setCompletion({
             ))}
           </div>
 
-          <Button
-            onClick={() => navigate("/profile")}
-            size="sm"
-            className="bg-orange-500 hover:bg-orange-600"
-          >
+          <Button onClick={() => navigate("/profile")} size="sm" className="bg-orange-500 hover:bg-orange-600">
             Compléter mon profil
           </Button>
         </div>

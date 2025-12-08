@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface ProfileCompletion {
@@ -34,7 +34,8 @@ export const ProfileProgressCard = () => {
           `
           *,
           private_info (
-            kyc_status
+            kyc_status,
+            phone
           )
         `,
         )
@@ -90,8 +91,8 @@ export const ProfileProgressCard = () => {
         completed: hasPhone,
         description: "Ajoutez votre numéro de téléphone",
       });
-
       if (hasPhone) percentage += 15;
+
       setCompletion({ percentage, items });
     } catch (error) {
       console.error("Erreur calcul complétion:", error);
