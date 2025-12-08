@@ -18,7 +18,7 @@ export const useUserStats = (userId: string | undefined) => {
 
   useEffect(() => {
     if (!userId) {
-      setStats(prev => ({ ...prev, isLoading: false }));
+      setStats((prev) => ({ ...prev, isLoading: false }));
       return;
     }
 
@@ -37,18 +37,12 @@ export const useUserStats = (userId: string | undefined) => {
           .eq("sender_id", userId);
 
         // Fetch matches count (where user is involved as traveler or sender)
-        const { data: userTrips } = await supabase
-          .from("trips")
-          .select("id")
-          .eq("traveler_id", userId);
+        const { data: userTrips } = await supabase.from("trips").select("id").eq("traveler_id", userId);
 
-        const { data: userShipments } = await supabase
-          .from("shipment_requests")
-          .select("id")
-          .eq("sender_id", userId);
+        const { data: userShipments } = await supabase.from("shipment_requests").select("id").eq("sender_id", userId);
 
-        const tripIds = userTrips?.map(t => t.id) || [];
-        const shipmentIds = userShipments?.map(s => s.id) || [];
+        const tripIds = userTrips?.map((t) => t.id) || [];
+        const shipmentIds = userShipments?.map((s) => s.id) || [];
 
         let matchesCount = 0;
 
@@ -78,7 +72,7 @@ export const useUserStats = (userId: string | undefined) => {
         });
       } catch (error) {
         console.error("Error fetching user stats:", error);
-        setStats(prev => ({ ...prev, isLoading: false }));
+        setStats((prev) => ({ ...prev, isLoading: false }));
       }
     };
 
@@ -94,14 +88,16 @@ export const getKycStatus = (privateInfo: {
   id_type?: string | null;
   id_number?: string | null;
   id_expiry_date?: string | null;
+  id_document_url?: string | null;
 }) => {
   const kycFields = [
     privateInfo.phone,
     privateInfo.id_type,
     privateInfo.id_number,
     privateInfo.id_expiry_date,
+    privateInfo.id_document_url,
   ];
-  const filledFields = kycFields.filter(f => f && String(f).trim() !== "").length;
+  const filledFields = kycFields.filter((f) => f && String(f).trim() !== "").length;
 
   if (filledFields === 0) return "not_filled" as const;
   if (filledFields < kycFields.length) return "partial" as const;
@@ -109,17 +105,15 @@ export const getKycStatus = (privateInfo: {
 };
 
 // Check if user is verified (phone + ID info)
-export const isUserVerified = (privateInfo: {
-  phone?: string | null;
-  id_type?: string | null;
-  id_number?: string | null;
-} | null) => {
+export const isUserVerified = (
+  privateInfo: {
+    phone?: string | null;
+    id_type?: string | null;
+    id_number?: string | null;
+  } | null,
+) => {
   if (!privateInfo) return false;
-  return Boolean(
-    privateInfo.phone?.trim() &&
-    privateInfo.id_type?.trim() &&
-    privateInfo.id_number?.trim()
-  );
+  return Boolean(privateInfo.phone?.trim() && privateInfo.id_type?.trim() && privateInfo.id_number?.trim());
 };
 
 export const isActiveSender = (shipmentsCount: number) => shipmentsCount > 2;

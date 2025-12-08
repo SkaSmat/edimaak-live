@@ -30,6 +30,7 @@ interface PrivateInfo {
   id_type: string | null;
   id_number: string | null;
   id_expiry_date: string | null;
+  id_document_url: string | null;
 }
 
 const AdminUsers = () => {
@@ -65,7 +66,7 @@ const AdminUsers = () => {
       // Fetch private_info for KYC status (admin has access via RLS)
       const { data: privateData, error: privateError } = await supabase
         .from("private_info")
-        .select("id, phone, id_type, id_number, id_expiry_date");
+        .select("id, phone, id_type, id_number, id_expiry_date, id_document_url");
 
       if (privateError) {
         console.error("Error fetching private info:", privateError);
@@ -144,7 +145,36 @@ const AdminUsers = () => {
       id_type: privateInfo?.id_type,
       id_number: privateInfo?.id_number,
       id_expiry_date: privateInfo?.id_expiry_date,
+      id_document_url: privateInfo?.id_document_url,
     });
+    const getKycStatusBadge = (kycStatus: string | null | undefined) => {
+      switch (kycStatus) {
+        case "verified":
+          return (
+            <Badge className="bg-green-500/90 border-0 gap-1">
+              <ShieldCheck className="w-3 h-3" /> Vérifié
+            </Badge>
+          );
+        case "pending":
+          return (
+            <Badge variant="secondary" className="bg-orange-500/20 text-orange-700 border-0 gap-1">
+              <Clock className="w-3 h-3" /> En attente
+            </Badge>
+          );
+        case "rejected":
+          return (
+            <Badge variant="destructive" className="gap-1">
+              <XCircle className="w-3 h-3" /> Rejeté
+            </Badge>
+          );
+        default:
+          return (
+            <Badge variant="outline" className="text-muted-foreground gap-1">
+              <AlertCircle className="w-3 h-3" /> Non soumis
+            </Badge>
+          );
+      }
+    };
 
     switch (status) {
       case "complete":
@@ -209,8 +239,8 @@ const AdminUsers = () => {
           filteredProfiles.map((profile) => {
             const privateInfo = privateInfoMap.get(profile.id);
             return (
-              <div 
-                key={profile.id} 
+              <div
+                key={profile.id}
                 className={`bg-card rounded-lg border p-4 space-y-3 ${!profile.is_active ? "bg-red-50/50 border-red-200" : ""}`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -220,17 +250,17 @@ const AdminUsers = () => {
                   </div>
                   {getRoleBadge(profile.role)}
                 </div>
-                
+
                 {profile.private_info?.id_number && (
                   <div className="text-xs text-muted-foreground">
                     <span className="font-bold uppercase">{profile.private_info.id_type}</span>
                     <span className="font-mono ml-2">{profile.private_info.id_number}</span>
                   </div>
                 )}
-                
+
                 <div className="flex items-center justify-between pt-2 border-t">
-                  <div>{getKycBadge(profile.private_info?.kyc_status)}</div>
-                  
+                  <div>{getKycStatusBadge(profile.private_info?.kyc_status)}</div>
+
                   {profile.private_info?.kyc_status === "pending" ? (
                     <div className="flex gap-2">
                       <Button
@@ -301,7 +331,7 @@ const AdminUsers = () => {
                         "-"
                       )}
                     </TableCell>
-                    <TableCell>{getKycBadge(profile.private_info?.kyc_status)}</TableCell>
+                    <TableCell>{getKycStatusBadge(profile.private_info?.kyc_status)}</TableCell>
                     <TableCell className="text-right">
                       {profile.private_info?.kyc_status === "pending" ? (
                         <div className="flex justify-end gap-2">
