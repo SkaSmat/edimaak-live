@@ -132,7 +132,7 @@ const TravelerDashboard = () => {
             <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
               {isVerified ? (
                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-0">
-                  Vérifié ✅
+                  Expéditeur vérifié ✅
                 </Badge>
               ) : isPending ? (
                 <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-0">
