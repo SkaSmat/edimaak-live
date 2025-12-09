@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+// Type local pour les notifications (table pas encore dans les types générés)
 interface Notification {
   id: string;
   type: string;
@@ -19,6 +20,7 @@ interface Notification {
   related_id: string | null;
   read: boolean;
   created_at: string;
+  user_id: string;
 }
 
 export const NotificationBell = ({ userId }: { userId: string }) => {
@@ -35,12 +37,19 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   }, [userId]);
 
   const loadNotifications = async () => {
-    const { data } = await supabase
-      .from("notifications")
+    // Requête typée explicitement avec .returns<>
+    const { data, error } = await supabase
+      .from("notifications" as any)
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(10)
+      .returns<Notification[]>();
+
+    if (error) {
+      console.error("Erreur chargement notifications:", error);
+      return;
+    }
 
     if (data) {
       setNotifications(data);
@@ -77,7 +86,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
 
   const markAsRead = async (notificationId: string) => {
     await supabase
-      .from("notifications")
+      .from("notifications" as any)
       .update({ read: true })
       .eq("id", notificationId);
 
@@ -100,7 +109,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
         <Button variant="ghost" size="sm" className="relative p-2">
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -110,7 +119,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
         <div className="p-2">
           <p className="font-bold text-sm mb-2 px-2">Notifications</p>
           {notifications.length === 0 ? (
-            <p className="text-sm text-gray-500 py-8 text-center">
+            <p className="text-sm text-muted-foreground py-8 text-center">
               Aucune notification
             </p>
           ) : (
@@ -120,13 +129,13 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
                   key={notif.id}
                   onClick={() => handleNotificationClick(notif)}
                   className={`cursor-pointer p-3 flex gap-3 items-start ${
-                    !notif.read ? "bg-blue-50 hover:bg-blue-100" : ""
+                    !notif.read ? "bg-primary/5 hover:bg-primary/10" : ""
                   }`}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{notif.title}</p>
-                    <p className="text-xs text-gray-600 line-clamp-2">{notif.message}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground line-clamp-2">{notif.message}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">
                       {new Date(notif.created_at).toLocaleDateString("fr-FR", {
                         day: "numeric",
                         month: "short",
@@ -136,7 +145,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
                     </p>
                   </div>
                   {!notif.read && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />
+                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />
                   )}
                 </DropdownMenuItem>
               ))}
