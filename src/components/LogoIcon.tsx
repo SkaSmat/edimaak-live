@@ -16,8 +16,8 @@ export const LogoIcon = ({ className, size = 64, onClick }: LogoIconProps) => {
       className={cn("cursor-pointer hover:opacity-80 transition-opacity", className)}
       onClick={onClick}
     >
-      {/* Fond orange arrondi */}
-      <rect width="64" height="64" rx="12" fill="#FF6B35"/>
+      {/* Fond noir arrondi */}
+      <rect width="64" height="64" rx="12" fill="#000000"/>
       
       {/* Lettre "E" centrée */}
       <text 
