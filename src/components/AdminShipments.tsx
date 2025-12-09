@@ -26,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AdminPagination } from "@/components/admin/AdminPagination";
+import { AdminExportButton } from "@/components/admin/AdminExportButton";
 
 interface ShipmentRequest {
   id: string;
@@ -44,11 +46,14 @@ interface ShipmentRequest {
   };
 }
 
+const ITEMS_PER_PAGE = 15;
+
 const AdminShipments = () => {
   const [shipments, setShipments] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchShipments();
@@ -83,6 +88,17 @@ const AdminShipments = () => {
     );
   }, [shipments, searchQuery]);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredShipments.length / ITEMS_PER_PAGE);
+  const paginatedShipments = filteredShipments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const handleToggleVisibility = async (id: string, currentStatus: string) => {
     setToggling(id);
     const newStatus = currentStatus === "closed" ? "open" : "closed";
@@ -95,7 +111,6 @@ const AdminShipments = () => {
 
       if (error) throw error;
       
-      // Update local state
       setShipments(shipments.map(s => s.id === id ? { ...s, status: newStatus } : s));
       toast.success(newStatus === "closed" ? "Demande masquée" : "Demande remise en ligne");
     } catch (error: any) {
@@ -119,6 +134,19 @@ const AdminShipments = () => {
     }
   };
 
+  // Export columns
+  const exportColumns = [
+    { key: "profiles.full_name", label: "Expéditeur", transform: (val: any) => val || "" },
+    { key: "from_city", label: "Départ" },
+    { key: "to_city", label: "Arrivée" },
+    { key: "item_type", label: "Type" },
+    { key: "weight_kg", label: "Poids (kg)" },
+    { key: "earliest_date", label: "Date début", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
+    { key: "latest_date", label: "Date fin", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
+    { key: "status", label: "Statut" },
+    { key: "created_at", label: "Créé le", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -129,25 +157,27 @@ const AdminShipments = () => {
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Rechercher par ville, expéditeur, type ou statut..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par ville, expéditeur, type ou statut..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <AdminExportButton data={filteredShipments} filename="demandes" columns={exportColumns} />
       </div>
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
-        {filteredShipments.length === 0 ? (
+        {paginatedShipments.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             {searchQuery ? "Aucune demande trouvée" : "Aucune demande"}
           </div>
         ) : (
-          filteredShipments.map((shipment: any) => (
+          paginatedShipments.map((shipment: any) => (
             <div key={shipment.id} className="bg-card rounded-lg border p-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -244,14 +274,14 @@ const AdminShipments = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredShipments.length === 0 ? (
+            {paginatedShipments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   {searchQuery ? "Aucune demande trouvée" : "Aucune demande"}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredShipments.map((shipment: any) => (
+              paginatedShipments.map((shipment: any) => (
                 <TableRow key={shipment.id} className="hover:bg-muted/30">
                   <TableCell className="font-medium">{shipment.profiles?.full_name || "-"}</TableCell>
                   <TableCell>
@@ -321,9 +351,14 @@ const AdminShipments = () => {
           </TableBody>
         </Table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {filteredShipments.length} demande(s) affichée(s)
-      </p>
+
+      <AdminPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredShipments.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

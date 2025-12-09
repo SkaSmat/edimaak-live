@@ -26,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AdminPagination } from "@/components/admin/AdminPagination";
+import { AdminExportButton } from "@/components/admin/AdminExportButton";
 
 interface Trip {
   id: string;
@@ -43,11 +45,14 @@ interface Trip {
   };
 }
 
+const ITEMS_PER_PAGE = 15;
+
 const AdminTrips = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchTrips();
@@ -81,6 +86,17 @@ const AdminTrips = () => {
     );
   }, [trips, searchQuery]);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredTrips.length / ITEMS_PER_PAGE);
+  const paginatedTrips = filteredTrips.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const handleToggleVisibility = async (id: string, currentStatus: string) => {
     setToggling(id);
     const newStatus = currentStatus === "closed" ? "open" : "closed";
@@ -93,7 +109,6 @@ const AdminTrips = () => {
 
       if (error) throw error;
       
-      // Update local state
       setTrips(trips.map(t => t.id === id ? { ...t, status: newStatus } : t));
       toast.success(newStatus === "closed" ? "Voyage masqué" : "Voyage remis en ligne");
     } catch (error: any) {
@@ -117,6 +132,18 @@ const AdminTrips = () => {
     }
   };
 
+  // Export columns
+  const exportColumns = [
+    { key: "profiles.full_name", label: "Voyageur", transform: (val: any) => val || "" },
+    { key: "from_city", label: "Départ" },
+    { key: "to_city", label: "Arrivée" },
+    { key: "departure_date", label: "Date départ", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
+    { key: "arrival_date", label: "Date arrivée", transform: (val: string | null) => val ? format(new Date(val), "dd/MM/yyyy") : "" },
+    { key: "max_weight_kg", label: "Capacité (kg)" },
+    { key: "status", label: "Statut" },
+    { key: "created_at", label: "Créé le", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -127,25 +154,27 @@ const AdminTrips = () => {
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Rechercher par ville, voyageur ou statut..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par ville, voyageur ou statut..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <AdminExportButton data={filteredTrips} filename="voyages" columns={exportColumns} />
       </div>
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
-        {filteredTrips.length === 0 ? (
+        {paginatedTrips.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             {searchQuery ? "Aucun voyage trouvé" : "Aucun voyage"}
           </div>
         ) : (
-          filteredTrips.map((trip: any) => (
+          paginatedTrips.map((trip: any) => (
             <div key={trip.id} className="bg-card rounded-lg border p-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -235,14 +264,14 @@ const AdminTrips = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTrips.length === 0 ? (
+            {paginatedTrips.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   {searchQuery ? "Aucun voyage trouvé" : "Aucun voyage"}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredTrips.map((trip: any) => (
+              paginatedTrips.map((trip: any) => (
                 <TableRow key={trip.id} className="hover:bg-muted/30">
                   <TableCell className="font-medium">{trip.profiles?.full_name || "-"}</TableCell>
                   <TableCell>
@@ -316,9 +345,14 @@ const AdminTrips = () => {
           </TableBody>
         </Table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {filteredTrips.length} voyage(s) affiché(s)
-      </p>
+
+      <AdminPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredTrips.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

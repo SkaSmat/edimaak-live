@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Users, Plane, Package } from "lucide-react";
+import { Loader2, Users, Plane, Package, Handshake } from "lucide-react";
 import AdminUsers from "@/components/AdminUsers";
 import AdminTrips from "@/components/AdminTrips";
 import AdminShipments from "@/components/AdminShipments";
+import AdminMatches from "@/components/AdminMatches";
 import { AdminStats } from "@/components/AdminStats";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
@@ -84,7 +85,7 @@ const Admin = () => {
 
         {/* Tabs Section */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4 hidden sm:block" />
               Utilisateurs
@@ -96,6 +97,10 @@ const Admin = () => {
             <TabsTrigger value="trips" className="gap-2">
               <Plane className="w-4 h-4 hidden sm:block" />
               Voyages
+            </TabsTrigger>
+            <TabsTrigger value="matches" className="gap-2">
+              <Handshake className="w-4 h-4 hidden sm:block" />
+              Matches
             </TabsTrigger>
           </TabsList>
 
@@ -128,6 +133,17 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <AdminTrips />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="matches">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Liste des matches</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AdminMatches />
               </CardContent>
             </Card>
           </TabsContent>
