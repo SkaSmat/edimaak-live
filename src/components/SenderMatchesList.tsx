@@ -56,7 +56,7 @@ const SenderMatchesList = ({ embedded = false, userId }: SenderMatchesListProps)
           *,
           trips:trip_id(id, from_city, to_city, departure_date, traveler_id, profiles:traveler_id(full_name)),
           shipment_requests:shipment_request_id(id, item_type, from_city, to_city, sender_id)
-        `
+        `,
         )
         .eq("shipment_requests.sender_id", userId)
         .in("status", ["pending", "accepted"])
@@ -216,11 +216,7 @@ const SenderMatchesList = ({ embedded = false, userId }: SenderMatchesListProps)
 
       {embedded && matches.length > 0 && (
         <div className="text-center pt-2">
-          <Button
-            variant="link"
-            onClick={() => navigate("/dashboard/sender/matches")}
-            className="text-xs sm:text-sm"
-          >
+          <Button variant="link" onClick={() => navigate("/dashboard/sender/matches")} className="text-xs sm:text-sm">
             Voir tous les matches →
           </Button>
         </div>
