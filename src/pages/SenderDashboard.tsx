@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import SenderShipments from "./SenderShipments";
+import SenderMatchesList from "@/components/SenderMatchesList";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Package, Handshake, User, Plus, ChevronRight, Loader2 } from "lucide-react";
