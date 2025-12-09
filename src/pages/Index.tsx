@@ -32,6 +32,7 @@ interface ShipmentRequest {
   image_url: string | null;
   view_count: number;
   sender_id: string;
+  price: number | null;
   public_profiles?: {
     id: string;
     display_first_name: string;
@@ -389,19 +390,36 @@ connectant voyageurs et expéditeurs pour le transport de colis.
         {!isLoading && filteredRequests.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredRequests.map(request => <div key={request.id} role="button" className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col" onClick={() => handleShipmentClick(request)}>
                 
-                {/* Header : Badge Type + Poids */}
-                <div className="p-3 sm:p-4 pb-2 flex items-center justify-between">
+                {/* Header : Badge Type + Prix */}
+                <div className="p-3 sm:p-4 pb-2 flex items-center justify-between border-b border-gray-50">
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs flex items-center gap-1">
                     <Package className="w-3 h-3" />
                     {request.item_type}
                   </Badge>
-                  <div className="bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                    📦 {request.weight_kg} kg
-                  </div>
+                  {request.price ? (
+                    <div className="bg-green-100 text-green-700 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      💶 {request.price}€
+                    </div>
+                  ) : (
+                    <div className="bg-gray-100 text-gray-500 text-[10px] sm:text-xs px-2 py-1 rounded-md">
+                      Prix à discuter
+                    </div>
+                  )}
                 </div>
 
+                {/* Image (si disponible) */}
+                {request.image_url && (
+                  <div className="relative h-32 sm:h-40 bg-gray-100">
+                    <img 
+                      src={request.image_url} 
+                      alt={request.item_type}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
                 {/* Trajet Principal */}
-                <div className="px-3 sm:px-4 pb-2">
+                <div className="px-3 sm:px-4 pt-3 pb-2">
                   <h3 className="font-bold text-gray-900 text-lg sm:text-xl leading-tight">
                     {request.from_city} → {request.to_city}
                   </h3>
@@ -413,8 +431,8 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                   </div>
                 </div>
 
-                {/* Expéditeur + Stats */}
-                <div className="px-3 sm:px-4 py-3 border-t border-gray-50 flex items-center justify-between">
+                {/* Expéditeur + Poids */}
+                <div className="px-3 sm:px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <UserAvatar 
                       fullName={session ? request.public_profiles?.display_first_name || "" : ""} 
@@ -444,6 +462,9 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                         </p>
                       )}
                     </div>
+                  </div>
+                  <div className="bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0">
+                    📦 {request.weight_kg} kg
                   </div>
                 </div>
 

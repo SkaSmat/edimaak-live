@@ -32,6 +32,12 @@ const shipmentSchema = z.object({
   }).refine((val) => val > 0 && val <= 100, "Le poids doit être entre 0.1 et 100 kg"),
   itemType: z.enum(VALID_ITEM_TYPES, { errorMap: () => ({ message: "Type d'objet invalide" }) }),
   notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
+  price: z.string().optional().transform((val) => {
+    if (!val || val === "") return null;
+    const num = parseFloat(val);
+    if (isNaN(num)) return null;
+    return num;
+  }).refine((val) => val === null || (val > 0 && val <= 10000), "Le prix doit être entre 1 et 10000 €"),
 }).refine((data) => data.fromCountry !== data.toCountry, {
   message: "Le départ et l'arrivée ne peuvent pas être le même pays",
   path: ["toCountry"],
@@ -55,6 +61,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     weightKg: "",
     itemType: "" as typeof VALID_ITEM_TYPES[number] | "",
     notes: "",
+    price: "",
   });
 
   const today = new Date().toISOString().split("T")[0];
@@ -124,6 +131,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         item_type: validatedData.itemType,
         notes: validatedData.notes || null,
         image_url: imageUrl,
+        price: validatedData.price,
         status: "open",
       });
 
@@ -253,6 +261,18 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
+        </div>
+        <div className="space-y-2">
+          <Label>Prix proposé (€) <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+          <Input
+            type="number"
+            step="1"
+            min="1"
+            max="10000"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            placeholder="Ex: 50"
+          />
         </div>
       </div>
       <div className="space-y-2">

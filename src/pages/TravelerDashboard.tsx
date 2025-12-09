@@ -133,15 +133,15 @@ const TravelerDashboard = () => {
             </CardHeader>
             <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
               {isVerified ? (
-                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-0">
-                  Vérifié ✅
+                <Badge className="text-xs bg-green-600 text-white border-0 hover:bg-green-600">
+                  KYC accepté ✅
                 </Badge>
               ) : isPending ? (
                 <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-0">
                   KYC en attente ⏳
                 </Badge>
               ) : isRejected ? (
-                <Badge variant="destructive" className="text-xs">
+                <Badge className="text-xs bg-red-600 text-white border-0 hover:bg-red-600">
                   KYC rejeté ❌
                 </Badge>
               ) : (

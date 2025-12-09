@@ -120,15 +120,15 @@ const SenderDashboard = () => {
   const getKycBadge = () => {
     if (kycStatus === "verified") {
       return (
-        <span className="bg-green-100 text-green-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
-          Vérifié ✅
+        <span className="bg-green-600 text-white text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
+          KYC accepté ✅
         </span>
       );
     }
 
     if (kycStatus === "pending") {
       return (
-        <span className="bg-orange-100 text-orange-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
+        <span className="bg-orange-100 text-orange-800 text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
           KYC en attente ⏳
         </span>
       );
@@ -136,14 +136,14 @@ const SenderDashboard = () => {
 
     if (kycStatus === "rejected") {
       return (
-        <span className="bg-red-100 text-red-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
+        <span className="bg-red-600 text-white text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
           KYC rejeté ❌
         </span>
       );
     }
 
     return (
-      <span className="bg-gray-100 text-gray-600 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
+      <span className="bg-gray-100 text-gray-600 text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
         KYC non rempli
       </span>
     );
@@ -164,23 +164,23 @@ const SenderDashboard = () => {
       <ProfileCompletionBanner />
       <div className="space-y-6 sm:space-y-8">
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Carte 1 : Transporteurs confirmés */}
+          {/* Carte 1 : Mes demandes d'expédition */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">
-                Transporteurs confirmés
+                Mes demandes d'expédition
               </h3>
-              <Handshake className="w-4 h-4 text-green-600" />
+              <Package className="w-4 h-4 text-primary" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold">{stats.acceptedMatches}</div>
-            <p className="text-xs text-muted-foreground mt-1">Colis en cours de transport</p>
+            <div className="text-xl sm:text-2xl font-bold">{stats.activeRequests}</div>
+            <p className="text-xs text-muted-foreground mt-1">Demandes actives</p>
             <div className="mt-3 sm:mt-4">
               <Button
-                onClick={() => navigate("/dashboard/sender/matches?filter=accepted")}
+                onClick={() => navigate("/dashboard/sender/shipments")}
                 variant="link"
                 className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
               >
-                Voir mes contacts <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                Voir mes demandes <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
