@@ -49,7 +49,7 @@ export const LogoEdiM3ak = ({
         <Package className={cn(sizes.package, "text-accent absolute -bottom-0.5 -right-0.5")} />
       </div>
       <span className={cn(sizes.text, "font-bold text-primary tracking-tight")}>
-        EDIM3AK
+        EDIMAAK
       </span>
     </div>
   );

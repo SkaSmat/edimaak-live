@@ -69,15 +69,29 @@ export const useRealtimeNotifications = (userId: string | undefined) => {
           playNotificationSound();
           triggerVibration();
 
-          toast.message("Nouveau message !", {
-            description: truncateText(newMessage.content, 40),
-            icon: <MessageCircle className="w-5 h-5 text-primary" />,
-            duration: 5000,
-            action: {
-              label: "Voir",
-              onClick: () => navigate(`/messages?matchId=${newMessage.match_id}`),
-            },
-          });
+          const matchId = newMessage.match_id;
+          
+          toast.custom(
+            (id) => (
+              <div
+                onClick={() => {
+                  navigate(`/messages?matchId=${matchId}`);
+                  toast.dismiss(id);
+                }}
+                className="flex items-center gap-3 w-full p-4 bg-card border rounded-lg shadow-lg cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all"
+              >
+                <MessageCircle className="w-5 h-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm">Nouveau message !</p>
+                  <p className="text-muted-foreground text-xs truncate">
+                    {truncateText(newMessage.content, 40)}
+                  </p>
+                </div>
+                <span className="text-xs text-primary font-medium shrink-0">Voir →</span>
+              </div>
+            ),
+            { duration: 5000 }
+          );
         }
       )
       .subscribe();
