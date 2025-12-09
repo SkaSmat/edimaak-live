@@ -20,8 +20,9 @@ interface ShipmentRequest {
   notes: string | null;
   image_url: string | null;
   sender_id: string;
-  profiles?: {
-    full_name: string;
+  public_profiles?: {
+    id: string;
+    display_first_name: string;
     avatar_url: string | null;
   };
 }
@@ -97,12 +98,15 @@ export const ShipmentDetailModal = ({
             }`}
           >
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <UserAvatar fullName={shipment.profiles?.full_name || ""} avatarUrl={shipment.profiles?.avatar_url} size="sm" className="flex-shrink-0" />
+              <UserAvatar
+                fullName={shipment.public_profiles?.display_first_name || ""}
+                avatarUrl={shipment.public_profiles?.avatar_url}
+                size="sm"
+                className="flex-shrink-0"
+              />
               <div className="min-w-0">
                 <p className="font-medium text-foreground text-sm sm:text-base truncate">
-                  {isAuthenticated 
-                    ? (shipment.profiles?.full_name || "Utilisateur") 
-                    : "Expéditeur"}
+                  {isAuthenticated ? shipment.public_profiles?.display_first_name || "Utilisateur" : "Expéditeur"}
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {isAuthenticated ? "Cliquez pour voir le profil" : "Connectez-vous pour voir le profil"}
@@ -110,9 +114,7 @@ export const ShipmentDetailModal = ({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {isAuthenticated && (
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              )}
+              {isAuthenticated && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
             </div>
           </button>
 
@@ -154,8 +156,12 @@ export const ShipmentDetailModal = ({
               <div className="flex items-start gap-2">
                 <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0">
-                  <h4 className="font-medium text-amber-900 dark:text-amber-100 text-xs sm:text-sm mb-1">Note de l'expéditeur</h4>
-                  <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-200/80 italic break-words">"{shipment.notes}"</p>
+                  <h4 className="font-medium text-amber-900 dark:text-amber-100 text-xs sm:text-sm mb-1">
+                    Note de l'expéditeur
+                  </h4>
+                  <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-200/80 italic break-words">
+                    "{shipment.notes}"
+                  </p>
                 </div>
               </div>
             </div>
@@ -169,7 +175,11 @@ export const ShipmentDetailModal = ({
                   Connectez-vous pour proposer votre voyage à cet expéditeur.
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <Button variant="outline" onClick={() => handleAuthAction(onLogin)} className="w-full text-xs sm:text-sm h-9 sm:h-10">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleAuthAction(onLogin)}
+                    className="w-full text-xs sm:text-sm h-9 sm:h-10"
+                  >
                     Se connecter
                   </Button>
                   <Button onClick={() => handleAuthAction(onSignUp)} className="w-full text-xs sm:text-sm h-9 sm:h-10">

@@ -206,6 +206,14 @@ const Index = () => {
       navigate("/auth");
     }
   }, [selectedShipment, navigate]);
+
+  const handleViewProfile = useCallback(
+    (userId: string) => {
+      navigate(`/user/${userId}`);
+    },
+    [navigate],
+  );
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* HEADER OPTIMISÉ */}
@@ -606,6 +614,7 @@ const Index = () => {
           isAuthenticated={!!session}
           onSignUp={handleSignUp}
           onLogin={handleLogin}
+          onViewProfile={handleViewProfile}
         />
       )}
     </div>
