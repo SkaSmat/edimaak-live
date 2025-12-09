@@ -18,6 +18,8 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { PublicProfileModal } from "@/components/PublicProfileModal";
 
 interface ShipmentRequest {
   id: string;
@@ -62,6 +64,9 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasTrips, setHasTrips] = useState(false);
+
+  // État pour le modal de profil public
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // --- RÉCUPÉRATION DE SECOURS (Si URL vide mais localStorage plein) ---
   useEffect(() => {
@@ -384,14 +389,33 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3 mt-5 sm:mt-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProfileId(shipment.sender_id);
+                      }}
+                      className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                    >
+                      <UserAvatar
+                        fullName={shipment.sender_display_name || "Anonyme"}
+                        avatarUrl={shipment.sender_avatar_url || null}
+                        size="sm"
+                        className="w-8 h-8 sm:w-10 sm:h-10"
+                      />
+                    </button>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-sm sm:text-base truncate">
                         {shipment.from_city} → {shipment.to_city}
                       </h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProfileId(shipment.sender_id);
+                        }}
+                        className="text-xs sm:text-sm text-muted-foreground truncate hover:text-primary hover:underline transition-colors"
+                      >
                         {shipment.sender_display_name || "Anonyme"}
-                      </p>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -428,6 +452,13 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           })}
         </div>
       )}
+
+      {/* Modal de profil public */}
+      <PublicProfileModal
+        isOpen={!!selectedProfileId}
+        onClose={() => setSelectedProfileId(null)}
+        userId={selectedProfileId || ""}
+      />
     </div>
   );
 };
