@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { LogoIcon } from "./LogoIcon";
 
 interface LogoEdiM3akProps {
   className?: string;
@@ -6,10 +7,10 @@ interface LogoEdiM3akProps {
   onClick?: () => void;
 }
 
-const sizeClasses = {
-  sm: "text-lg",
-  md: "text-xl",
-  lg: "text-2xl",
+const sizeMap = {
+  sm: 24,
+  md: 32,
+  lg: 40,
 };
 
 export const LogoEdiM3ak = ({ 
@@ -25,9 +26,7 @@ export const LogoEdiM3ak = ({
       )}
       onClick={onClick}
     >
-      <span className={cn(sizeClasses[iconSize], "font-bold text-foreground tracking-tight")}>
-        EDIMAAK
-      </span>
+      <LogoIcon height={sizeMap[iconSize]} onClick={onClick} />
     </div>
   );
 };
