@@ -47,12 +47,10 @@ const PublicProfile = () => {
 
       console.log("🔍 Chargement profil pour userId:", userId);
 
-      // Utiliser la vue sécurisée public_profiles
+      // Utiliser la fonction SECURITY DEFINER pour accéder au profil public
       const { data: profileData, error: profileError } = await supabase
-        .from("public_profiles")
-        .select("id, display_first_name, avatar_url, created_at")
-        .eq("id", userId)
-        .single();
+        .rpc("get_public_profile", { profile_id: userId })
+        .maybeSingle();
 
       if (profileError) {
         console.error("❌ Erreur:", profileError);
@@ -61,11 +59,11 @@ const PublicProfile = () => {
 
       console.log("📊 Résultat:", profileData);
 
-      // Mapper les données de la vue vers notre interface
+      // Mapper les données vers notre interface
       if (profileData) {
         setProfile({
           id: profileData.id,
-          full_name: profileData.display_first_name,
+          full_name: profileData.display_first_name || "Utilisateur",
           avatar_url: profileData.avatar_url,
           created_at: profileData.created_at,
           private_info: null,
