@@ -31,9 +31,8 @@ interface ShipmentRequest {
   weight_kg: number;
   item_type: string;
   notes: string | null;
-  profiles: {
-    full_name: string;
-  } | null;
+  sender_display_name?: string;
+  sender_avatar_url?: string;
 }
 
 interface CompatibleMatch {
@@ -123,10 +122,26 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
       const { data: shipments, error } = await supabase
         .from("shipment_requests")
-        .select("*, profiles:sender_id(full_name)")
+        .select("*")
         .eq("status", "open");
 
       if (error) throw error;
+
+      // Récupérer les infos d'affichage des expéditeurs via la fonction sécurisée
+      const senderIds = [...new Set((shipments || []).map((s: any) => s.sender_id))];
+      const senderInfos: Record<string, { display_name: string; avatar_url: string | null }> = {};
+      
+      await Promise.all(
+        senderIds.map(async (senderId) => {
+          const { data } = await supabase.rpc("get_sender_display_info", { sender_uuid: senderId });
+          if (data && data.length > 0) {
+            senderInfos[senderId] = {
+              display_name: data[0].display_name,
+              avatar_url: data[0].avatar_url,
+            };
+          }
+        })
+      );
 
       const foundMatches: CompatibleMatch[] = [];
       const normalize = (text: string) => (text ? text.toLowerCase().trim() : "");
@@ -159,8 +174,13 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         });
 
         if (matchingTrip) {
+          const senderInfo = senderInfos[shipment.sender_id];
           foundMatches.push({
-            shipment: shipment as ShipmentRequest,
+            shipment: {
+              ...shipment,
+              sender_display_name: senderInfo?.display_name || "Anonyme",
+              sender_avatar_url: senderInfo?.avatar_url || null,
+            } as ShipmentRequest,
             matchingTrip: {
               id: matchingTrip.id,
               departure_date: matchingTrip.departure_date,
@@ -370,7 +390,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                         {shipment.from_city} → {shipment.to_city}
                       </h3>
                       <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {shipment.profiles?.full_name || "Anonyme"}
+                        {shipment.sender_display_name || "Anonyme"}
                       </p>
                     </div>
                   </div>
