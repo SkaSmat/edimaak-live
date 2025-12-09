@@ -427,6 +427,16 @@ export type Database = {
       }
     }
     Functions: {
+      get_public_profile: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_first_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       get_sender_display_info: {
         Args: { sender_uuid: string }
         Returns: {
