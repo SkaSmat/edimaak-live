@@ -229,7 +229,7 @@ const Auth = () => {
           )}
 
           <div className="flex justify-center mb-4">
-            <LogoIcon size={64} onClick={() => navigate("/")} />
+            <LogoIcon height={48} onClick={() => navigate("/")} />
           </div>
           <CardTitle className="text-2xl font-semibold">{getTitle()}</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">{getDescription()}</CardDescription>
