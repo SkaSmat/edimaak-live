@@ -19,6 +19,7 @@ interface Profile {
   role: string;
   created_at: string;
   is_active: boolean;
+  email?: string;
   private_info?: {
     phone: string;
     id_type: string;
@@ -67,6 +68,21 @@ const AdminUsers = () => {
         console.error("Error fetching private info:", privateError);
       }
 
+      // Récupérer les emails des utilisateurs via la fonction RPC admin
+      const { data: emailsData, error: emailsError } = await supabase
+        .rpc("get_user_emails");
+
+      if (emailsError) {
+        console.error("Error fetching emails:", emailsError);
+      }
+
+      const emailMap = new Map<string, string>();
+      if (emailsData) {
+        emailsData.forEach((e: { user_id: string; email: string }) => {
+          emailMap.set(e.user_id, e.email);
+        });
+      }
+
       const infoMap = new Map<string, PrivateInfo>();
       if (privateData) {
         (privateData as unknown as PrivateInfo[]).forEach((info) => {
@@ -79,6 +95,7 @@ const AdminUsers = () => {
         ...p,
         is_active: p.is_active === null ? true : p.is_active,
         private_info: p.private_info?.[0] || p.private_info,
+        email: emailMap.get(p.id) || undefined,
       }));
 
       setProfiles(sanitizedProfiles);
@@ -124,6 +141,7 @@ const AdminUsers = () => {
       return (
         profile.full_name.toLowerCase().includes(query) ||
         profile.role.toLowerCase().includes(query) ||
+        profile.email?.toLowerCase().includes(query) ||
         privateInfo?.phone?.toLowerCase().includes(query)
       );
     });
@@ -186,6 +204,7 @@ const AdminUsers = () => {
   // Export columns
   const exportColumns = [
     { key: "full_name", label: "Nom" },
+    { key: "email", label: "Email" },
     { key: "role", label: "Rôle" },
     { 
       key: "private_info.phone", 
@@ -223,7 +242,7 @@ const AdminUsers = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par nom, rôle ou téléphone..."
+            placeholder="Rechercher par nom, email, rôle ou téléphone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -247,6 +266,7 @@ const AdminUsers = () => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-medium text-foreground truncate">{profile.full_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{profile.email || "-"}</p>
                     <p className="text-sm text-muted-foreground">{privateInfo?.phone || "-"}</p>
                   </div>
                   <div className="flex flex-col gap-1 items-end">
@@ -315,6 +335,7 @@ const AdminUsers = () => {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Nom</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Rôle</TableHead>
               <TableHead>Téléphone</TableHead>
               <TableHead>Document KYC</TableHead>
@@ -326,7 +347,7 @@ const AdminUsers = () => {
           <TableBody>
             {paginatedProfiles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   Aucun résultat
                 </TableCell>
               </TableRow>
@@ -336,6 +357,7 @@ const AdminUsers = () => {
                 return (
                   <TableRow key={profile.id} className={!profile.is_active ? "bg-red-50/50" : ""}>
                     <TableCell className="font-medium">{profile.full_name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{profile.email || "-"}</TableCell>
                     <TableCell>{getRoleBadge(profile.role)}</TableCell>
                     <TableCell>{privateInfo?.phone || "-"}</TableCell>
                     <TableCell>
