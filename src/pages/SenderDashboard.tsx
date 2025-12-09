@@ -4,9 +4,11 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import SenderMatchesList from "@/components/SenderMatchesList";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Package, Handshake, User, Plus, ChevronRight, Loader2 } from "lucide-react";
+import { Package, Handshake, ChevronRight, Loader2, CheckCircle, Clock, XCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const SenderDashboard = () => {
   const navigate = useNavigate();
@@ -116,38 +118,10 @@ const SenderDashboard = () => {
       setLoading(false);
     }
   };
-  // 🔧 Fonction pour obtenir le badge de statut KYC
-  const getKycBadge = () => {
-    if (kycStatus === "verified") {
-      return (
-        <span className="bg-green-600 text-white text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
-          KYC accepté ✅
-        </span>
-      );
-    }
-
-    if (kycStatus === "pending") {
-      return (
-        <span className="bg-orange-100 text-orange-800 text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
-          KYC en attente ⏳
-        </span>
-      );
-    }
-
-    if (kycStatus === "rejected") {
-      return (
-        <span className="bg-red-600 text-white text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
-          KYC rejeté ❌
-        </span>
-      );
-    }
-
-    return (
-      <span className="bg-gray-100 text-gray-600 text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-medium">
-        KYC non rempli
-      </span>
-    );
-  };
+  // Variables pour l'affichage KYC
+  const isVerified = kycStatus === "verified";
+  const isPending = kycStatus === "pending";
+  const isRejected = kycStatus === "rejected";
 
   if (loading) {
     return (
@@ -202,23 +176,49 @@ const SenderDashboard = () => {
               </Button>
             </div>
           </div>
-          {/* Carte 3 : Mon Profil */}{" "}
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Mon Profil</h3>
-              <User className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div className="text-xs sm:text-sm font-medium mt-2">Statut : {getKycBadge()}</div>
-            <div className="mt-3 sm:mt-4">
+          {/* Carte 3 : Statut KYC */}
+          <Card className="bg-card border shadow-sm sm:col-span-2 lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Statut KYC</CardTitle>
+              {isVerified ? (
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+              ) : isPending ? (
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+              ) : isRejected ? (
+                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+              ) : (
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              )}
+            </CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              {isVerified ? (
+                <Badge className="text-xs bg-green-600 text-white border-0 hover:bg-green-600">
+                  KYC accepté ✅
+                </Badge>
+              ) : isPending ? (
+                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-0">
+                  KYC en attente ⏳
+                </Badge>
+              ) : isRejected ? (
+                <Badge className="text-xs bg-red-600 text-white border-0 hover:bg-red-600">
+                  KYC rejeté ❌
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border-0">
+                  Incomplet
+                </Badge>
+              )}
+
               <Button
-                onClick={() => navigate("/profile")}
                 variant="link"
-                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
+                className="p-0 h-auto text-primary mt-2 block text-xs sm:text-sm"
+                onClick={() => navigate("/profile")}
               >
-                Voir mon profil <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                {isVerified ? "Voir mon profil" : "Gérer mon dossier"}{" "}
+                <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4 inline" />
               </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Section Matches / Demandes de voyageurs */}
