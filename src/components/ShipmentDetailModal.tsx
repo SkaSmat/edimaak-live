@@ -32,6 +32,7 @@ interface ShipmentRequest {
   notes: string | null;
   image_url: string | null;
   sender_id: string;
+  price?: number | null;
   public_profiles?: {
     id: string;
     display_first_name: string;
@@ -108,6 +109,20 @@ export const ShipmentDetailModal = ({
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          
+          {/* Prix en haut à droite */}
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+            {shipment.price ? (
+              <div className="bg-green-500 text-white text-sm sm:text-base font-bold px-3 py-1.5 rounded-lg shadow-lg">
+                💶 {shipment.price}€
+              </div>
+            ) : (
+              <div className="bg-white/90 text-gray-700 text-xs sm:text-sm font-medium px-2.5 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">
+                Prix à discuter
+              </div>
+            )}
+          </div>
+          
           <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 text-white">
             <Badge
               variant="secondary"

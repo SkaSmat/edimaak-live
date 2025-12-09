@@ -8,7 +8,7 @@ import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
-// Removed unused import: getShipmentImageUrl
+import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
@@ -110,39 +110,54 @@ const Index = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // 1. Fetch shipment requests
       const {
         data,
         error: fetchError
-      } = await supabase.from("shipment_requests").select(`
-    *,
-    public_profiles!sender_id (
-      id,
-      display_first_name,
-      avatar_url
-    )
-  `).eq("status", "open").neq("sender_id", session?.user?.id || "00000000-0000-0000-0000-000000000000") // Exclure ses propres annonces
+      } = await supabase.from("shipment_requests").select("*").eq("status", "open").neq("sender_id", session?.user?.id || "00000000-0000-0000-0000-000000000000")
       .order("created_at", {
         ascending: false
       }).limit(20);
       if (fetchError) throw fetchError;
-      if (data) {
+      if (data && data.length > 0) {
         const senderIds = [...new Set(data.map(r => r.sender_id))];
-        if (senderIds.length > 0) {
-          const {
-            data: counts
-          } = await supabase.from("shipment_requests").select("sender_id").in("sender_id", senderIds);
-          const countMap: Record<string, number> = (counts || []).reduce((acc, item) => {
-            acc[item.sender_id] = (acc[item.sender_id] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>);
-          const enrichedData = data.map(r => ({
-            ...r,
-            sender_request_count: countMap[r.sender_id] || 0
-          }));
-          setShipmentRequests(enrichedData);
-        } else {
-          setShipmentRequests(data);
+        
+        // 2. Fetch sender display info using the SECURITY DEFINER function
+        const senderInfoMap: Record<string, { display_name: string; avatar_url: string | null }> = {};
+        
+        if (session) {
+          // For authenticated users, fetch sender info
+          for (const senderId of senderIds) {
+            const { data: senderData } = await supabase.rpc('get_sender_display_info', { sender_uuid: senderId });
+            if (senderData && senderData.length > 0) {
+              senderInfoMap[senderId] = {
+                display_name: senderData[0].display_name,
+                avatar_url: senderData[0].avatar_url
+              };
+            }
+          }
         }
+
+        // 3. Fetch shipment counts per sender
+        const { data: counts } = await supabase.from("shipment_requests").select("sender_id").in("sender_id", senderIds);
+        const countMap: Record<string, number> = (counts || []).reduce((acc, item) => {
+          acc[item.sender_id] = (acc[item.sender_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        // 4. Enrich data with sender info
+        const enrichedData = data.map(r => ({
+          ...r,
+          sender_request_count: countMap[r.sender_id] || 0,
+          public_profiles: senderInfoMap[r.sender_id] ? {
+            id: r.sender_id,
+            display_first_name: senderInfoMap[r.sender_id].display_name,
+            avatar_url: senderInfoMap[r.sender_id].avatar_url
+          } : undefined
+        }));
+        setShipmentRequests(enrichedData);
+      } else {
+        setShipmentRequests(data || []);
       }
     } catch (err) {
       console.error("Erreur chargement", err);
@@ -407,16 +422,14 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                   )}
                 </div>
 
-                {/* Image (si disponible) */}
-                {request.image_url && (
-                  <div className="relative h-32 sm:h-40 bg-gray-100">
-                    <img 
-                      src={request.image_url} 
-                      alt={request.item_type}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
+                {/* Image (avec fallback par défaut) */}
+                <div className="relative h-32 sm:h-40 bg-gray-100">
+                  <img 
+                    src={getShipmentImageUrl(request.image_url, request.item_type)} 
+                    alt={request.item_type}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
                 {/* Trajet Principal */}
                 <div className="px-3 sm:px-4 pt-3 pb-2">
