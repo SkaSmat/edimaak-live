@@ -137,7 +137,16 @@ const Profile = () => {
       setIdType(privateData.id_type || "");
       setIdNumber(privateData.id_number || "");
       setIdExpiryDate(privateData.id_expiry_date || "");
-      setIdDocumentUrl(privateData.id_document_url || null);
+      
+      // Générer une URL signée si un document existe
+      if (privateData.id_document_url) {
+        const { data: signedData } = await supabase.storage
+          .from("kyc-documents")
+          .createSignedUrl(privateData.id_document_url, 60 * 60 * 24 * 365);
+        setIdDocumentUrl(signedData?.signedUrl || null);
+      } else {
+        setIdDocumentUrl(null);
+      }
     }
 
     setLoading(false);
@@ -193,28 +202,33 @@ const Profile = () => {
 
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}_id_document_${Date.now()}.${fileExt}`;
-      const filePath = `kyc_documents/${fileName}`;
+      const fileName = `id_document_${Date.now()}.${fileExt}`;
+      // Le chemin doit être {user_id}/filename pour respecter la policy RLS
+      const filePath = `${user.id}/${fileName}`;
 
       // Upload vers Supabase Storage
       const { error: uploadError } = await supabase.storage.from("kyc-documents").upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Obtenir l'URL publique
+      // Obtenir l'URL signée (bucket privé)
       const {
-        data: { publicUrl },
-      } = supabase.storage.from("kyc-documents").getPublicUrl(filePath);
+        data: { signedUrl },
+        error: signedUrlError,
+      } = await supabase.storage.from("kyc-documents").createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 an
 
-      // Mettre à jour la base de données
+      if (signedUrlError) throw signedUrlError;
+      const documentUrl = signedUrl;
+
+      // Mettre à jour la base de données avec le chemin du fichier (pas l'URL signée)
       const { error: updateError } = await supabase.from("private_info").upsert({
         id: user.id,
-        id_document_url: publicUrl,
+        id_document_url: filePath, // On stocke le chemin, pas l'URL signée
       });
 
       if (updateError) throw updateError;
 
-      setIdDocumentUrl(publicUrl);
+      setIdDocumentUrl(documentUrl);
       toast.success("Document uploadé avec succès !");
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -228,14 +242,12 @@ const Profile = () => {
     if (!idDocumentUrl || !user) return;
 
     try {
-      // Extraire le chemin du fichier depuis l'URL
-      const urlParts = idDocumentUrl.split("/kyc-documents/");
-      if (urlParts.length === 2) {
-        const filePath = `kyc_documents/${urlParts[1]}`;
+      // idDocumentUrl contient maintenant le chemin du fichier directement
+      // Format: {user_id}/filename
+      const filePath = idDocumentUrl.includes("/") ? idDocumentUrl : `${user.id}/${idDocumentUrl}`;
 
-        // Supprimer du storage
-        await supabase.storage.from("kyc-documents").remove([filePath]);
-      }
+      // Supprimer du storage
+      await supabase.storage.from("kyc-documents").remove([filePath]);
 
       // Mettre à jour la base de données
       const { error } = await supabase.from("private_info").update({ id_document_url: null }).eq("id", user.id);
