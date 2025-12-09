@@ -164,26 +164,7 @@ const SenderDashboard = () => {
       <ProfileCompletionBanner />
       <div className="space-y-6 sm:space-y-8">
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Carte 1 : Demandes de match reçues */}
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Demandes de match</h3>
-              <Handshake className="w-4 h-4 text-orange-600" />
-            </div>
-            <div className="text-xl sm:text-2xl font-bold">{stats.pendingMatches}</div>
-            <p className="text-xs text-muted-foreground mt-1">Voyageurs intéressés par vos colis</p>
-            <div className="mt-3 sm:mt-4">
-              <Button
-                onClick={() => navigate("/dashboard/sender/matches?filter=pending")}
-                variant="link"
-                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
-              >
-                Voir les demandes <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Carte 2 : Matches acceptés */}
+          {/* Carte 1 : Transporteurs confirmés */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">
@@ -203,7 +184,25 @@ const SenderDashboard = () => {
               </Button>
             </div>
           </div>
-
+          {/* Carte 2 : Demandes de match reçues */}
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Demandes de match</h3>
+              <Handshake className="w-4 h-4 text-orange-600" />
+            </div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.pendingMatches}</div>
+            <p className="text-xs text-muted-foreground mt-1">Voyageurs intéressés par vos colis</p>
+            <div className="mt-3 sm:mt-4">
+              <Button
+                onClick={() => navigate("/dashboard/sender/matches?filter=pending")}
+                variant="link"
+                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
+              >
+                Voir les demandes <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </Button>
+            </div>
+          </div>
+          {/* Carte 3 : Mon Profil */}{" "}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 sm:p-6 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className="tracking-tight text-xs sm:text-sm font-medium text-muted-foreground">Mon Profil</h3>
