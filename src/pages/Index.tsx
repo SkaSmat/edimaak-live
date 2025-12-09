@@ -106,8 +106,11 @@ const Index = () => {
     navigate(getDashboardPath(userRole));
   }, [userRole, navigate, resetUnreadCount]);
   useEffect(() => {
-    fetchShipmentRequests();
-  }, []);
+    // On attend que authLoading soit terminé avant de fetch
+    if (!authLoading) {
+      fetchShipmentRequests();
+    }
+  }, [authLoading, session?.user?.id]); // Dépend de session pour re-fetch si l'utilisateur se connecte
   const fetchShipmentRequests = async () => {
     setIsLoading(true);
     setError(null);
@@ -615,6 +618,7 @@ const Index = () => {
           onSignUp={handleSignUp}
           onLogin={handleLogin}
           onViewProfile={handleViewProfile}
+          userRole={userRole}
         />
       )}
     </div>
