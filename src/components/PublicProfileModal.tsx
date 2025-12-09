@@ -61,15 +61,26 @@ export const PublicProfileModal = ({ isOpen, onClose, userId }: PublicProfileMod
   const fetchProfileData = async () => {
     setLoading(true);
     try {
-      // Fetch profile (basic public info)
+      // Fetch profile via la fonction sécurisée get_public_profile
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, full_name, first_name, avatar_url, role, country_of_residence, created_at")
-        .eq("id", userId)
-        .single();
+        .rpc("get_public_profile", { profile_id: userId });
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      
+      if (profileData && profileData.length > 0) {
+        const p = profileData[0];
+        setProfile({
+          id: p.id,
+          full_name: p.display_first_name || "Utilisateur",
+          first_name: p.display_first_name,
+          avatar_url: p.avatar_url,
+          role: p.role,
+          country_of_residence: null, // Non disponible via get_public_profile
+          created_at: p.created_at,
+        });
+      } else {
+        setProfile(null);
+      }
 
       // Fetch private_info to check KYC status
       const { data: privateData } = await supabase
