@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
-import { LogoIcon } from "@/components/LogoIcon";
+import { AuthLogo } from "@/components/LogoIcon";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -229,7 +229,7 @@ const Auth = () => {
           )}
 
           <div className="flex justify-center mb-4">
-            <LogoIcon height={48} onClick={() => navigate("/")} />
+            <AuthLogo size={64} onClick={() => navigate("/")} />
           </div>
           <CardTitle className="text-2xl font-semibold">{getTitle()}</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">{getDescription()}</CardDescription>
