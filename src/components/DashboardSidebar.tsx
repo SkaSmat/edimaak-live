@@ -172,10 +172,14 @@ export const DashboardSidebar = ({
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <item.icon className="h-5 w-5 shrink-0" />
-                        <span className="text-sm truncate">{item.title}</span>
+                        {/* Toujours afficher le texte sur mobile, cacher seulement en mode collapsed sur desktop */}
+                        <span className={cn(
+                          "text-sm truncate",
+                          collapsed && !isMobile && "hidden"
+                        )}>{item.title}</span>
                       </div>
 
-                      {showBadge && !collapsed && (
+                      {showBadge && (!collapsed || isMobile) && (
                         <Badge
                           variant="destructive"
                           className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full text-[10px] shrink-0"
@@ -184,8 +188,8 @@ export const DashboardSidebar = ({
                         </Badge>
                       )}
 
-                      {showBadge && collapsed && (
-                        <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                      {showBadge && collapsed && !isMobile && (
+                        <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-destructive border-2 border-background animate-pulse" />
                       )}
                     </button>
                   </SidebarMenuItem>
