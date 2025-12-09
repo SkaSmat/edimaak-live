@@ -1,11 +1,23 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ShipmentRequest {
   id: string;
@@ -35,6 +47,7 @@ interface ShipmentDetailModalProps {
   onSignUp: () => void;
   onLogin: () => void;
   onViewProfile?: (userId: string) => void;
+  userRole?: "traveler" | "sender" | "admin" | null;
 }
 
 export const ShipmentDetailModal = ({
@@ -45,7 +58,11 @@ export const ShipmentDetailModal = ({
   onSignUp,
   onLogin,
   onViewProfile,
+  userRole,
 }: ShipmentDetailModalProps) => {
+  const navigate = useNavigate();
+  const [showSwitchRoleDialog, setShowSwitchRoleDialog] = useState(false);
+
   if (!shipment) return null;
 
   // Fonction helper pour sauvegarder l'intention avant de rediriger
@@ -59,6 +76,25 @@ export const ShipmentDetailModal = ({
     if (isAuthenticated && onViewProfile && shipment.sender_id) {
       onViewProfile(shipment.sender_id);
     }
+  };
+
+  const handleProposeTrip = () => {
+    // Si l'utilisateur est un sender, on lui propose de changer de rôle
+    if (userRole === "sender") {
+      setShowSwitchRoleDialog(true);
+    } else {
+      // Sinon, comportement normal (créer un voyage)
+      onSignUp();
+    }
+  };
+
+  const handleSwitchToTraveler = async () => {
+    // Fermer le dialog
+    setShowSwitchRoleDialog(false);
+    // Sauvegarder l'intention
+    localStorage.setItem("targetShipmentId", shipment.id);
+    // Rediriger vers le dashboard traveler (le système changera le rôle automatiquement)
+    navigate("/dashboard/traveler");
   };
 
   return (
@@ -188,7 +224,7 @@ export const ShipmentDetailModal = ({
                 </div>
               </div>
             ) : (
-              <Button className="w-full h-10 sm:h-11 text-sm sm:text-base" onClick={onSignUp}>
+              <Button className="w-full h-10 sm:h-11 text-sm sm:text-base" onClick={handleProposeTrip}>
                 <Package className="w-4 h-4 mr-2" />
                 Proposer mon voyage
               </Button>
@@ -196,6 +232,31 @@ export const ShipmentDetailModal = ({
           </div>
         </div>
       </DialogContent>
+
+      {/* AlertDialog pour proposer le changement de rôle */}
+      <AlertDialog open={showSwitchRoleDialog} onOpenChange={setShowSwitchRoleDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-orange-500" />
+              Changer de rôle ?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm space-y-2">
+              <p>
+                Vous êtes actuellement en mode <strong>Expéditeur</strong>. Pour proposer votre voyage à cet expéditeur,
+                vous devez passer en mode <strong>Voyageur</strong>.
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Ne vous inquiétez pas, vous pourrez revenir en mode Expéditeur à tout moment depuis votre profil.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSwitchToTraveler}>Passer en mode Voyageur</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
