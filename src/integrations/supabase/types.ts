@@ -260,6 +260,7 @@ export type Database = {
           item_type: string
           latest_date: string
           notes: string | null
+          price: number | null
           sender_id: string
           status: string
           to_city: string
@@ -277,6 +278,7 @@ export type Database = {
           item_type: string
           latest_date: string
           notes?: string | null
+          price?: number | null
           sender_id: string
           status?: string
           to_city: string
@@ -294,6 +296,7 @@ export type Database = {
           item_type?: string
           latest_date?: string
           notes?: string | null
+          price?: number | null
           sender_id?: string
           status?: string
           to_city?: string
