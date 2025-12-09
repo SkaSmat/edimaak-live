@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
-import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
+// Removed unused import: getShipmentImageUrl
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
@@ -388,56 +388,79 @@ connectant voyageurs et expéditeurs pour le transport de colis.
 
         {!isLoading && filteredRequests.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredRequests.map(request => <div key={request.id} role="button" className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col" onClick={() => handleShipmentClick(request)}>
-                <div className="aspect-[4/3] overflow-hidden relative bg-gray-100">
-                  <img src={getShipmentImageUrl(request.image_url, request.item_type)} alt={request.item_type} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 backdrop-blur-md text-gray-900 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shadow-sm flex items-center gap-1">
-                    <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
-                    {request.weight_kg} kg
+                
+                {/* Header : Badge Type + Poids */}
+                <div className="p-3 sm:p-4 pb-2 flex items-center justify-between">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs flex items-center gap-1">
+                    <Package className="w-3 h-3" />
+                    {request.item_type}
+                  </Badge>
+                  <div className="bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                    📦 {request.weight_kg} kg
                   </div>
                 </div>
 
-                <div className="p-3 sm:p-4 flex flex-col flex-1">
-                  {/* Type d'objet en premier */}
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs">
-                      {request.item_type}
-                    </Badge>
-                    {(request.sender_request_count || 0) > 2 && <div className="bg-green-50 text-green-700 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-                        <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        <span className="hidden sm:inline">FIABLE</span>
-                        <span className="sm:hidden">✓</span>
-                      </div>}
+                {/* Trajet Principal */}
+                <div className="px-3 sm:px-4 pb-2">
+                  <h3 className="font-bold text-gray-900 text-lg sm:text-xl leading-tight">
+                    {request.from_city} → {request.to_city}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 mt-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>
+                      {format(new Date(request.earliest_date), "dd MMM")} - {format(new Date(request.latest_date), "dd MMM")}
+                    </span>
                   </div>
+                </div>
 
-                  {/* Trajet en dessous */}
-                  <div className="mb-2 sm:mb-3">
-                    <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight truncate">
-                      {request.from_city} → {request.to_city}
-                    </h3>
-                  </div>
-
-                  <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
-                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
-                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">
-                        {format(new Date(request.earliest_date), "dd MMM")} -{" "}
-                        {format(new Date(request.latest_date), "dd MMM")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-50 flex items-center gap-2 sm:gap-3">
-                    <UserAvatar fullName={session ? request.public_profiles?.display_first_name || "" : "Utilisateur"} avatarUrl={session ? request.public_profiles?.avatar_url : null} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      {session ? <button onClick={e => {
-                  e.stopPropagation();
-                  navigate(`/user/${request.sender_id}`);
-                }} className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left">
+                {/* Expéditeur + Stats */}
+                <div className="px-3 sm:px-4 py-3 border-t border-gray-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <UserAvatar 
+                      fullName={session ? request.public_profiles?.display_first_name || "" : ""} 
+                      avatarUrl={session ? request.public_profiles?.avatar_url : null} 
+                      size="sm" 
+                    />
+                    <div className="min-w-0">
+                      {session ? (
+                        <button 
+                          onClick={e => {
+                            e.stopPropagation();
+                            navigate(`/user/${request.sender_id}`);
+                          }} 
+                          className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left flex items-center gap-1"
+                        >
                           {request.public_profiles?.display_first_name || "Utilisateur"}
-                        </button> : <span className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                          {(request.sender_request_count || 0) > 2 && <ShieldCheck className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                        </button>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-medium text-gray-400 truncate">
                           Utilisateur anonyme
-                        </span>}
+                        </span>
+                      )}
+                      {(request.sender_request_count || 0) > 1 && (
+                        <p className="text-[10px] sm:text-xs text-gray-400">
+                          {request.sender_request_count} colis actifs
+                        </p>
+                      )}
                     </div>
+                  </div>
+                </div>
+
+                {/* Tags si notes */}
+                {request.notes && (
+                  <div className="px-3 sm:px-4 pb-2 flex flex-wrap gap-1">
+                    <span className="bg-amber-50 text-amber-700 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full">
+                      📝 Note
+                    </span>
+                  </div>
+                )}
+
+                {/* Bouton CTA */}
+                <div className="p-3 sm:p-4 pt-2 mt-auto">
+                  <div className="w-full bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
+                    Proposer mon voyage
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               </div>)}

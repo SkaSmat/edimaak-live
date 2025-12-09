@@ -121,7 +121,7 @@ const SenderDashboard = () => {
     if (kycStatus === "verified") {
       return (
         <span className="bg-green-100 text-green-800 text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full">
-          Expéditeur vérifié ✅
+          Vérifié ✅
         </span>
       );
     }
