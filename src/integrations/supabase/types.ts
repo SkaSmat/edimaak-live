@@ -448,6 +448,13 @@ export type Database = {
           id: string
         }[]
       }
+      get_user_emails: {
+        Args: never
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       has_match_with_user: { Args: { _profile_id: string }; Returns: boolean }
       has_role: {
         Args: {
