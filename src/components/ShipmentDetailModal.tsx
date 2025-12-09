@@ -124,35 +124,51 @@ export const ShipmentDetailModal = ({
         </div>
 
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          {/* Info Expéditeur - Visible pour les utilisateurs connectés */}
-          <button
-            type="button"
-            onClick={handleProfileClick}
-            disabled={!isAuthenticated}
-            className={`w-full flex items-center justify-between p-3 sm:p-4 bg-muted/30 rounded-lg text-left transition-colors ${
-              isAuthenticated ? "hover:bg-muted/50 cursor-pointer" : ""
-            }`}
-          >
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <UserAvatar
-                fullName={shipment.public_profiles?.display_first_name || ""}
-                avatarUrl={shipment.public_profiles?.avatar_url}
-                size="sm"
-                className="flex-shrink-0"
-              />
-              <div className="min-w-0">
-                <p className="font-medium text-foreground text-sm sm:text-base truncate">
-                  {isAuthenticated ? shipment.public_profiles?.display_first_name || "Utilisateur" : "Expéditeur"}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                  {isAuthenticated ? "Cliquez pour voir le profil" : "Connectez-vous pour voir le profil"}
-                </p>
+          {/* Info Expéditeur */}
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={handleProfileClick}
+              className="w-full flex items-center justify-between p-3 sm:p-4 bg-muted/30 rounded-lg text-left transition-colors hover:bg-muted/50 cursor-pointer"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <UserAvatar
+                  fullName={shipment.public_profiles?.display_first_name || ""}
+                  avatarUrl={shipment.public_profiles?.avatar_url}
+                  size="sm"
+                  className="flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm sm:text-base truncate">
+                    {shipment.public_profiles?.display_first_name || "Utilisateur"}
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                    Cliquez pour voir le profil
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </button>
+          ) : (
+            <div className="w-full flex items-center p-3 sm:p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <UserAvatar
+                  fullName=""
+                  avatarUrl={null}
+                  size="sm"
+                  className="flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="font-medium text-muted-foreground text-sm sm:text-base truncate">
+                    Utilisateur anonyme
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                    Connectez-vous pour voir le profil
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {isAuthenticated && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-            </div>
-          </button>
+          )}
 
           {/* Détails du colis */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
