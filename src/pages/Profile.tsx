@@ -13,7 +13,7 @@ import { ActivityBadge, KycBadge, ProfileStats, VerifiedBadge } from "@/componen
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { ProfileProgressCard } from "@/components/ProfileProgressCard";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { getPhoneCodeOptions, getCountryOptions, PHONE_COUNTRY_CODES } from "@/lib/countryData";
+import { getPhoneCodeOptions, getCountryOptions, getPhoneCodeById, findCountryByPhone } from "@/lib/countryData";
 
 interface ProfileData {
   id: string;
@@ -61,8 +61,8 @@ const Profile = () => {
   // Password
   const [newPassword, setNewPassword] = useState("");
 
-  // KYC states
-  const [phoneCode, setPhoneCode] = useState("+33");
+  // KYC states - phoneCode stocke l'id du pays (ex: "FR")
+  const [phoneCode, setPhoneCode] = useState("FR");
   const [phoneNumber, setPhoneNumber] = useState("");
 
   const [addressLine1, setAddressLine1] = useState("");
@@ -118,12 +118,12 @@ const Profile = () => {
       setKycStatus(privateData.kyc_status || "not_submitted");
 
       if (privateData.phone) {
-        const foundCode = PHONE_COUNTRY_CODES.find((c) => privateData.phone!.startsWith(c.code));
-        if (foundCode) {
-          setPhoneCode(foundCode.code);
-          setPhoneNumber(privateData.phone!.replace(foundCode.code, ""));
+        const foundCountry = findCountryByPhone(privateData.phone);
+        if (foundCountry) {
+          setPhoneCode(foundCountry.id);
+          setPhoneNumber(privateData.phone.replace(foundCountry.code, ""));
         } else {
-          setPhoneNumber(privateData.phone!);
+          setPhoneNumber(privateData.phone);
         }
       }
 
@@ -318,7 +318,8 @@ const Profile = () => {
 
     setSavingKyc(true);
 
-    const fullPhone = `${phoneCode}${phoneNumber}`;
+    const actualPhoneCode = getPhoneCodeById(phoneCode);
+    const fullPhone = `${actualPhoneCode}${phoneNumber}`;
 
     const { data: kycData, error } = await supabase
       .from("private_info")

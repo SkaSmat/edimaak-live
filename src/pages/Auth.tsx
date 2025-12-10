@@ -10,7 +10,7 @@ import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { AuthLogo } from "@/components/LogoIcon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { getPhoneCodeOptions, PHONE_COUNTRY_CODES } from "@/lib/countryData";
+import { getPhoneCodeOptions, getPhoneCodeById } from "@/lib/countryData";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -32,8 +32,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Nouvel état pour l'indicatif
-  const [phoneCode, setPhoneCode] = useState("+33");
+  // État pour l'indicatif (stocke l'id du pays, ex: "FR")
+  const [phoneCode, setPhoneCode] = useState("FR");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -126,8 +126,9 @@ const Auth = () => {
       } else if (view === "signup") {
         if (!formData.phone) throw new Error("Le numéro de téléphone est obligatoire.");
 
-        // On combine l'indicatif et le numéro
-        const fullPhone = `${phoneCode}${formData.phone.replace(/^0+/, "")}`; // Enlève le premier 0 si présent
+        // On combine l'indicatif (récupéré via l'id du pays) et le numéro
+        const actualPhoneCode = getPhoneCodeById(phoneCode);
+        const fullPhone = `${actualPhoneCode}${formData.phone.replace(/^0+/, "")}`; // Enlève le premier 0 si présent
 
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
