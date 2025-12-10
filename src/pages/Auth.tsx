@@ -9,65 +9,19 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { AuthLogo } from "@/components/LogoIcon";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getPhoneCodeOptions, PHONE_COUNTRY_CODES } from "@/lib/countryData";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
   fullName: z.string().min(2, "Le nom doit contenir au moins 2 caractères").optional(),
-  phone: z.string().optional(), // On valide manuellement la concaténation
+  phone: z.string().optional(),
 });
 
 type AuthView = "login" | "signup" | "reset_password";
 
-// Liste étendue des indicatifs
-const COUNTRY_CODES = [
-  { code: "+33", label: "🇫🇷 France (+33)" },
-  { code: "+213", label: "🇩🇿 Algérie (+213)" },
-  { code: "+216", label: "🇹🇳 Tunisie (+216)" },
-  { code: "+212", label: "🇲🇦 Maroc (+212)" },
-  { code: "+32", label: "🇧🇪 Belgique (+32)" },
-  { code: "+1", label: "🇺🇸/🇨🇦 USA/Canada (+1)" },
-  { code: "+44", label: "🇬🇧 Royaume-Uni (+44)" },
-  { code: "+49", label: "🇩🇪 Allemagne (+49)" },
-  { code: "+34", label: "🇪🇸 Espagne (+34)" },
-  { code: "+39", label: "🇮🇹 Italie (+39)" },
-  { code: "+41", label: "🇨🇭 Suisse (+41)" },
-  { code: "+31", label: "🇳🇱 Pays-Bas (+31)" },
-  { code: "+351", label: "🇵🇹 Portugal (+351)" },
-  { code: "+48", label: "🇵🇱 Pologne (+48)" },
-  { code: "+46", label: "🇸🇪 Suède (+46)" },
-  { code: "+47", label: "🇳🇴 Norvège (+47)" },
-  { code: "+45", label: "🇩🇰 Danemark (+45)" },
-  { code: "+358", label: "🇫🇮 Finlande (+358)" },
-  { code: "+43", label: "🇦🇹 Autriche (+43)" },
-  { code: "+353", label: "🇮🇪 Irlande (+353)" },
-  { code: "+30", label: "🇬🇷 Grèce (+30)" },
-  { code: "+90", label: "🇹🇷 Turquie (+90)" },
-  { code: "+7", label: "🇷🇺 Russie (+7)" },
-  { code: "+380", label: "🇺🇦 Ukraine (+380)" },
-  { code: "+20", label: "🇪🇬 Égypte (+20)" },
-  { code: "+966", label: "🇸🇦 Arabie Saoudite (+966)" },
-  { code: "+971", label: "🇦🇪 Émirats (+971)" },
-  { code: "+974", label: "🇶🇦 Qatar (+974)" },
-  { code: "+965", label: "🇰🇼 Koweït (+965)" },
-  { code: "+961", label: "🇱🇧 Liban (+961)" },
-  { code: "+962", label: "🇯🇴 Jordanie (+962)" },
-  { code: "+86", label: "🇨🇳 Chine (+86)" },
-  { code: "+81", label: "🇯🇵 Japon (+81)" },
-  { code: "+82", label: "🇰🇷 Corée du Sud (+82)" },
-  { code: "+91", label: "🇮🇳 Inde (+91)" },
-  { code: "+61", label: "🇦🇺 Australie (+61)" },
-  { code: "+55", label: "🇧🇷 Brésil (+55)" },
-  { code: "+52", label: "🇲🇽 Mexique (+52)" },
-  { code: "+54", label: "🇦🇷 Argentine (+54)" },
-  { code: "+27", label: "🇿🇦 Afrique du Sud (+27)" },
-  { code: "+234", label: "🇳🇬 Nigeria (+234)" },
-  { code: "+254", label: "🇰🇪 Kenya (+254)" },
-  { code: "+225", label: "🇨🇮 Côte d'Ivoire (+225)" },
-  { code: "+221", label: "🇸🇳 Sénégal (+221)" },
-  { code: "+237", label: "🇨🇲 Cameroun (+237)" },
-  { code: "+223", label: "🇲🇱 Mali (+223)" },
-];
+const phoneCodeOptions = getPhoneCodeOptions();
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -289,17 +243,17 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="phone">Téléphone *</Label>
                     <div className="flex gap-2">
-                      <select
-                        className="w-24 h-11 px-2 border border-input rounded-md bg-background text-sm"
-                        value={phoneCode}
-                        onChange={(e) => setPhoneCode(e.target.value)}
-                      >
-                        {COUNTRY_CODES.map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.code}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="w-44">
+                        <SearchableSelect
+                          options={phoneCodeOptions}
+                          value={phoneCode}
+                          onValueChange={setPhoneCode}
+                          placeholder="Indicatif"
+                          searchPlaceholder="Rechercher un pays..."
+                          emptyMessage="Aucun pays trouvé."
+                          triggerClassName="h-11"
+                        />
+                      </div>
                       <Input
                         id="phone"
                         type="tel"
@@ -310,7 +264,7 @@ const Auth = () => {
                         required
                       />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Sélectionnez l'indicatif de votre pays.</p>
+                    <p className="text-[10px] text-muted-foreground">Recherchez votre pays pour sélectionner l'indicatif.</p>
                   </div>
                 </>
               )}

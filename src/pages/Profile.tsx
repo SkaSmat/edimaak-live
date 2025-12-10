@@ -11,7 +11,10 @@ import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload";
 import { useUserStats, isActiveSender, isActiveTraveler } from "@/hooks/useUserStats";
 import { ActivityBadge, KycBadge, ProfileStats, VerifiedBadge } from "@/components/UserProfileBadges";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
-import { ProfileProgressCard } from "@/components/ProfileProgressCard"; 
+import { ProfileProgressCard } from "@/components/ProfileProgressCard";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getPhoneCodeOptions, getCountryOptions, PHONE_COUNTRY_CODES } from "@/lib/countryData";
+
 interface ProfileData {
   id: string;
   full_name: string;
@@ -35,14 +38,8 @@ interface PrivateInfoData {
   kyc_status?: string | null;
 }
 
-const COUNTRY_CODES = [
-  { code: "+33", label: "FR (+33)" },
-  { code: "+213", label: "DZ (+213)" },
-  { code: "+216", label: "TN (+216)" },
-  { code: "+212", label: "MA (+212)" },
-  { code: "+32", label: "BE (+32)" },
-  { code: "+1", label: "CA (+1)" },
-];
+const phoneCodeOptions = getPhoneCodeOptions();
+const countryOptions = getCountryOptions();
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -121,7 +118,7 @@ const Profile = () => {
       setKycStatus(privateData.kyc_status || "not_submitted");
 
       if (privateData.phone) {
-        const foundCode = COUNTRY_CODES.find((c) => privateData.phone!.startsWith(c.code));
+        const foundCode = PHONE_COUNTRY_CODES.find((c) => privateData.phone!.startsWith(c.code));
         if (foundCode) {
           setPhoneCode(foundCode.code);
           setPhoneNumber(privateData.phone!.replace(foundCode.code, ""));
@@ -483,10 +480,13 @@ const Profile = () => {
             </div>
             <div className="space-y-2">
               <Label>Pays de résidence</Label>
-              <Input
+              <SearchableSelect
+                options={countryOptions}
                 value={countryOfResidence}
-                onChange={(e) => setCountryOfResidence(e.target.value)}
-                placeholder="France"
+                onValueChange={setCountryOfResidence}
+                placeholder="Sélectionner un pays..."
+                searchPlaceholder="Rechercher un pays..."
+                emptyMessage="Aucun pays trouvé."
               />
             </div>
             <Button onClick={savePersonalInfo} disabled={savingPersonal}>
@@ -522,18 +522,17 @@ const Profile = () => {
                 Numéro de téléphone <span className="text-destructive">*</span>
               </Label>
               <div className="flex gap-2">
-                <select
-                  className="w-24 h-10 px-2 border border-input rounded-md bg-background text-sm"
-                  value={phoneCode}
-                  onChange={(e) => setPhoneCode(e.target.value)}
-                  disabled={kycStatus === "pending"}
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-44">
+                  <SearchableSelect
+                    options={phoneCodeOptions}
+                    value={phoneCode}
+                    onValueChange={setPhoneCode}
+                    placeholder="Indicatif"
+                    searchPlaceholder="Rechercher un pays..."
+                    emptyMessage="Aucun pays trouvé."
+                    triggerClassName="h-10"
+                  />
+                </div>
                 <Input
                   type="tel"
                   value={phoneNumber}
