@@ -134,12 +134,13 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get all travelers (excluding the sender)
+    // Get all travelers (excluding the sender) - explicit limit to avoid default Supabase limit
     const { data: travelers, error: travelersError } = await supabaseAdmin
       .from("profiles")
       .select("id, first_name, full_name")
       .eq("role", "traveler")
-      .neq("id", record.sender_id);
+      .neq("id", record.sender_id)
+      .limit(10000);
 
     if (travelersError) {
       console.error("Error fetching travelers:", travelersError);

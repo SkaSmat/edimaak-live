@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plane, Handshake, CheckCircle, AlertCircle, ArrowRight, Package, Clock, XCircle } from "lucide-react";
+import { Plane, Handshake, CheckCircle, AlertCircle, ArrowRight, Package, Clock, XCircle, Bell } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useUserStats, getKycStatus } from "@/hooks/useUserStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,6 +79,25 @@ const TravelerDashboard = () => {
   return (
     <DashboardLayout role="traveler" fullName={profile.full_name} onLogout={handleLogout}>
       <ProfileCompletionBanner />
+      
+      {/* Notification Info Banner */}
+      <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Bell className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-blue-900 text-sm mb-1">
+              🔔 Vous recevez des notifications par email
+            </h3>
+            <p className="text-blue-800 text-sm">
+              Quand vous êtes en mode Voyageur, vous êtes alerté(e) par email des nouvelles annonces d'expédition.
+            </p>
+            <p className="text-blue-700 text-xs mt-2">
+              Basculez en mode Expéditeur si vous ne souhaitez plus recevoir ces notifications.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-4 sm:space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

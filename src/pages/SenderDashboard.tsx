@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import SenderMatchesList from "@/components/SenderMatchesList";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Package, Handshake, ChevronRight, Loader2, CheckCircle, Clock, XCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { Package, Handshake, ChevronRight, Loader2, CheckCircle, Clock, XCircle, AlertCircle, ArrowRight, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,6 +136,22 @@ const SenderDashboard = () => {
   return (
     <DashboardLayout role="sender" fullName={profile?.full_name}>
       <ProfileCompletionBanner />
+      
+      {/* Traveler Tip Banner */}
+      <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Plane className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-green-900 text-sm mb-1">
+              💡 Astuce voyageur
+            </h3>
+            <p className="text-green-800 text-sm">
+              Vous prévoyez de voyager bientôt ? Passez en mode Voyageur pour recevoir les notifications de nouvelles annonces et arrondir vos fins de mois !
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-6 sm:space-y-8">
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {/* Carte 1 : Mes demandes d'expédition */}
