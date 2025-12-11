@@ -15,7 +15,7 @@ interface ShipmentRequestFormProps {
   onSuccess: () => void;
 }
 
-const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
+const COUNTRIES = ["France", "Algérie", "Belgique", "Canada", "Espagne", "Royaume-Uni"];
 const VALID_ITEM_TYPES = ["Documents", "Vêtements", "Médicaments", "Argent", "Autres"] as const;
 
 // Zod schema for shipment request validation
