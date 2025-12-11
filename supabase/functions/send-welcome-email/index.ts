@@ -28,12 +28,6 @@ function isAuthorizedRequest(req: Request): boolean {
     }
   }
   
-  // For internal calls from pg_net, check if request has valid Supabase internal headers
-  const clientInfo = req.headers.get("x-client-info");
-  if (clientInfo && clientInfo.includes("supabase")) {
-    return true;
-  }
-  
   return false;
 }
 
