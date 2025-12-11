@@ -11,6 +11,7 @@ import { z } from "zod";
 import { AuthLogo } from "@/components/LogoIcon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getPhoneCodeOptions, getPhoneCodeById } from "@/lib/countryData";
+import { validatePhoneNumber, formatFullPhoneNumber } from "@/lib/phoneValidation";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -127,9 +128,14 @@ const Auth = () => {
       } else if (view === "signup") {
         if (!formData.phone) throw new Error("Le numéro de téléphone est obligatoire.");
 
-        // On combine l'indicatif (récupéré via l'id du pays) et le numéro
-        const actualPhoneCode = getPhoneCodeById(phoneCode);
-        const fullPhone = `${actualPhoneCode}${formData.phone.replace(/^0+/, "")}`; // Enlève le premier 0 si présent
+        // Validation du numéro de téléphone
+        const phoneValidation = validatePhoneNumber(formData.phone, phoneCode);
+        if (!phoneValidation.isValid) {
+          throw new Error(phoneValidation.error || "Numéro de téléphone invalide");
+        }
+
+        // Construire le numéro complet avec indicatif
+        const fullPhone = formatFullPhoneNumber(formData.phone, phoneCode);
 
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
@@ -138,7 +144,7 @@ const Auth = () => {
             data: {
               full_name: formData.fullName,
               role: formData.role,
-              phone: fullPhone, // On envoie le numéro complet
+              phone: fullPhone,
             },
           },
         });

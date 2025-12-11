@@ -14,7 +14,7 @@ interface TripFormProps {
   onSuccess: () => void;
 }
 
-const COUNTRIES = ["France", "Algérie", "Canada", "Espagne", "Royaume-Uni"];
+const COUNTRIES = ["France", "Algérie", "Belgique", "Canada", "Espagne", "Royaume-Uni"];
 
 // Zod schema for trip form validation
 const tripSchema = z.object({

@@ -14,6 +14,7 @@ import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { ProfileProgressCard } from "@/components/ProfileProgressCard";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getPhoneCodeOptions, getCountryOptions, getPhoneCodeById, findCountryByPhone } from "@/lib/countryData";
+import { validatePhoneNumber, formatFullPhoneNumber } from "@/lib/phoneValidation";
 
 interface ProfileData {
   id: string;
@@ -297,11 +298,11 @@ const Profile = () => {
   const saveKycInfo = async () => {
     if (!user) return;
 
-    // 1. Validation du Téléphone
-    const cleanPhone = phoneNumber.replace(/[\s\-\.]/g, "");
-    if (!/^\d{8,15}$/.test(cleanPhone)) {
-      toast.error("Numéro de téléphone invalide (chiffres uniquement)");
-      setPhoneError("Format incorrect");
+    // 1. Validation du Téléphone avec la nouvelle fonction
+    const phoneValidation = validatePhoneNumber(phoneNumber, phoneCode);
+    if (!phoneValidation.isValid) {
+      toast.error(phoneValidation.error || "Numéro de téléphone invalide");
+      setPhoneError(phoneValidation.error || "Format incorrect");
       return;
     }
     setPhoneError("");
@@ -324,8 +325,8 @@ const Profile = () => {
 
     setSavingKyc(true);
 
-    const actualPhoneCode = getPhoneCodeById(phoneCode);
-    const fullPhone = `${actualPhoneCode}${phoneNumber}`;
+    // Construire le numéro complet avec la nouvelle fonction
+    const fullPhone = formatFullPhoneNumber(phoneNumber, phoneCode);
 
     const { data: kycData, error } = await supabase
       .from("private_info")

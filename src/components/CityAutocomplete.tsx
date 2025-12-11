@@ -92,6 +92,24 @@ export const CITIES_UK = [
   "Édimbourg",
 ].sort();
 
+export const CITIES_BELGIUM = [
+  "Bruxelles",
+  "Anvers",
+  "Gand",
+  "Charleroi",
+  "Liège",
+  "Bruges",
+  "Namur",
+  "Louvain",
+  "Mons",
+  "Ostende",
+  "Courtrai",
+  "Malines",
+  "Hasselt",
+  "Tournai",
+  "Arlon",
+].sort();
+
 interface CityAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
@@ -128,8 +146,11 @@ export function CityAutocomplete({
     case "Royaume-Uni":
       cities = CITIES_UK;
       break;
+    case "Belgique":
+      cities = CITIES_BELGIUM;
+      break;
     default:
-      cities = [...CITIES_ALGERIA, ...CITIES_FRANCE, ...CITIES_SPAIN].sort();
+      cities = [...CITIES_ALGERIA, ...CITIES_FRANCE, ...CITIES_SPAIN, ...CITIES_BELGIUM].sort();
   }
 
   return (
