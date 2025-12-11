@@ -201,7 +201,7 @@ const Index = () => {
   const handleSignUp = useCallback(() => {
     if (selectedShipment) {
       localStorage.setItem("targetShipmentId", selectedShipment.id);
-      navigate("/auth?role=traveler");
+      navigate("/auth?role=traveler&view=signup");
     }
   }, [selectedShipment, navigate]);
   const handleLogin = useCallback(() => {
