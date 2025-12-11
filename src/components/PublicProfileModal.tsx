@@ -40,12 +40,6 @@ interface UserStats {
   completedMatchesCount: number;
 }
 
-interface PrivateInfoForVerification {
-  phone: string | null;
-  id_type: string | null;
-  id_number: string | null;
-}
-
 export const PublicProfileModal = ({ isOpen, onClose, userId }: PublicProfileModalProps) => {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [stats, setStats] = useState<UserStats>({ shipmentsCount: 0, tripsCount: 0, completedMatchesCount: 0 });
@@ -82,20 +76,11 @@ export const PublicProfileModal = ({ isOpen, onClose, userId }: PublicProfileMod
         setProfile(null);
       }
 
-      // Fetch private_info to check KYC status
-      const { data: privateData } = await supabase
-        .from("private_info")
-        .select("phone, id_type, id_number")
-        .eq("id", userId)
-        .maybeSingle();
+      // Fetch KYC status via secure function
+      const { data: kycStatus } = await supabase
+        .rpc("get_public_kyc_status", { profile_id: userId });
 
-      // Vérifier si le KYC est réellement complété
-      const isVerified = Boolean(
-        privateData?.phone?.trim() &&
-        privateData?.id_type?.trim() &&
-        privateData?.id_number?.trim()
-      );
-      setIsKycVerified(isVerified);
+      setIsKycVerified(kycStatus === true);
 
       // Fetch stats
       const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([

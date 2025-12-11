@@ -372,6 +372,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_kyc_status: { Args: { profile_id: string }; Returns: boolean }
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {
