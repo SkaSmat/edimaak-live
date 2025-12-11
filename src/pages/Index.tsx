@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -39,6 +39,7 @@ interface ShipmentRequest {
     avatar_url: string | null;
   };
   sender_request_count?: number;
+  sender_kyc_verified?: boolean;
 }
 
 // Liste des pays disponibles
@@ -124,17 +125,22 @@ const Index = () => {
         
         // 2. Fetch sender display info using the SECURITY DEFINER function
         const senderInfoMap: Record<string, { display_name: string; avatar_url: string | null }> = {};
+        const senderKycMap: Record<string, boolean> = {};
         
         if (session) {
-          // For authenticated users, fetch sender info
+          // For authenticated users, fetch sender info and KYC status
           for (const senderId of senderIds) {
-            const { data: senderData } = await supabase.rpc('get_sender_display_info', { sender_uuid: senderId });
-            if (senderData && senderData.length > 0) {
+            const [senderResult, kycResult] = await Promise.all([
+              supabase.rpc('get_sender_display_info', { sender_uuid: senderId }),
+              supabase.rpc('get_public_kyc_status', { profile_id: senderId })
+            ]);
+            if (senderResult.data && senderResult.data.length > 0) {
               senderInfoMap[senderId] = {
-                display_name: senderData[0].display_name,
-                avatar_url: senderData[0].avatar_url
+                display_name: senderResult.data[0].display_name,
+                avatar_url: senderResult.data[0].avatar_url
               };
             }
+            senderKycMap[senderId] = kycResult.data === true;
           }
         }
 
@@ -149,6 +155,7 @@ const Index = () => {
         const enrichedData = data.map(r => ({
           ...r,
           sender_request_count: countMap[r.sender_id] || 0,
+          sender_kyc_verified: senderKycMap[r.sender_id] || false,
           public_profiles: senderInfoMap[r.sender_id] ? {
             id: r.sender_id,
             display_first_name: senderInfoMap[r.sender_id].display_name,
@@ -462,22 +469,29 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                     />
                     <div className="min-w-0">
                       {session ? (
-                        <button 
-                          onClick={e => {
-                            e.stopPropagation();
-                            navigate(`/user/${request.sender_id}`);
-                          }} 
-                          className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left flex items-center gap-1"
-                        >
-                          {request.public_profiles?.display_first_name || "Utilisateur"}
-                          {(request.sender_request_count || 0) > 2 && <ShieldCheck className="w-3 h-3 text-green-600 flex-shrink-0" />}
-                        </button>
+                        <>
+                          <button 
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/user/${request.sender_id}`);
+                            }} 
+                            className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left flex items-center gap-1"
+                          >
+                            {request.public_profiles?.display_first_name || "Utilisateur"}
+                            {request.sender_kyc_verified && <CheckCircle className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                          </button>
+                          {request.sender_kyc_verified && (
+                            <p className="text-[10px] sm:text-xs text-green-600 font-medium">
+                              Identité vérifiée
+                            </p>
+                          )}
+                        </>
                       ) : (
                         <span className="text-xs sm:text-sm font-medium text-gray-400 truncate">
                           Utilisateur anonyme
                         </span>
                       )}
-                      {(request.sender_request_count || 0) > 1 && (
+                      {!request.sender_kyc_verified && (request.sender_request_count || 0) > 1 && (
                         <p className="text-[10px] sm:text-xs text-gray-400">
                           {request.sender_request_count} colis actifs
                         </p>
