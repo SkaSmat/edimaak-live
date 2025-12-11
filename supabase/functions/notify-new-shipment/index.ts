@@ -176,14 +176,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending notifications to ${travelerEmails.length} travelers`);
 
-    // Send emails to all travelers
-    const results = await Promise.allSettled(
-      travelerEmails.map(({ email, firstName }) => {
-        const priceSection = record.price 
-          ? `<div class="detail">💰 <strong>Compensation :</strong> ${record.price}€</div>`
-          : "";
+    // Helper function to delay execution (for rate limiting)
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const emailHtml = `
+    // Send emails sequentially with delay to respect Resend rate limit (2 req/sec)
+    let successful = 0;
+    let failed = 0;
+    const failedDetails: { email: string; reason: string }[] = [];
+
+    for (const { email, firstName } of travelerEmails) {
+      const priceSection = record.price 
+        ? `<div class="detail">💰 <strong>Compensation :</strong> ${record.price}€</div>`
+        : "";
+
+      const emailHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -221,35 +227,41 @@ const handler = async (req: Request): Promise<Response> => {
     <p><strong>L'équipe EdiMaak</strong></p>
   </div>
   <div class="footer">
-    <p>© 2024 EdiMaak - Tous droits réservés</p>
+    <p>© 2025 EdiMaak - Tous droits réservés</p>
     <p><small>Vous recevez cet email car vous êtes inscrit comme voyageur sur EdiMaak.</small></p>
   </div>
 </body>
 </html>
-        `;
+      `;
 
-        return sendEmail(email, `📦 Nouvelle demande d'expédition ${record.from_city} → ${record.to_city}`, emailHtml);
-      })
-    );
-    
-    const successful = results.filter(r => r.status === "fulfilled").length;
-    const failedResults = results.filter(r => r.status === "rejected") as PromiseRejectedResult[];
-    
-    // Log detailed error information for failed emails
-    if (failedResults.length > 0) {
-      console.error("Failed email details:", failedResults.map((r, i) => ({
-        index: i,
-        reason: r.reason?.message || r.reason || "Unknown error"
-      })));
+      try {
+        await sendEmail(email, `📦 Nouvelle demande d'expédition ${record.from_city} → ${record.to_city}`, emailHtml);
+        successful++;
+        console.log(`Email sent successfully to ${email}`);
+      } catch (error: any) {
+        failed++;
+        failedDetails.push({ email, reason: error.message || "Unknown error" });
+        console.error(`Failed to send email to ${email}:`, error.message);
+      }
+
+      // Wait 600ms between emails to respect Resend rate limit (2 req/sec)
+      if (travelerEmails.indexOf({ email, firstName }) < travelerEmails.length - 1) {
+        await delay(600);
+      }
     }
     
-    console.log(`Emails sent: ${successful} successful, ${failedResults.length} failed`);
+    // Log summary
+    if (failedDetails.length > 0) {
+      console.error("Failed email details:", failedDetails);
+    }
+    
+    console.log(`Emails sent: ${successful} successful, ${failed} failed`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         sent: successful, 
-        failed: failedResults.length,
+        failed: failed,
         totalTravelers: travelerEmails.length 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
