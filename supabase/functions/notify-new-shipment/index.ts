@@ -1,33 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
 };
 
-interface ShipmentRecord {
-  id: string;
-  sender_id: string;
-  from_city: string;
-  from_country: string;
-  to_city: string;
-  to_country: string;
-  item_type: string;
-  price: number | null;
-  earliest_date: string;
-  latest_date: string;
-  status: string;
-}
+// Input validation schema
+const ShipmentRecordSchema = z.object({
+  id: z.string().uuid(),
+  sender_id: z.string().uuid(),
+  from_city: z.string(),
+  from_country: z.string(),
+  to_city: z.string(),
+  to_country: z.string(),
+  item_type: z.string(),
+  price: z.number().nullable(),
+  earliest_date: z.string(),
+  latest_date: z.string(),
+  status: z.string(),
+});
 
-interface WebhookPayload {
-  type: "INSERT";
-  table: string;
-  record: ShipmentRecord;
-  schema: string;
-}
+const WebhookPayloadSchema = z.object({
+  type: z.literal("INSERT"),
+  table: z.string(),
+  record: ShipmentRecordSchema,
+  schema: z.string(),
+});
 
 async function sendEmail(to: string, subject: string, html: string) {
   const response = await fetch("https://api.resend.com/emails", {
@@ -64,8 +67,30 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const payload: WebhookPayload = await req.json();
-    console.log("Received webhook payload:", JSON.stringify(payload));
+    // Webhook secret verification
+    const signature = req.headers.get("x-webhook-secret");
+    if (!signature || signature !== WEBHOOK_SECRET) {
+      console.error("Unauthorized: Invalid or missing webhook secret");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate payload
+    const rawPayload = await req.json();
+    const parseResult = WebhookPayloadSchema.safeParse(rawPayload);
+    
+    if (!parseResult.success) {
+      console.error("Invalid payload:", parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: "Invalid payload", details: parseResult.error.errors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const payload = parseResult.data;
+    console.log("Received validated webhook payload:", JSON.stringify(payload));
 
     const { record } = payload;
 
