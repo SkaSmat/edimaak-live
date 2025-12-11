@@ -124,7 +124,10 @@ export const ProfileProgressCard = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Progress value={completion.percentage} className="mb-6" />
+        <Progress 
+          value={completion.percentage} 
+          className={`mb-6 ${completion.percentage === 100 ? "[&>div]:bg-green-500" : ""}`}
+        />
 
         <div className="space-y-3">
           {completion.items.map((item) => (
