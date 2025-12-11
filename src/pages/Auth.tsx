@@ -27,8 +27,9 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleFromUrl = searchParams.get("role") as "traveler" | "sender" | null;
+  const viewFromUrl = searchParams.get("view") as AuthView | null;
 
-  const [view, setView] = useState<AuthView>("login");
+  const [view, setView] = useState<AuthView>(viewFromUrl === "signup" ? "signup" : "login");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
