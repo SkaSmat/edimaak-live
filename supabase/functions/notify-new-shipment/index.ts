@@ -233,15 +233,23 @@ const handler = async (req: Request): Promise<Response> => {
     );
     
     const successful = results.filter(r => r.status === "fulfilled").length;
-    const failed = results.filter(r => r.status === "rejected").length;
+    const failedResults = results.filter(r => r.status === "rejected") as PromiseRejectedResult[];
     
-    console.log(`Emails sent: ${successful} successful, ${failed} failed`);
+    // Log detailed error information for failed emails
+    if (failedResults.length > 0) {
+      console.error("Failed email details:", failedResults.map((r, i) => ({
+        index: i,
+        reason: r.reason?.message || r.reason || "Unknown error"
+      })));
+    }
+    
+    console.log(`Emails sent: ${successful} successful, ${failedResults.length} failed`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         sent: successful, 
-        failed: failed,
+        failed: failedResults.length,
         totalTravelers: travelerEmails.length 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
