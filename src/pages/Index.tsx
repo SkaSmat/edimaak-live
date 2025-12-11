@@ -219,6 +219,14 @@ const Index = () => {
         <div className="container mx-auto px-3 sm:px-4 max-w-7xl h-16 md:h-20 transition-all duration-200 flex items-center justify-between">
           <LogoEdiM3ak iconSize="lg" onClick={() => navigate("/")} />
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/securite")} 
+              size="sm" 
+              className="hidden md:inline-flex text-gray-600 text-xs sm:text-sm"
+            >
+              Sécurité
+            </Button>
             {authLoading ? <div className="h-8 sm:h-10 w-24 sm:w-32 bg-gray-200 rounded-full animate-pulse" /> : session ? <>
                 <NotificationBell userId={session.user.id} />
                 <Button onClick={handleDashboardClick} size="sm" className="rounded-full font-medium relative overflow-visible text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-10">
@@ -503,8 +511,18 @@ connectant voyageurs et expéditeurs pour le transport de colis.
 
       {/* FOOTER */}
       <footer className="border-t border-gray-200 bg-white py-8 sm:py-10 mt-auto">
-        <div className="container mx-auto px-4 text-center text-xs sm:text-sm text-gray-400">
-          © 2025 EDIM3AK. La plateforme de confiance.
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap justify-center gap-4 mb-4 text-xs sm:text-sm">
+            <button onClick={() => navigate("/securite")} className="text-gray-500 hover:text-primary transition-colors">
+              Sécurité
+            </button>
+            <button onClick={() => navigate("/legal")} className="text-gray-500 hover:text-primary transition-colors">
+              Mentions légales
+            </button>
+          </div>
+          <p className="text-center text-xs sm:text-sm text-gray-400">
+            © 2025 EDIM3AK. La plateforme de confiance.
+          </p>
         </div>
       </footer>
 

@@ -73,6 +73,7 @@ const Profile = () => {
   const [idNumber, setIdNumber] = useState("");
   const [idExpiryDate, setIdExpiryDate] = useState("");
   const [idDocumentUrl, setIdDocumentUrl] = useState<string | null>(null);
+  const [idDocumentPath, setIdDocumentPath] = useState<string | null>(null); // Chemin du fichier dans storage
 
   const [phoneError, setPhoneError] = useState("");
 
@@ -137,12 +138,14 @@ const Profile = () => {
       
       // Générer une URL signée si un document existe
       if (privateData.id_document_url) {
+        setIdDocumentPath(privateData.id_document_url); // Stocker le chemin original
         const { data: signedData } = await supabase.storage
           .from("kyc-documents")
           .createSignedUrl(privateData.id_document_url, 60 * 60 * 24 * 365);
         setIdDocumentUrl(signedData?.signedUrl || null);
       } else {
         setIdDocumentUrl(null);
+        setIdDocumentPath(null);
       }
     }
 
@@ -225,6 +228,7 @@ const Profile = () => {
 
       if (updateError) throw updateError;
 
+      setIdDocumentPath(filePath); // Stocker le chemin pour la suppression
       setIdDocumentUrl(documentUrl);
       toast.success("Document uploadé avec succès !");
     } catch (error: any) {
@@ -236,15 +240,11 @@ const Profile = () => {
   };
 
   const handleRemoveDocument = async () => {
-    if (!idDocumentUrl || !user) return;
+    if (!idDocumentPath || !user) return;
 
     try {
-      // idDocumentUrl contient maintenant le chemin du fichier directement
-      // Format: {user_id}/filename
-      const filePath = idDocumentUrl.includes("/") ? idDocumentUrl : `${user.id}/${idDocumentUrl}`;
-
-      // Supprimer du storage
-      await supabase.storage.from("kyc-documents").remove([filePath]);
+      // Supprimer du storage en utilisant le chemin stocké
+      await supabase.storage.from("kyc-documents").remove([idDocumentPath]);
 
       // Mettre à jour la base de données
       const { error } = await supabase.from("private_info").update({ id_document_url: null }).eq("id", user.id);
@@ -252,6 +252,7 @@ const Profile = () => {
       if (error) throw error;
 
       setIdDocumentUrl(null);
+      setIdDocumentPath(null);
       toast.success("Document supprimé");
     } catch (error: any) {
       console.error("Remove error:", error);
@@ -263,11 +264,15 @@ const Profile = () => {
     if (!user) return;
     setSavingPersonal(true);
 
+    // Construire le full_name à partir de firstName et lastName
+    const newFullName = [firstName, lastName].filter(Boolean).join(" ") || profile?.full_name || "";
+
     const { error } = await supabase
       .from("profiles")
       .update({
         first_name: firstName || null,
         last_name: lastName || null,
+        full_name: newFullName,
         country_of_residence: countryOfResidence || null,
       })
       .eq("id", user.id);
@@ -281,6 +286,7 @@ const Profile = () => {
           ...profile,
           first_name: firstName,
           last_name: lastName,
+          full_name: newFullName,
           country_of_residence: countryOfResidence,
         });
       }

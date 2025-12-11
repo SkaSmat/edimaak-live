@@ -60,10 +60,31 @@ export const useRealtimeNotifications = (userId: string | undefined) => {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
+        async (payload) => {
           const newMessage = payload.new as MessagePayload;
 
+          // Ignorer les messages envoyés par l'utilisateur lui-même
           if (newMessage.sender_id === userId) return;
+
+          // Vérifier que l'utilisateur est bien impliqué dans ce match
+          const { data: matchData } = await supabase
+            .from("matches")
+            .select(`
+              id,
+              trips!inner(traveler_id),
+              shipment_requests!inner(sender_id)
+            `)
+            .eq("id", newMessage.match_id)
+            .single();
+
+          if (!matchData) return;
+
+          // Vérifier si l'utilisateur est le voyageur ou l'expéditeur de ce match
+          const isInvolved = 
+            matchData.trips?.traveler_id === userId || 
+            matchData.shipment_requests?.sender_id === userId;
+
+          if (!isInvolved) return;
 
           setUnreadCount((prev) => prev + 1);
           playNotificationSound();

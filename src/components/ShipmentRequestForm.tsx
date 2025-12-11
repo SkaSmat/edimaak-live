@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, AlertTriangle } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { z } from "zod";
 
@@ -64,6 +65,8 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     price: "",
   });
 
+  const [valueLimitConfirmed, setValueLimitConfirmed] = useState(false);
+
   const today = new Date().toISOString().split("T")[0];
 
   // LOGIQUE ANTI-DOUBLON
@@ -101,6 +104,13 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Vérifier la confirmation de limite de valeur
+    if (!valueLimitConfirmed) {
+      toast.error("Veuillez confirmer que la valeur de votre colis ne dépasse pas 200€");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -309,7 +319,37 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
           placeholder="Décrivez votre colis, précautions particulières..."
         />
       </div>
-      <Button type="submit" disabled={loading} className="w-full">
+
+      {/* Disclaimer limite de valeur */}
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-3">
+            <p className="text-sm text-amber-800 font-medium">
+              ⚠️ Limite de valeur : 200€ maximum pour débuter
+            </p>
+            <p className="text-xs text-amber-700">
+              Pour votre sécurité, les colis de grande valeur (électronique, bijoux, argent liquide) ne sont pas couverts. 
+              <a href="/securite" className="underline hover:text-amber-900 ml-1">En savoir plus</a>
+            </p>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="value-limit" 
+                checked={valueLimitConfirmed}
+                onCheckedChange={(checked) => setValueLimitConfirmed(checked === true)}
+              />
+              <label 
+                htmlFor="value-limit" 
+                className="text-sm text-amber-900 cursor-pointer"
+              >
+                Je confirme que la valeur de mon colis ne dépasse pas 200€
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Button type="submit" disabled={loading || !valueLimitConfirmed} className="w-full">
         {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Créer la demande"}
       </Button>
     </form>
