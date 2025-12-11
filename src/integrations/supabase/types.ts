@@ -397,7 +397,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_webhook_secret: { Args: never; Returns: string }
       has_match_with_user: { Args: { _profile_id: string }; Returns: boolean }
       has_role: {
         Args: {
