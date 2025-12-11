@@ -33,6 +33,7 @@ const PublicProfile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [isKycVerified, setIsKycVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -69,20 +70,24 @@ const PublicProfile = () => {
           private_info: null,
         });
 
-        // Charger les statistiques publiques uniquement
-        const [shipmentsRes, tripsRes, matchesRes] = await Promise.all([
+        // Charger le statut KYC public et les statistiques en parallèle
+        const [kycRes, shipmentsRes, tripsRes, matchesRes] = await Promise.all([
+          supabase.rpc("get_public_kyc_status", { profile_id: userId }),
           supabase
             .from("shipment_requests")
             .select("id", { count: "exact", head: true })
             .eq("sender_id", userId)
-            .eq("status", "open"), // Seulement les annonces publiques
+            .eq("status", "open"),
           supabase
             .from("trips")
             .select("id", { count: "exact", head: true })
             .eq("traveler_id", userId)
-            .eq("status", "open"), // Seulement les voyages publics
+            .eq("status", "open"),
           supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "accepted"),
         ]);
+
+        // Définir le statut KYC
+        setIsKycVerified(kycRes.data === true);
 
         setStats({
           shipmentsCount: shipmentsRes.count || 0,
@@ -99,7 +104,6 @@ const PublicProfile = () => {
     }
   };
 
-  const isVerified = profile?.private_info?.kyc_status === "verified";
   const memberSince = profile?.created_at ? format(new Date(profile.created_at), "MMMM yyyy", { locale: fr }) : "";
 
   if (isLoading) {
@@ -162,9 +166,9 @@ const PublicProfile = () => {
                       <div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 flex flex-wrap items-center gap-2">
                           {profile.full_name}
-                          {isVerified && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0" />}
+                          {isKycVerified && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0" />}
                         </h1>
-                        {isVerified && (
+                        {isKycVerified && (
                           <Badge className="bg-green-100 text-green-800 border-0">Identité vérifiée</Badge>
                         )}
                       </div>
@@ -225,7 +229,7 @@ const PublicProfile = () => {
                 <h3 className="font-bold text-foreground mb-4">Vérifications</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    {isVerified ? (
+                    {isKycVerified ? (
                       <>
                         <CheckCircle className="w-5 h-5 text-green-500" />
                         <span className="text-sm">Identité vérifiée</span>
