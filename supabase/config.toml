@@ -1,1 +1,7 @@
 project_id = "hzatoqpmnlxrsxjwtwfq"
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.notify-new-shipment]
+verify_jwt = false
