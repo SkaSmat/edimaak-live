@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, ArrowRightLeft } from "lucide-react";
+import { Loader2, ArrowRightLeft, Shield, Clock, XCircle } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { z } from "zod";
 
@@ -13,6 +14,8 @@ interface TripFormProps {
   userId: string;
   onSuccess: () => void;
 }
+
+type KycStatus = "verified" | "pending" | "rejected" | "not_submitted" | null;
 
 const COUNTRIES = ["France", "Algérie", "Belgique", "Canada", "Espagne", "Royaume-Uni"];
 
@@ -42,7 +45,10 @@ const tripSchema = z.object({
 });
 
 const TripForm = ({ userId, onSuccess }: TripFormProps) => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [kycStatus, setKycStatus] = useState<KycStatus>(null);
+  const [kycLoading, setKycLoading] = useState(true);
   const [formData, setFormData] = useState({
     fromCountry: "France",
     fromCity: "",
@@ -55,6 +61,33 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
   });
 
   const today = new Date().toISOString().split("T")[0];
+
+  // Vérifier le statut KYC
+  useEffect(() => {
+    const checkKycStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("private_info")
+          .select("kyc_status")
+          .eq("id", userId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching KYC status:", error);
+          setKycStatus("not_submitted");
+        } else {
+          setKycStatus((data?.kyc_status as KycStatus) || "not_submitted");
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        setKycStatus("not_submitted");
+      } finally {
+        setKycLoading(false);
+      }
+    };
+
+    checkKycStatus();
+  }, [userId]);
 
   // LOGIQUE INTELLIGENTE : Anti-Doublon
   // Si le pays de départ devient égal au pays d'arrivée, on change l'arrivée
@@ -110,6 +143,75 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
       setLoading(false);
     }
   };
+
+  // Afficher le loader pendant la vérification KYC
+  if (kycLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Bloquer si KYC non vérifié
+  if (kycStatus !== "verified") {
+    return (
+      <div className="max-w-2xl mx-auto p-8 text-center">
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-8">
+          {kycStatus === "pending" ? (
+            <>
+              <Clock className="w-16 h-16 mx-auto text-orange-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                ⏳ Vérification en cours
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Votre demande de vérification KYC est en cours de traitement (24-48h).
+                Vous pourrez publier dès que votre profil sera validé.
+              </p>
+              <div className="bg-white rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm text-gray-600 mb-2">✓ Documents soumis avec succès</p>
+                <p className="text-sm text-gray-600 mb-2">✓ Validation par notre équipe en cours</p>
+                <p className="text-sm text-gray-600">✓ Notification par email dès validation</p>
+              </div>
+            </>
+          ) : kycStatus === "rejected" ? (
+            <>
+              <XCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                ❌ Vérification rejetée
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Votre demande de vérification KYC a été rejetée. 
+                Veuillez soumettre à nouveau vos documents.
+              </p>
+              <Button onClick={() => navigate('/profile')} size="lg">
+                Soumettre à nouveau
+              </Button>
+            </>
+          ) : (
+            <>
+              <Shield className="w-16 h-16 mx-auto text-orange-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                🔒 Vérification d'identité requise
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Pour garantir la sécurité de notre communauté, vous devez 
+                compléter votre vérification KYC avant de publier un voyage.
+              </p>
+              <div className="bg-white rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm text-gray-600 mb-2">✓ Processus simple et sécurisé</p>
+                <p className="text-sm text-gray-600 mb-2">✓ Validation en 24-48h</p>
+                <p className="text-sm text-gray-600">✓ Badge "Vérifié" sur votre profil</p>
+              </div>
+              <Button onClick={() => navigate('/profile')} size="lg">
+                Compléter ma vérification (5 min)
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-5 border rounded-xl bg-card shadow-sm">
