@@ -80,33 +80,32 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
   const Content = (
     <div className="space-y-6">
       <section className={`bg-card rounded-2xl border p-6 ${embedded ? "shadow-none border-0 p-0" : "shadow-sm"}`}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            {/* Si on est dans le dashboard (embedded), on cache le titre car le Dashboard l'affiche déjà au-dessus */}
-            {!embedded && (
-              <>
-                <h2 className="text-xl font-bold text-foreground">Mes demandes d'expédition</h2>
-                <p className="text-sm text-muted-foreground mt-1">Gérez vos demandes d'expédition</p>
-              </>
-            )}
+        {/* Titre et sous-titre */}
+        {!embedded && (
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-foreground">Mes demandes d'expédition</h2>
+            <p className="text-sm text-muted-foreground mt-1">Gérez vos demandes d'expédition</p>
           </div>
-          <Button
-            onClick={() => setShowRequestForm(!showRequestForm)}
-            variant={showRequestForm ? "outline" : "default"}
-          >
-            {showRequestForm ? (
-              <>
-                <X className="w-4 h-4 mr-2" />
-                Annuler
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle demande
-              </>
-            )}
-          </Button>
-        </div>
+        )}
+
+        {/* Bouton full-width comme TravelerTrips */}
+        <Button
+          onClick={() => setShowRequestForm(!showRequestForm)}
+          variant={showRequestForm ? "outline" : "default"}
+          className="w-full mb-6"
+        >
+          {showRequestForm ? (
+            <>
+              <X className="w-4 h-4 mr-2" />
+              Annuler
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle demande
+            </>
+          )}
+        </Button>
 
         {showRequestForm && (
           <div className="mb-6 p-4 border rounded-lg bg-muted/30">
