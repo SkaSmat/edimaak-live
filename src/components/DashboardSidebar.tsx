@@ -227,6 +227,14 @@ export const DashboardSidebar = ({
 
       <SidebarFooter className="p-2">
         <Separator className="mb-2" />
+        <SidebarMenuButton
+          onClick={() => handleNavigation("/securite")}
+          tooltip="Sécurité"
+          className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          <ShieldCheck className="h-5 w-5" />
+          <span>Sécurité</span>
+        </SidebarMenuButton>
         <FeedbackButton variant="sidebar" collapsed={collapsed} />
         <SidebarMenuButton
           onClick={onLogout}
