@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.notify-new-shipment]
 verify_jwt = false
+
+[functions.notify-match-proposal]
+verify_jwt = false
