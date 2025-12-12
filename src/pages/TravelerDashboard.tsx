@@ -80,19 +80,16 @@ const TravelerDashboard = () => {
     <DashboardLayout role="traveler" fullName={profile.full_name} onLogout={handleLogout}>
       <ProfileCompletionBanner />
       
-      {/* Notification Info Banner */}
-      <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <Bell className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+      {/* Mode Info Banner */}
+      <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-3 sm:p-4 mb-6">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <span className="text-lg sm:text-xl flex-shrink-0">✈️</span>
           <div>
-            <h3 className="font-semibold text-blue-900 text-sm mb-1">
-              🔔 Vous recevez des notifications par email
+            <h3 className="font-semibold text-blue-900 text-sm sm:text-base mb-1">
+              Mode Voyageur
             </h3>
-            <p className="text-blue-800 text-sm">
-              Quand vous êtes en mode Voyageur, vous êtes alerté(e) par email des nouvelles annonces d'expédition.
-            </p>
-            <p className="text-blue-700 text-xs mt-2">
-              Basculez en mode Expéditeur si vous ne souhaitez plus recevoir ces notifications.
+            <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
+              Vous êtes alerté(e) par email des nouvelles annonces d'envoi de colis compatibles avec vos voyages renseignés.
             </p>
           </div>
         </div>
