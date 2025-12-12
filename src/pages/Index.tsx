@@ -43,7 +43,7 @@ interface ShipmentRequest {
 }
 
 // Liste des pays disponibles
-const COUNTRIES = ["Algérie", "France", "Canada", "Espagne", "Royaume-Uni"];
+const COUNTRIES = ["Algérie", "Belgique", "France", "Canada", "Espagne", "Royaume-Uni"];
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
