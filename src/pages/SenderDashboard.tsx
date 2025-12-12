@@ -174,16 +174,16 @@ const SenderDashboard = () => {
     <DashboardLayout role="sender" fullName={profile?.full_name}>
       <ProfileCompletionBanner />
       
-      {/* Traveler Tip Banner */}
-      <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <Plane className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+      {/* Mode Info Banner */}
+      <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-3 sm:p-4 mb-6">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <span className="text-lg sm:text-xl flex-shrink-0">📦</span>
           <div>
-            <h3 className="font-semibold text-green-900 text-sm mb-1">
-              💡 Astuce voyageur
+            <h3 className="font-semibold text-green-900 text-sm sm:text-base mb-1">
+              Mode Expéditeur
             </h3>
-            <p className="text-green-800 text-sm">
-              Vous prévoyez de voyager bientôt ? Passez en mode Voyageur pour recevoir les notifications de nouvelles annonces et arrondir vos fins de mois !
+            <p className="text-green-800 text-xs sm:text-sm leading-relaxed">
+              Créez une demande d'envoi de colis. Des voyageurs vous proposeront de transporter votre colis.
             </p>
           </div>
         </div>
