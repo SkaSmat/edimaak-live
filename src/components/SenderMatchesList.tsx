@@ -44,6 +44,27 @@ const SenderMatchesList = ({ embedded = false, userId }: SenderMatchesListProps)
   useEffect(() => {
     if (userId) {
       fetchMatches();
+      
+      // Subscribe to realtime match updates
+      const channel = supabase
+        .channel(`sender-matches-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'matches',
+          },
+          () => {
+            // Refetch when any match changes
+            fetchMatches();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [userId]);
 

@@ -9,12 +9,24 @@ import { Button } from "@/components/ui/button";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const SenderDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState<string>("not_submitted");
+  const [showSwitchDialog, setShowSwitchDialog] = useState(false);
+  const [pendingShipmentId, setPendingShipmentId] = useState<string | null>(null);
 
   const [stats, setStats] = useState({
     activeRequests: 0,
@@ -24,6 +36,14 @@ const SenderDashboard = () => {
 
   useEffect(() => {
     checkAuthAndFetchStats();
+    
+    // Check for pending shipment switch
+    const pending = localStorage.getItem("pendingShipmentSwitch");
+    if (pending) {
+      setPendingShipmentId(pending);
+      setShowSwitchDialog(true);
+      localStorage.removeItem("pendingShipmentSwitch");
+    }
   }, []);
 
   const checkAuthAndFetchStats = async () => {
@@ -118,6 +138,22 @@ const SenderDashboard = () => {
       setLoading(false);
     }
   };
+
+  const handleSwitchToTraveler = async () => {
+    if (!profile?.id) return;
+    try {
+      await supabase.from("profiles").update({ role: "traveler" }).eq("id", profile.id);
+      toast.success("Mode voyageur activé !");
+      if (pendingShipmentId) {
+        navigate(`/dashboard/traveler?highlight=${pendingShipmentId}`);
+      } else {
+        navigate("/dashboard/traveler");
+      }
+    } catch (error) {
+      toast.error("Erreur lors du changement de rôle");
+    }
+  };
+
   // Variables pour l'affichage KYC
   const isVerified = kycStatus === "verified";
   const isPending = kycStatus === "pending";
@@ -134,6 +170,7 @@ const SenderDashboard = () => {
   }
 
   return (
+    <>
     <DashboardLayout role="sender" fullName={profile?.full_name}>
       <ProfileCompletionBanner />
       
@@ -259,6 +296,32 @@ const SenderDashboard = () => {
         </div>
       </div>
     </DashboardLayout>
+
+      {/* Dialog for switching to traveler mode when shipment was clicked before login */}
+      <AlertDialog open={showSwitchDialog} onOpenChange={setShowSwitchDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Plane className="w-5 h-5 text-primary" />
+              Proposer votre voyage ?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm space-y-2">
+              <p>
+                Vous avez cliqué sur une demande d'expédition. Pour proposer votre voyage à cet expéditeur,
+                vous devez passer en mode <strong>Voyageur</strong>.
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Vous pourrez revenir en mode Expéditeur à tout moment depuis votre profil.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowSwitchDialog(false)}>Rester expéditeur</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSwitchToTraveler}>Passer en mode Voyageur</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

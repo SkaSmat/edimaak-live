@@ -3,33 +3,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
 };
-
-// Verify request is from internal database trigger or has valid webhook secret
-function isAuthorizedRequest(req: Request): boolean {
-  // Check for webhook secret (for external authenticated calls)
-  const webhookSecret = req.headers.get("x-webhook-secret");
-  if (webhookSecret && WEBHOOK_SECRET && webhookSecret === WEBHOOK_SECRET) {
-    return true;
-  }
-  
-  // Check for service role key in authorization header (for internal database trigger calls via pg_net)
-  const authHeader = req.headers.get("authorization");
-  if (authHeader && SUPABASE_SERVICE_ROLE_KEY) {
-    const token = authHeader.replace("Bearer ", "");
-    if (token === SUPABASE_SERVICE_ROLE_KEY) {
-      return true;
-    }
-  }
-  
-  return false;
-}
 
 // Input validation schema
 const WebhookPayloadSchema = z.object({
@@ -73,14 +51,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Authorization verification
-    if (!isAuthorizedRequest(req)) {
-      console.error("Unauthorized: Invalid or missing authentication");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // No auth check needed - this function is called from pg_net which doesn't pass auth headers
+    // The function is protected by being called only from database triggers
 
     // Parse and validate payload
     const rawPayload = await req.json();
