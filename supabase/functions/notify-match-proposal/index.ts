@@ -4,11 +4,38 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Authorization check - verifies the request is from database trigger or authorized source
+function isAuthorizedRequest(req: Request): boolean {
+  // Check for webhook secret header
+  const webhookSecret = req.headers.get("x-webhook-secret");
+  if (webhookSecret && webhookSecret === WEBHOOK_SECRET) {
+    return true;
+  }
+  
+  // Check for service role key in authorization header (from database triggers)
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    const token = authHeader.replace("Bearer ", "");
+    if (token === SUPABASE_SERVICE_ROLE_KEY) {
+      return true;
+    }
+  }
+  
+  // Check for internal database trigger header
+  const clientInfo = req.headers.get("x-client-info");
+  if (clientInfo === "supabase-db-trigger") {
+    return true;
+  }
+  
+  return false;
+}
 
 // Payload schema for match notification
 const MatchPayloadSchema = z.object({
@@ -45,6 +72,15 @@ async function sendEmail(to: string, subject: string, html: string) {
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Authorization check - verify the request is from database trigger
+  if (!isAuthorizedRequest(req)) {
+    console.error("Unauthorized request to notify-match-proposal");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
