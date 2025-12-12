@@ -485,18 +485,9 @@ connectant voyageurs et expéditeurs pour le transport de colis.
             {/* Cas utilisateur non connecté */}
             {!session && (
               <>
-                <p className="text-sm sm:text-base text-gray-500 max-w-md mb-4">
-                  Créez un compte pour être notifié dès qu'un colis correspondant à votre recherche sera publié.
+                <p className="text-sm sm:text-base text-gray-500 max-w-md mb-6">
+                  Recevez un email dès qu'un colis <strong>{localFromCity || fromCountry} → {localToCity || toCountry}</strong> sera publié.
                 </p>
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 max-w-md">
-                  <p className="text-sm text-blue-800 font-medium mb-2">
-                    🔔 Recevez une notification par email
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    En vous inscrivant comme voyageur, vous serez alerté(e) des nouvelles annonces sur ce trajet : 
-                    <strong> {localFromCity || fromCountry} → {localToCity || toCountry}</strong>
-                  </p>
-                </div>
                 <Button 
                   onClick={() => {
                     const searchIntent = {
