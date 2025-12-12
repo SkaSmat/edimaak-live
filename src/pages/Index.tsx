@@ -433,17 +433,9 @@ connectant voyageurs et expéditeurs pour le transport de colis.
             {/* Cas utilisateur connecté sans alerte */}
             {session && !alertCreated && (
               <>
-                <p className="text-sm sm:text-base text-gray-500 max-w-md mb-4">
-                  Pas de colis disponibles pour ce trajet pour le moment.
+                <p className="text-sm sm:text-base text-gray-500 max-w-md mb-6">
+                  Recevez un email dès qu'un colis <strong>{localFromCity || fromCountry} → {localToCity || toCountry}</strong> sera publié.
                 </p>
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 max-w-md">
-                  <p className="text-sm text-blue-800 font-medium mb-2">
-                    🔔 Créez une alerte pour ce trajet
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    Recevez un email dès qu'un colis <strong>{localFromCity || fromCountry} → {localToCity || toCountry}</strong> sera publié.
-                  </p>
-                </div>
                 <Button 
                   onClick={async () => {
                     if (!session?.user?.id) return;
@@ -465,7 +457,7 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                         }
                       } else {
                         setAlertCreated(true);
-                        toast.success("Alerte créée ! Vous recevrez un email dès qu'un colis correspondant sera publié.");
+                        toast.success(`Vous serez notifié par email dès qu'un colis ${localFromCity || fromCountry} → ${localToCity || toCountry} sera publié.`);
                       }
                     } catch (err) {
                       console.error("Error creating alert:", err);
