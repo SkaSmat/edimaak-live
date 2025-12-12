@@ -13,11 +13,19 @@ const corsHeaders = {
 
 // Verify request is from internal database trigger or has valid webhook secret
 function isAuthorizedRequest(req: Request): boolean {
+  // Check for webhook secret header (external webhook calls)
   const webhookSecret = req.headers.get("x-webhook-secret");
   if (webhookSecret && WEBHOOK_SECRET && webhookSecret === WEBHOOK_SECRET) {
     return true;
   }
   
+  // Check for database trigger call (internal pg_net calls)
+  const clientInfo = req.headers.get("x-client-info");
+  if (clientInfo === "supabase-db-trigger") {
+    return true;
+  }
+  
+  // Check for service role key in Authorization header (database trigger calls)
   const authHeader = req.headers.get("authorization");
   if (authHeader && SUPABASE_SERVICE_ROLE_KEY) {
     const token = authHeader.replace("Bearer ", "");
