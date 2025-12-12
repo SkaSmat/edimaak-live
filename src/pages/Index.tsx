@@ -251,7 +251,7 @@ const Index = () => {
                 <Button variant="ghost" onClick={() => navigate("/auth?role=sender")} size="sm" className="hidden md:inline-flex text-gray-600 text-xs sm:text-sm">
                   Devenir expéditeur
                 </Button>
-                <Button onClick={() => navigate("/auth")} size="sm" className="rounded-full px-3 sm:px-6 shadow-sm text-xs sm:text-sm h-8 sm:h-10">
+                <Button onClick={() => navigate("/auth")} size="sm" className="rounded-full px-3 sm:px-6 shadow-sm text-xs sm:text-sm h-8 sm:h-10 bg-primary text-white hover:bg-primary/90">
                   <span className="hidden sm:inline">Se connecter</span>
                   <span className="sm:hidden">Connexion</span>
                 </Button>
