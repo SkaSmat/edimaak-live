@@ -48,7 +48,7 @@ const Auth = () => {
   // Redirection intelligente
   const handleSmartRedirect = async (userId: string) => {
     try {
-      const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
+      const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
 
       const targetShipmentId = localStorage.getItem("targetShipmentId");
 
@@ -60,9 +60,17 @@ const Auth = () => {
           navigate("/dashboard/traveler");
         }
       } else if (data?.role === "sender") {
-        navigate("/dashboard/sender");
+        // If sender clicked on a shipment, propose to switch to traveler
+        if (targetShipmentId) {
+          localStorage.setItem("pendingShipmentSwitch", targetShipmentId);
+          navigate("/dashboard/sender");
+        } else {
+          navigate("/dashboard/sender");
+        }
       } else if (data?.role === "admin") {
         navigate("/admin");
+      } else {
+        navigate("/");
       }
     } catch (error) {
       console.error("Erreur redirection:", error);

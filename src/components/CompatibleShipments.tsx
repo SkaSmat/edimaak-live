@@ -237,12 +237,22 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
     const fetchTargetShipment = async () => {
       if (!highlightId) return;
       try {
+        // First try to get sender info via RPC
         const { data, error } = await supabase
           .from("shipment_requests")
-          .select("*, profiles:sender_id(full_name)")
+          .select("*")
           .eq("id", highlightId)
-          .single();
-        if (!error && data) setTargetShipment(data as unknown as ShipmentRequest);
+          .maybeSingle();
+        
+        if (!error && data) {
+          // Fetch sender display info
+          const { data: senderInfo } = await supabase.rpc('get_sender_display_info', { sender_uuid: data.sender_id });
+          setTargetShipment({
+            ...data,
+            sender_display_name: senderInfo?.[0]?.display_name || "Anonyme",
+            sender_avatar_url: senderInfo?.[0]?.avatar_url || null,
+          } as ShipmentRequest);
+        }
       } catch (err) {
         console.error(err);
       }

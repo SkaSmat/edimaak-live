@@ -123,25 +123,27 @@ const Index = () => {
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map(r => r.sender_id))];
         
-        // 2. Fetch sender display info using the SECURITY DEFINER function
+        // 2. Fetch sender display info and KYC status in parallel batches
         const senderInfoMap: Record<string, { display_name: string; avatar_url: string | null }> = {};
         const senderKycMap: Record<string, boolean> = {};
         
         if (session) {
-          // For authenticated users, fetch sender info and KYC status
-          for (const senderId of senderIds) {
-            const [senderResult, kycResult] = await Promise.all([
+          // Batch all RPC calls for better performance
+          const senderPromises = senderIds.map(senderId => 
+            Promise.all([
               supabase.rpc('get_sender_display_info', { sender_uuid: senderId }),
               supabase.rpc('get_public_kyc_status', { profile_id: senderId })
-            ]);
-            if (senderResult.data && senderResult.data.length > 0) {
-              senderInfoMap[senderId] = {
-                display_name: senderResult.data[0].display_name,
-                avatar_url: senderResult.data[0].avatar_url
-              };
-            }
-            senderKycMap[senderId] = kycResult.data === true;
-          }
+            ]).then(([senderResult, kycResult]) => {
+              if (senderResult.data && senderResult.data.length > 0) {
+                senderInfoMap[senderId] = {
+                  display_name: senderResult.data[0].display_name,
+                  avatar_url: senderResult.data[0].avatar_url
+                };
+              }
+              senderKycMap[senderId] = kycResult.data === true;
+            })
+          );
+          await Promise.all(senderPromises);
         }
 
         // 3. Fetch shipment counts per sender
@@ -409,11 +411,39 @@ connectant voyageurs et expéditeurs pour le transport de colis.
               <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun trajet ne correspond</h3>
-            <p className="text-sm sm:text-base text-gray-500 max-w-md mb-6 sm:mb-8">
-              Créez une alerte voyageur et nous vous préviendrons.
+            <p className="text-sm sm:text-base text-gray-500 max-w-md mb-4">
+              {session 
+                ? "Pas de colis disponibles pour ce trajet pour le moment." 
+                : "Créez un compte pour être notifié dès qu'un voyageur publie un trajet correspondant à votre recherche."}
             </p>
-            <Button onClick={() => navigate("/auth?role=traveler")} size="lg" className="rounded-full px-6 sm:px-8 text-sm sm:text-base shadow-lg shadow-primary/20">
-              Créer une alerte
+            {!session && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 max-w-md">
+                <p className="text-sm text-blue-800 font-medium mb-2">
+                  🔔 Recevez une notification par email
+                </p>
+                <p className="text-xs text-blue-600">
+                  En vous inscrivant comme voyageur, vous serez alerté(e) des nouvelles annonces sur ce trajet : 
+                  <strong> {localFromCity || fromCountry} → {localToCity || toCountry}</strong>
+                </p>
+              </div>
+            )}
+            <Button 
+              onClick={() => {
+                // Save search params to localStorage for post-registration
+                const searchIntent = {
+                  fromCity: localFromCity,
+                  toCity: localToCity,
+                  fromCountry,
+                  toCountry,
+                  date: localSearchDate
+                };
+                localStorage.setItem("searchIntent", JSON.stringify(searchIntent));
+                navigate("/auth?role=traveler&view=signup");
+              }} 
+              size="lg" 
+              className="rounded-full px-6 sm:px-8 text-sm sm:text-base shadow-lg shadow-primary/20"
+            >
+              {session ? "Créer une alerte" : "Créer un compte gratuit"}
             </Button>
           </div>}
 
