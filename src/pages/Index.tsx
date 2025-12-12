@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -67,6 +67,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
+  const [alertCreated, setAlertCreated] = useState(false);
+  const [isCreatingAlert, setIsCreatingAlert] = useState(false);
   const currentFromCity = searchParams.get("from") || "";
   const currentToCity = searchParams.get("to") || "";
   const currentSearchDate = searchParams.get("date") || "";
@@ -410,41 +412,118 @@ connectant voyageurs et expéditeurs pour le transport de colis.
             <div className="bg-primary/10 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
               <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun trajet ne correspond</h3>
-            <p className="text-sm sm:text-base text-gray-500 max-w-md mb-4">
-              {session 
-                ? "Pas de colis disponibles pour ce trajet pour le moment." 
-                : "Créez un compte pour être notifié dès qu'un voyageur publie un trajet correspondant à votre recherche."}
-            </p>
-            {!session && (
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 max-w-md">
-                <p className="text-sm text-blue-800 font-medium mb-2">
-                  🔔 Recevez une notification par email
-                </p>
-                <p className="text-xs text-blue-600">
-                  En vous inscrivant comme voyageur, vous serez alerté(e) des nouvelles annonces sur ce trajet : 
-                  <strong> {localFromCity || fromCountry} → {localToCity || toCountry}</strong>
-                </p>
-              </div>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Aucun colis ne correspond</h3>
+            
+            {/* Cas utilisateur connecté avec alerte créée */}
+            {session && alertCreated && (
+              <>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 max-w-md">
+                  <div className="flex items-center gap-2 text-green-700 font-medium mb-1">
+                    <CheckCircle className="w-5 h-5" />
+                    <span>Alerte créée avec succès !</span>
+                  </div>
+                  <p className="text-sm text-green-600">
+                    Vous serez notifié par email dès qu'un colis correspondant à 
+                    <strong> {localFromCity || fromCountry} → {localToCity || toCountry}</strong> sera publié.
+                  </p>
+                </div>
+              </>
             )}
-            <Button 
-              onClick={() => {
-                // Save search params to localStorage for post-registration
-                const searchIntent = {
-                  fromCity: localFromCity,
-                  toCity: localToCity,
-                  fromCountry,
-                  toCountry,
-                  date: localSearchDate
-                };
-                localStorage.setItem("searchIntent", JSON.stringify(searchIntent));
-                navigate("/auth?role=traveler&view=signup");
-              }} 
-              size="lg" 
-              className="rounded-full px-6 sm:px-8 text-sm sm:text-base shadow-lg shadow-primary/20"
-            >
-              {session ? "Créer une alerte" : "Créer un compte gratuit"}
-            </Button>
+            
+            {/* Cas utilisateur connecté sans alerte */}
+            {session && !alertCreated && (
+              <>
+                <p className="text-sm sm:text-base text-gray-500 max-w-md mb-4">
+                  Pas de colis disponibles pour ce trajet pour le moment.
+                </p>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 max-w-md">
+                  <p className="text-sm text-blue-800 font-medium mb-2">
+                    🔔 Créez une alerte pour ce trajet
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Recevez un email dès qu'un colis <strong>{localFromCity || fromCountry} → {localToCity || toCountry}</strong> sera publié.
+                  </p>
+                </div>
+                <Button 
+                  onClick={async () => {
+                    if (!session?.user?.id) return;
+                    setIsCreatingAlert(true);
+                    try {
+                      const { error } = await supabase.from("shipment_alerts").insert({
+                        user_id: session.user.id,
+                        from_city: localFromCity || null,
+                        from_country: fromCountry,
+                        to_city: localToCity || null,
+                        to_country: toCountry,
+                      });
+                      if (error) {
+                        if (error.code === "23505") {
+                          toast.info("Vous avez déjà une alerte pour ce trajet");
+                          setAlertCreated(true);
+                        } else {
+                          throw error;
+                        }
+                      } else {
+                        setAlertCreated(true);
+                        toast.success("Alerte créée ! Vous recevrez un email dès qu'un colis correspondant sera publié.");
+                      }
+                    } catch (err) {
+                      console.error("Error creating alert:", err);
+                      toast.error("Erreur lors de la création de l'alerte");
+                    } finally {
+                      setIsCreatingAlert(false);
+                    }
+                  }} 
+                  size="lg" 
+                  disabled={isCreatingAlert}
+                  className="rounded-full px-6 sm:px-8 text-sm sm:text-base shadow-lg shadow-primary/20"
+                >
+                  {isCreatingAlert ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    "Créer une alerte"
+                  )}
+                </Button>
+              </>
+            )}
+            
+            {/* Cas utilisateur non connecté */}
+            {!session && (
+              <>
+                <p className="text-sm sm:text-base text-gray-500 max-w-md mb-4">
+                  Créez un compte pour être notifié dès qu'un colis correspondant à votre recherche sera publié.
+                </p>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 max-w-md">
+                  <p className="text-sm text-blue-800 font-medium mb-2">
+                    🔔 Recevez une notification par email
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    En vous inscrivant comme voyageur, vous serez alerté(e) des nouvelles annonces sur ce trajet : 
+                    <strong> {localFromCity || fromCountry} → {localToCity || toCountry}</strong>
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => {
+                    const searchIntent = {
+                      fromCity: localFromCity,
+                      toCity: localToCity,
+                      fromCountry,
+                      toCountry,
+                      date: localSearchDate
+                    };
+                    localStorage.setItem("searchIntent", JSON.stringify(searchIntent));
+                    navigate("/auth?role=traveler&view=signup");
+                  }} 
+                  size="lg" 
+                  className="rounded-full px-6 sm:px-8 text-sm sm:text-base shadow-lg shadow-primary/20"
+                >
+                  Créer un compte gratuit
+                </Button>
+              </>
+            )}
           </div>}
 
         {!isLoading && filteredRequests.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">

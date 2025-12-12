@@ -228,6 +228,47 @@ export type Database = {
         }
         Relationships: []
       }
+      shipment_alerts: {
+        Row: {
+          created_at: string
+          from_city: string | null
+          from_country: string
+          id: string
+          is_active: boolean
+          to_city: string | null
+          to_country: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_city?: string | null
+          from_country: string
+          id?: string
+          is_active?: boolean
+          to_city?: string | null
+          to_country: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_city?: string | null
+          from_country?: string
+          id?: string
+          is_active?: boolean
+          to_city?: string | null
+          to_country?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipment_requests: {
         Row: {
           created_at: string

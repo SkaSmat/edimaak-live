@@ -13,13 +13,11 @@ const corsHeaders = {
 
 // Verify request is from internal database trigger or has valid webhook secret
 function isAuthorizedRequest(req: Request): boolean {
-  // Check for webhook secret (for external authenticated calls)
   const webhookSecret = req.headers.get("x-webhook-secret");
   if (webhookSecret && WEBHOOK_SECRET && webhookSecret === WEBHOOK_SECRET) {
     return true;
   }
   
-  // Check for service role key in authorization header (for internal database trigger calls via pg_net)
   const authHeader = req.headers.get("authorization");
   if (authHeader && SUPABASE_SERVICE_ROLE_KEY) {
     const token = authHeader.replace("Bearer ", "");
@@ -82,13 +80,15 @@ const formatDate = (dateStr: string): string => {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 };
 
+// Helper function to delay execution (for rate limiting)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Authorization verification
     if (!isAuthorizedRequest(req)) {
       console.error("Unauthorized: Invalid or missing authentication");
       return new Response(
@@ -97,7 +97,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Parse and validate payload
     const rawPayload = await req.json();
     const parseResult = WebhookPayloadSchema.safeParse(rawPayload);
     
@@ -114,7 +113,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { record } = payload;
 
-    // Only process if status is 'open'
     if (record.status !== "open") {
       console.log("Shipment status is not 'open', skipping notification");
       return new Response(
@@ -128,7 +126,49 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get all travelers (excluding the sender) - explicit limit to avoid default Supabase limit
+    // 1. First, notify users with matching alerts (priority)
+    const { data: matchingAlerts, error: alertsError } = await supabaseAdmin
+      .from("shipment_alerts")
+      .select("user_id")
+      .eq("is_active", true)
+      .eq("from_country", record.from_country)
+      .eq("to_country", record.to_country)
+      .neq("user_id", record.sender_id);
+
+    if (alertsError) {
+      console.error("Error fetching alerts:", alertsError);
+    }
+
+    // Filter alerts by city match (if specified in alert)
+    const alertUserIds = new Set<string>();
+    if (matchingAlerts) {
+      for (const alert of matchingAlerts) {
+        // We need to check city match separately since we can't do OR/NULL in the query easily
+        const { data: alertDetails } = await supabaseAdmin
+          .from("shipment_alerts")
+          .select("from_city, to_city")
+          .eq("user_id", alert.user_id)
+          .eq("from_country", record.from_country)
+          .eq("to_country", record.to_country)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (alertDetails) {
+          const fromCityMatch = !alertDetails.from_city || 
+            record.from_city.toLowerCase().includes(alertDetails.from_city.toLowerCase());
+          const toCityMatch = !alertDetails.to_city || 
+            record.to_city.toLowerCase().includes(alertDetails.to_city.toLowerCase());
+          
+          if (fromCityMatch && toCityMatch) {
+            alertUserIds.add(alert.user_id);
+          }
+        }
+      }
+    }
+
+    console.log(`Found ${alertUserIds.size} users with matching alerts`);
+
+    // 2. Get all travelers (excluding the sender and alert users - they get priority email)
     const { data: travelers, error: travelersError } = await supabaseAdmin
       .from("profiles")
       .select("id, first_name, full_name")
@@ -144,44 +184,82 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!travelers || travelers.length === 0) {
-      console.log("No travelers to notify");
+    // Combine: alert users first (they get priority), then other travelers
+    const allRecipients: { userId: string; firstName: string; isAlert: boolean }[] = [];
+    
+    // Add alert users first
+    for (const userId of alertUserIds) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("first_name, full_name")
+        .eq("id", userId)
+        .maybeSingle();
+      
+      if (profile) {
+        allRecipients.push({
+          userId,
+          firstName: profile.first_name || profile.full_name?.split(" ")[0] || "Voyageur",
+          isAlert: true,
+        });
+      }
+    }
+    
+    // Add other travelers (excluding alert users to avoid duplicates)
+    if (travelers) {
+      for (const traveler of travelers) {
+        if (!alertUserIds.has(traveler.id)) {
+          allRecipients.push({
+            userId: traveler.id,
+            firstName: traveler.first_name || traveler.full_name?.split(" ")[0] || "Voyageur",
+            isAlert: false,
+          });
+        }
+      }
+    }
+
+    if (allRecipients.length === 0) {
+      console.log("No recipients to notify");
       return new Response(
-        JSON.stringify({ success: true, message: "No travelers to notify" }),
+        JSON.stringify({ success: true, message: "No recipients to notify" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Found ${travelers.length} travelers to notify`);
+    console.log(`Total recipients: ${allRecipients.length} (${alertUserIds.size} alerts, ${allRecipients.length - alertUserIds.size} travelers)`);
 
-    // Get emails for all travelers
-    const travelerEmails: { email: string; firstName: string }[] = [];
+    // Get emails for all recipients
+    const recipientEmails: { email: string; firstName: string; isAlert: boolean }[] = [];
     
-    for (const traveler of travelers) {
-      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(traveler.id);
+    for (const recipient of allRecipients) {
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(recipient.userId);
       
       if (!userError && userData?.user?.email) {
-        travelerEmails.push({
+        recipientEmails.push({
           email: userData.user.email,
-          firstName: traveler.first_name || traveler.full_name?.split(" ")[0] || "Voyageur",
+          firstName: recipient.firstName,
+          isAlert: recipient.isAlert,
         });
       }
     }
 
-    console.log(`Sending notifications to ${travelerEmails.length} travelers`);
-
-    // Helper function to delay execution (for rate limiting)
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    console.log(`Sending notifications to ${recipientEmails.length} recipients`);
 
     // Send emails sequentially with delay to respect Resend rate limit (2 req/sec)
     let successful = 0;
     let failed = 0;
     const failedDetails: { email: string; reason: string }[] = [];
 
-    for (const { email, firstName } of travelerEmails) {
+    for (let i = 0; i < recipientEmails.length; i++) {
+      const { email, firstName, isAlert } = recipientEmails[i];
+      
       const priceSection = record.price 
         ? `<div class="detail">💰 <strong>Compensation :</strong> ${record.price}€</div>`
         : "";
+
+      // Different messaging for alert users vs regular travelers
+      const introMessage = isAlert 
+        ? `<p><strong>🔔 Bonne nouvelle !</strong> Un colis correspondant à votre alerte vient d'être publié :</p>`
+        : `<p>Une nouvelle demande d'expédition vient d'être publiée sur EdiMaak :</p>`;
 
       const emailHtml = `
 <!DOCTYPE html>
@@ -195,23 +273,25 @@ const handler = async (req: Request): Promise<Response> => {
     .detail { margin: 10px 0; padding: 12px; background: white; border-radius: 5px; border-left: 3px solid #E75C3C; }
     .cta { display: inline-block; background: #E75C3C; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
     .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+    .alert-badge { background: #22c55e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; display: inline-block; margin-bottom: 15px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>📦 Nouvelle demande d'expédition</h1>
+    <h1>📦 ${isAlert ? "Alerte : Nouveau colis disponible !" : "Nouvelle demande d'expédition"}</h1>
     <p>${record.from_city} → ${record.to_city}</p>
   </div>
   <div class="content">
+    ${isAlert ? '<span class="alert-badge">✓ Correspond à votre alerte</span>' : ''}
     <p>Bonjour <strong>${firstName}</strong>,</p>
-    <p>Une nouvelle demande d'expédition vient d'être publiée sur EdiMaak :</p>
+    ${introMessage}
     
     <div class="detail">🗺️ <strong>Trajet :</strong> ${record.from_city} (${record.from_country}) → ${record.to_city} (${record.to_country})</div>
     <div class="detail">📦 <strong>Type :</strong> ${record.item_type}</div>
     ${priceSection}
     <div class="detail">📅 <strong>Date souhaitée :</strong> Entre le ${formatDate(record.earliest_date)} et le ${formatDate(record.latest_date)}</div>
     
-    <p>Cette annonce correspond peut-être à votre prochain voyage !</p>
+    <p>${isAlert ? "Ne manquez pas cette opportunité !" : "Cette annonce correspond peut-être à votre prochain voyage !"}</p>
     
     <p style="text-align: center;">
       <a href="https://edimaak.com/" class="cta">👉 Voir l'annonce</a>
@@ -222,16 +302,22 @@ const handler = async (req: Request): Promise<Response> => {
   </div>
   <div class="footer">
     <p>© 2025 EdiMaak - Tous droits réservés</p>
-    <p><small>Vous recevez cet email car vous êtes inscrit comme voyageur sur EdiMaak.</small></p>
+    <p><small>Vous recevez cet email car ${isAlert ? "vous avez créé une alerte pour ce trajet" : "vous êtes inscrit comme voyageur"} sur EdiMaak.</small></p>
   </div>
 </body>
 </html>
       `;
 
       try {
-        await sendEmail(email, `📦 Nouvelle demande d'expédition ${record.from_city} → ${record.to_city}`, emailHtml);
+        await sendEmail(
+          email, 
+          isAlert 
+            ? `🔔 Alerte : Nouveau colis ${record.from_city} → ${record.to_city}` 
+            : `📦 Nouvelle demande d'expédition ${record.from_city} → ${record.to_city}`, 
+          emailHtml
+        );
         successful++;
-        console.log(`Email sent successfully to ${email}`);
+        console.log(`Email sent successfully to ${email} (alert: ${isAlert})`);
       } catch (error: any) {
         failed++;
         failedDetails.push({ email, reason: error.message || "Unknown error" });
@@ -239,12 +325,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       // Wait 600ms between emails to respect Resend rate limit (2 req/sec)
-      if (travelerEmails.indexOf({ email, firstName }) < travelerEmails.length - 1) {
+      if (i < recipientEmails.length - 1) {
         await delay(600);
       }
     }
     
-    // Log summary
     if (failedDetails.length > 0) {
       console.error("Failed email details:", failedDetails);
     }
@@ -256,7 +341,8 @@ const handler = async (req: Request): Promise<Response> => {
         success: true, 
         sent: successful, 
         failed: failed,
-        totalTravelers: travelerEmails.length 
+        alertUsers: alertUserIds.size,
+        totalRecipients: recipientEmails.length 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
