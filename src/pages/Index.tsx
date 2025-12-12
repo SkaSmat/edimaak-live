@@ -104,12 +104,18 @@ const Index = () => {
     navigate(getDashboardPath(userRole));
   }, [userRole, navigate, resetUnreadCount]);
   useEffect(() => {
-    // On attend que authLoading soit terminé avant de fetch
-    if (!authLoading) {
-      fetchShipmentRequests();
+    // Chargement initial des annonces même si l'auth n'est pas encore prête
+    fetchShipmentRequests(null);
+  }, []);
+
+  useEffect(() => {
+    // Lorsque l'utilisateur est connu, on refetch pour exclure ses propres annonces
+    if (!authLoading && session?.user?.id) {
+      fetchShipmentRequests(session.user.id);
     }
-  }, [authLoading, session?.user?.id]); // Dépend de session pour re-fetch si l'utilisateur se connecte
-  const fetchShipmentRequests = async () => {
+  }, [authLoading, session?.user?.id]);
+
+  const fetchShipmentRequests = async (currentUserId: string | null) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -117,10 +123,13 @@ const Index = () => {
       const {
         data,
         error: fetchError
-      } = await supabase.from("shipment_requests").select("*").eq("status", "open").neq("sender_id", session?.user?.id || "00000000-0000-0000-0000-000000000000")
-      .order("created_at", {
-        ascending: false
-      }).limit(20);
+      } = await supabase
+        .from("shipment_requests")
+        .select("*")
+        .eq("status", "open")
+        .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
+        .order("created_at", { ascending: false })
+        .limit(20);
       if (fetchError) throw fetchError;
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map(r => r.sender_id))];
