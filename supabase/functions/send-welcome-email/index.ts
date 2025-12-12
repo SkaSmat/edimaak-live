@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,30 @@ const WebhookPayloadSchema = z.object({
   }),
   schema: z.string(),
 });
+
+// Authorization check - verifies the request comes from a trusted source
+function isAuthorizedRequest(req: Request): boolean {
+  // Check for webhook secret header (external webhook calls)
+  const webhookSecret = req.headers.get("x-webhook-secret");
+  if (webhookSecret && WEBHOOK_SECRET && webhookSecret === WEBHOOK_SECRET) {
+    return true;
+  }
+  
+  // Check for database trigger call (internal pg_net calls)
+  const clientInfo = req.headers.get("x-client-info");
+  if (clientInfo === "supabase-db-trigger") {
+    return true;
+  }
+  
+  // Check for service role key in Authorization header (database trigger calls)
+  const authHeader = req.headers.get("authorization");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (authHeader && serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) {
+    return true;
+  }
+  
+  return false;
+}
 
 async function sendEmail(to: string, subject: string, html: string) {
   const response = await fetch("https://api.resend.com/emails", {
@@ -51,8 +76,14 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // No auth check needed - this function is called from pg_net which doesn't pass auth headers
-    // The function is protected by being called only from database triggers
+    // Authorization check - verify the request comes from a trusted source
+    if (!isAuthorizedRequest(req)) {
+      console.error("Unauthorized request to send-welcome-email");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Parse and validate payload
     const rawPayload = await req.json();
