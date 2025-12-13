@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 
 const TravelerTrips = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showTripForm, setShowTripForm] = useState(false);
@@ -17,7 +18,11 @@ const TravelerTrips = () => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+    // Open form if ?new=true is in URL
+    if (searchParams.get("new") === "true") {
+      setShowTripForm(true);
+    }
+  }, [searchParams]);
 
   const checkAuth = async () => {
     const {
