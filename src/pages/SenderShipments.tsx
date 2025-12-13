@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -15,6 +15,7 @@ interface SenderShipmentsProps {
 
 const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -23,7 +24,11 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+    // Open form if ?new=true is in URL
+    if (searchParams.get("new") === "true") {
+      setShowRequestForm(true);
+    }
+  }, [searchParams]);
 
   const checkAuth = async () => {
     try {
@@ -102,7 +107,7 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
           ) : (
             <>
               <Plus className="w-4 h-4 mr-2" />
-              Nouvelle demande
+              Envoyer un colis
             </>
           )}
         </Button>
