@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Upload, X, AlertTriangle, Shield, Clock, XCircle } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
+import { WORLD_COUNTRIES } from "@/lib/worldData";
 import { z } from "zod";
 
 interface ShipmentRequestFormProps {
@@ -18,7 +19,7 @@ interface ShipmentRequestFormProps {
 
 type KycStatus = "verified" | "pending" | "rejected" | "not_submitted" | null;
 
-const COUNTRIES = ["France", "Algérie", "Belgique", "Canada", "Espagne", "Royaume-Uni"];
+const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
 const VALID_ITEM_TYPES = ["Documents", "Vêtements", "Médicaments", "Argent", "Autres"] as const;
 
 // Zod schema for shipment request validation

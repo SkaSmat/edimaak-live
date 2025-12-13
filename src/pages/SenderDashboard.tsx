@@ -201,13 +201,21 @@ const SenderDashboard = () => {
             </div>
             <div className="text-xl sm:text-2xl font-bold">{stats.activeRequests}</div>
             <p className="text-xs text-muted-foreground mt-1">Demandes actives</p>
-            <div className="mt-3 sm:mt-4">
+            <div className="mt-3 sm:mt-4 flex flex-col gap-2">
               <Button
                 onClick={() => navigate("/dashboard/sender/shipments")}
                 variant="link"
-                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1"
+                className="p-0 h-auto text-primary text-xs sm:text-sm flex items-center gap-1 justify-start"
               >
                 Voir mes demandes <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </Button>
+              <Button
+                onClick={() => navigate("/dashboard/sender/shipments?new=true")}
+                size="sm"
+                className="w-full mt-1 bg-primary hover:bg-primary/90 text-white text-xs sm:text-sm"
+              >
+                <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
+                Nouvelle demande
               </Button>
             </div>
           </div>

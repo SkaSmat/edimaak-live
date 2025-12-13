@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, ArrowRightLeft, Shield, Clock, XCircle } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
+import { WORLD_COUNTRIES } from "@/lib/worldData";
 import { z } from "zod";
 
 interface TripFormProps {
@@ -17,7 +18,7 @@ interface TripFormProps {
 
 type KycStatus = "verified" | "pending" | "rejected" | "not_submitted" | null;
 
-const COUNTRIES = ["France", "Algérie", "Belgique", "Canada", "Espagne", "Royaume-Uni"];
+const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
 
 // Zod schema for trip form validation
 const tripSchema = z.object({

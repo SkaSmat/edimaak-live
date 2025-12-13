@@ -42,8 +42,11 @@ interface ShipmentRequest {
   sender_kyc_verified?: boolean;
 }
 
-// Liste des pays disponibles
-const COUNTRIES = ["Algérie", "Belgique", "France", "Canada", "Espagne", "Royaume-Uni"];
+// Import world countries for intelligent selection
+import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
+
+// Liste des pays disponibles - now uses all world countries
+const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
