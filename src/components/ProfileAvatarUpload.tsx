@@ -46,8 +46,9 @@ export const ProfileAvatarUpload = ({
         await supabase.storage.from("avatars").remove([oldPath]);
       }
 
-      // Upload new avatar
-      const filePath = `${userId}/avatar`;
+      // Upload new avatar with unique filename to bust cache
+      const timestamp = Date.now();
+      const filePath = `${userId}/avatar_${timestamp}`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, { upsert: true });
@@ -59,20 +60,15 @@ export const ProfileAvatarUpload = ({
         .from("avatars")
         .getPublicUrl(filePath);
 
-      // Use stable URL without cache buster for database storage
-      // The browser will cache based on the actual file content
-      const stableUrl = publicUrl;
-
-      // Update profile with stable URL
+      // Update profile with the new URL (unique path ensures no cache issues)
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: stableUrl })
+        .update({ avatar_url: publicUrl })
         .eq("id", userId);
 
       if (updateError) throw updateError;
 
-      // Pass URL with cache buster for immediate UI update only
-      onAvatarUpdated(`${stableUrl}?t=${Date.now()}`);
+      onAvatarUpdated(publicUrl);
       toast.success("Photo de profil mise à jour");
     } catch (error: any) {
       console.error("Error uploading avatar:", error);
@@ -88,9 +84,13 @@ export const ProfileAvatarUpload = ({
     setIsDeleting(true);
 
     try {
-      // Delete from storage
-      const filePath = `${userId}/avatar`;
-      await supabase.storage.from("avatars").remove([filePath]);
+      // Extract the file path from the URL
+      const urlParts = currentAvatarUrl.split('/avatars/');
+      const filePath = urlParts[1]?.split('?')[0]; // Remove any query params
+      
+      if (filePath) {
+        await supabase.storage.from("avatars").remove([filePath]);
+      }
 
       // Update profile
       const { error: updateError } = await supabase
