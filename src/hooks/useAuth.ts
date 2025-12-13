@@ -1,23 +1,44 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type UserRole = "sender" | "traveler" | "admin" | null;
 
+const AUTH_TIMEOUT_MS = 5000; // 5 second timeout to prevent infinite loading
+
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     const initializeAuth = async () => {
+      // Set a timeout to prevent infinite loading state
+      timeoutRef.current = setTimeout(() => {
+        if (mountedRef.current && isLoading) {
+          console.warn("Auth timeout - forcing loading to complete");
+          setIsLoading(false);
+        }
+      }, AUTH_TIMEOUT_MS);
+
       try {
         const {
           data: { session },
           error,
         } = await supabase.auth.getSession();
 
-        if (error) throw error;
+        if (!mountedRef.current) return;
+
+        if (error) {
+          console.error("Session error:", error);
+          setSession(null);
+          setIsLoading(false);
+          return;
+        }
 
         setSession(session);
         if (session) {
@@ -27,7 +48,9 @@ export const useAuth = () => {
         }
       } catch (error) {
         console.error("Erreur d'initialisation:", error);
-        setIsLoading(false);
+        if (mountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -36,6 +59,8 @@ export const useAuth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mountedRef.current) return;
+      
       setSession(session);
       if (session) {
         await fetchUserRole(session.user.id);
@@ -45,7 +70,13 @@ export const useAuth = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserRole = async (userId: string): Promise<void> => {
@@ -54,16 +85,28 @@ export const useAuth = () => {
         .from("profiles")
         .select("role")
         .eq("id", userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle to prevent errors when no row found
 
-      if (error) throw error;
+      if (!mountedRef.current) return;
 
-      setUserRole((data?.role as UserRole) || null);
+      if (error) {
+        console.error("Erreur rôle:", error);
+        setUserRole(null);
+      } else {
+        setUserRole((data?.role as UserRole) || null);
+      }
     } catch (error) {
       console.error("Erreur rôle:", error);
-      setUserRole(null);
+      if (mountedRef.current) {
+        setUserRole(null);
+      }
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      }
     }
   };
 

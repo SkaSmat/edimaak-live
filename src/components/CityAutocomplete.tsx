@@ -4,118 +4,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-export const CITIES_FRANCE = [
-  "Paris",
-  "Marseille",
-  "Lyon",
-  "Toulouse",
-  "Nice",
-  "Nantes",
-  "Montpellier",
-  "Strasbourg",
-  "Bordeaux",
-  "Lille",
-  "Rennes",
-  "Reims",
-  "Saint-Étienne",
-  "Le Havre",
-  "Toulon",
-  "Grenoble",
-  "Dijon",
-  "Angers",
-  "Nîmes",
-  "Villeurbanne",
-].sort();
-
-export const CITIES_ALGERIA = [
-  "Alger",
-  "Oran",
-  "Constantine",
-  "Annaba",
-  "Blida",
-  "Batna",
-  "Djelfa",
-  "Sétif",
-  "Sidi Bel Abbès",
-  "Biskra",
-  "Tébessa",
-  "El Oued",
-  "Skikda",
-  "Tiaret",
-  "Béjaïa",
-  "Tlemcen",
-  "Ouargla",
-  "Béchar",
-  "Mostaganem",
-  "Bordj Bou Arreridj",
-].sort();
-
-export const CITIES_CANADA = [
-  "Montréal",
-  "Québec",
-  "Ottawa",
-  "Toronto",
-  "Vancouver",
-  "Gatineau",
-  "Laval",
-  "Longueuil",
-  "Sherbrooke",
-  "Calgary",
-  "Edmonton",
-].sort();
-
-export const CITIES_SPAIN = [
-  "Madrid",
-  "Barcelone",
-  "Valence",
-  "Séville",
-  "Saragosse",
-  "Málaga",
-  "Murcie",
-  "Palma",
-  "Las Palmas",
-  "Bilbao",
-  "Alicante",
-].sort();
-
-export const CITIES_UK = [
-  "Londres",
-  "Birmingham",
-  "Manchester",
-  "Glasgow",
-  "Newcastle",
-  "Sheffield",
-  "Liverpool",
-  "Leeds",
-  "Bristol",
-  "Édimbourg",
-].sort();
-
-export const CITIES_BELGIUM = [
-  "Bruxelles",
-  "Anvers",
-  "Gand",
-  "Charleroi",
-  "Liège",
-  "Bruges",
-  "Namur",
-  "Louvain",
-  "Mons",
-  "Ostende",
-  "Courtrai",
-  "Malines",
-  "Hasselt",
-  "Tournai",
-  "Arlon",
-].sort();
+import { getCitiesForCountry, getAllCities } from "@/lib/worldData";
 
 interface CityAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  // On accepte n'importe quelle string pour être flexible
   limitToCountry?: string | null;
 }
 
@@ -128,30 +23,15 @@ export function CityAutocomplete({
 }: CityAutocompleteProps) {
   const [open, setOpen] = React.useState(false);
 
-  let cities: string[] = [];
-
-  switch (limitToCountry) {
-    case "France":
-      cities = CITIES_FRANCE;
-      break;
-    case "Algérie":
-      cities = CITIES_ALGERIA;
-      break;
-    case "Canada":
-      cities = CITIES_CANADA;
-      break;
-    case "Espagne":
-      cities = CITIES_SPAIN;
-      break;
-    case "Royaume-Uni":
-      cities = CITIES_UK;
-      break;
-    case "Belgique":
-      cities = CITIES_BELGIUM;
-      break;
-    default:
-      cities = [...CITIES_ALGERIA, ...CITIES_FRANCE, ...CITIES_SPAIN, ...CITIES_BELGIUM].sort();
-  }
+  // Get cities based on country - uses the new world data
+  const cities = React.useMemo(() => {
+    if (limitToCountry) {
+      const countryCities = getCitiesForCountry(limitToCountry);
+      // If country has cities, use them; otherwise allow manual input
+      return countryCities.length > 0 ? countryCities : [];
+    }
+    return getAllCities();
+  }, [limitToCountry]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -166,11 +46,33 @@ export function CityAutocomplete({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-[300px] p-0 bg-popover border shadow-lg z-50" align="start">
         <Command>
-          <CommandInput placeholder={limitToCountry ? `Ville (${limitToCountry})...` : "Rechercher..."} />
+          <CommandInput 
+            placeholder={limitToCountry ? `Ville (${limitToCountry})...` : "Rechercher une ville..."} 
+            onValueChange={(search) => {
+              // Allow typing custom city if search doesn't match existing ones
+              if (search && !cities.some(c => c.toLowerCase() === search.toLowerCase())) {
+                // Will be handled on selection
+              }
+            }}
+          />
           <CommandList>
-            <CommandEmpty>Ville introuvable.</CommandEmpty>
+            <CommandEmpty>
+              <div className="py-2 px-3 text-sm">
+                <p className="text-muted-foreground mb-2">Ville introuvable dans la liste.</p>
+                {value !== "" && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => setOpen(false)}
+                  >
+                    Utiliser la saisie actuelle
+                  </Button>
+                )}
+              </div>
+            </CommandEmpty>
             <CommandGroup>
               {cities.map((city) => (
                 <CommandItem
@@ -194,3 +96,11 @@ export function CityAutocomplete({
     </Popover>
   );
 }
+
+// Legacy exports for backward compatibility
+export const CITIES_FRANCE = getCitiesForCountry("France");
+export const CITIES_ALGERIA = getCitiesForCountry("Algérie");
+export const CITIES_CANADA = getCitiesForCountry("Canada");
+export const CITIES_SPAIN = getCitiesForCountry("Espagne");
+export const CITIES_UK = getCitiesForCountry("Royaume-Uni");
+export const CITIES_BELGIUM = getCitiesForCountry("Belgique");
