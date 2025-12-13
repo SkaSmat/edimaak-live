@@ -59,18 +59,20 @@ export const ProfileAvatarUpload = ({
         .from("avatars")
         .getPublicUrl(filePath);
 
-      // Add cache buster
-      const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
+      // Use stable URL without cache buster for database storage
+      // The browser will cache based on the actual file content
+      const stableUrl = publicUrl;
 
-      // Update profile
+      // Update profile with stable URL
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: urlWithCacheBuster })
+        .update({ avatar_url: stableUrl })
         .eq("id", userId);
 
       if (updateError) throw updateError;
 
-      onAvatarUpdated(urlWithCacheBuster);
+      // Pass URL with cache buster for immediate UI update only
+      onAvatarUpdated(`${stableUrl}?t=${Date.now()}`);
       toast.success("Photo de profil mise à jour");
     } catch (error: any) {
       console.error("Error uploading avatar:", error);

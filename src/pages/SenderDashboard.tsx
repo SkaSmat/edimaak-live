@@ -215,7 +215,7 @@ const SenderDashboard = () => {
                 className="w-full mt-1 bg-primary hover:bg-primary/90 text-white text-xs sm:text-sm"
               >
                 <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
-                Nouvelle demande
+                Envoyer un colis
               </Button>
             </div>
           </div>

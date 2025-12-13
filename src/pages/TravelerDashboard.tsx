@@ -112,6 +112,14 @@ const TravelerDashboard = () => {
               >
                 Voir mes voyages <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
+              <Button
+                onClick={() => navigate("/dashboard/traveler/trips?new=true")}
+                size="sm"
+                className="w-full mt-2 bg-primary hover:bg-primary/90 text-white text-xs sm:text-sm"
+              >
+                <Plane className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
+                Nouveau voyage
+              </Button>
             </CardContent>
           </Card>
 
