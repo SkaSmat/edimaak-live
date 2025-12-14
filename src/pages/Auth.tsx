@@ -12,6 +12,7 @@ import { AuthLogo } from "@/components/LogoIcon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getPhoneCodeOptions, getPhoneCodeById } from "@/lib/countryData";
 import { validatePhoneNumber, formatFullPhoneNumber } from "@/lib/phoneValidation";
+import { OnboardingModal } from "@/components/OnboardingModal";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -33,6 +34,7 @@ const Auth = () => {
   const [view, setView] = useState<AuthView>(viewFromUrl === "signup" ? "signup" : "login");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // État pour l'indicatif (stocke l'id du pays, ex: "FR")
   const [phoneCode, setPhoneCode] = useState("FR");
@@ -161,7 +163,8 @@ const Auth = () => {
         toast.success("Compte créé !");
 
         if (data.session) {
-          await handleSmartRedirect(data.user!.id);
+          // Show onboarding modal for new signups instead of direct redirect
+          setShowOnboarding(true);
         } else {
           toast.info("Vérifiez vos emails pour confirmer le compte.");
         }
@@ -360,6 +363,12 @@ const Auth = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Onboarding Modal for new signups */}
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
     </div>
   );
 };
