@@ -35,6 +35,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isNewSignup, setIsNewSignup] = useState(false);
 
   // État pour l'indicatif (stocke l'id du pays, ex: "FR")
   const [phoneCode, setPhoneCode] = useState("FR");
@@ -81,16 +82,17 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    // 1. Vérif session classique
+    // 1. Vérif session classique (only for returning users, not new signups)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) handleSmartRedirect(session.user.id);
+      if (session && !isNewSignup) handleSmartRedirect(session.user.id);
     });
 
     // 2. Écouteur d'événements (C'est ici qu'on gère le cas Mobile)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
+      // Only redirect for login, NOT for new signups (they see the onboarding modal)
+      if (event === "SIGNED_IN" && session && !isNewSignup) {
         handleSmartRedirect(session.user.id);
       }
       // AJOUT : Si c'est une récupération de mot de passe, on file direct au profil
@@ -100,7 +102,7 @@ const Auth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isNewSignup]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +165,8 @@ const Auth = () => {
         toast.success("Compte créé !");
 
         if (data.session) {
+          // Mark as new signup to prevent auto-redirect from onAuthStateChange
+          setIsNewSignup(true);
           // Show onboarding modal for new signups instead of direct redirect
           setShowOnboarding(true);
         } else {
