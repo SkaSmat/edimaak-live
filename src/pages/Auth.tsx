@@ -91,12 +91,9 @@ const Auth = () => {
     // 2. Écouteur d'événements (C'est ici qu'on gère le cas Mobile)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      // Only redirect for login, NOT for new signups (they see the onboarding modal)
-      if (event === "SIGNED_IN" && session && !isNewSignupRef.current) {
-        handleSmartRedirect(session.user.id);
-      }
-      // AJOUT : Si c'est une récupération de mot de passe, on file direct au profil
+    } = supabase.auth.onAuthStateChange((event) => {
+      // On ne gère ici que la récupération de mot de passe pour éviter
+      // de rediriger automatiquement après un SIGNED_IN (qui ferme le modal onboarding)
       if (event === "PASSWORD_RECOVERY") {
         navigate("/profile");
       }
