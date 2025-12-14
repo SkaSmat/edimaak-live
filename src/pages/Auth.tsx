@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isNewSignup, setIsNewSignup] = useState(false);
+  // Use ref instead of state to prevent race condition with onAuthStateChange
+  const isNewSignupRef = useRef(false);
 
   // État pour l'indicatif (stocke l'id du pays, ex: "FR")
   const [phoneCode, setPhoneCode] = useState("FR");
@@ -84,7 +85,7 @@ const Auth = () => {
   useEffect(() => {
     // 1. Vérif session classique (only for returning users, not new signups)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !isNewSignup) handleSmartRedirect(session.user.id);
+      if (session && !isNewSignupRef.current) handleSmartRedirect(session.user.id);
     });
 
     // 2. Écouteur d'événements (C'est ici qu'on gère le cas Mobile)
@@ -92,7 +93,7 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       // Only redirect for login, NOT for new signups (they see the onboarding modal)
-      if (event === "SIGNED_IN" && session && !isNewSignup) {
+      if (event === "SIGNED_IN" && session && !isNewSignupRef.current) {
         handleSmartRedirect(session.user.id);
       }
       // AJOUT : Si c'est une récupération de mot de passe, on file direct au profil
@@ -102,7 +103,7 @@ const Auth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, isNewSignup]);
+  }, [navigate]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,11 +163,11 @@ const Auth = () => {
         });
 
         if (error) throw error;
-        toast.success("Compte créé !");
-
+        
         if (data.session) {
-          // Mark as new signup to prevent auto-redirect from onAuthStateChange
-          setIsNewSignup(true);
+          // Mark as new signup IMMEDIATELY (ref updates sync) to prevent auto-redirect
+          isNewSignupRef.current = true;
+          toast.success("Compte créé !");
           // Show onboarding modal for new signups instead of direct redirect
           setShowOnboarding(true);
         } else {
