@@ -125,6 +125,8 @@ const AdminTrips = () => {
         return <Badge className="bg-green-500/90">En ligne</Badge>;
       case "matched":
         return <Badge className="bg-blue-500/90">Associé</Badge>;
+      case "completed":
+        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">✓ Livraison validée</Badge>;
       case "closed":
         return <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">Masqué</Badge>;
       default:
@@ -195,7 +197,7 @@ const AdminTrips = () => {
                 </div>
               </div>
               
-              {trip.status !== "matched" && (
+              {trip.status !== "matched" && trip.status !== "completed" && (
                 <div className="pt-2 border-t">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -292,7 +294,7 @@ const AdminTrips = () => {
                     {format(new Date(trip.created_at), "d MMM yyyy", { locale: fr })}
                   </TableCell>
                   <TableCell>
-                    {trip.status !== "matched" && (
+                    {trip.status !== "matched" && trip.status !== "completed" && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

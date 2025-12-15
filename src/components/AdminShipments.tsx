@@ -127,6 +127,8 @@ const AdminShipments = () => {
         return <Badge className="bg-green-500/90">En ligne</Badge>;
       case "matched":
         return <Badge className="bg-blue-500/90">Associée</Badge>;
+      case "completed":
+        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">✓ Colis livré</Badge>;
       case "closed":
         return <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">Masquée</Badge>;
       default:
@@ -205,7 +207,7 @@ const AdminShipments = () => {
                 </div>
               </div>
               
-              {shipment.status !== "matched" && (
+              {shipment.status !== "matched" && shipment.status !== "completed" && (
                 <div className="pt-2 border-t">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -298,7 +300,7 @@ const AdminShipments = () => {
                     {format(new Date(shipment.created_at), "d MMM yyyy", { locale: fr })}
                   </TableCell>
                   <TableCell>
-                    {shipment.status !== "matched" && (
+                    {shipment.status !== "matched" && shipment.status !== "completed" && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

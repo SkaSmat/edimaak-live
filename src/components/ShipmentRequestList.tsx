@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, Pencil, Calendar, Weight, Package, Eye } from "lucide-react";
+import { Trash2, Pencil, Calendar, Weight, Package, Eye, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
@@ -124,15 +124,24 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
                 </h3>
               </div>
               <div className="flex items-center gap-2 self-end sm:self-auto">
-                <Badge variant={request.status === "open" ? "default" : "secondary"} className="text-xs">
-                  {request.status === "open" ? "Ouvert" : request.status === "matched" ? "Associé" : "Fermé"}
-                </Badge>
-                <Button variant="ghost" size="sm" onClick={() => setEditingRequest(request)} className="h-8 w-8 p-0">
-                  <Pencil className="w-4 h-4 text-primary" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0">
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                {request.status === "completed" ? (
+                  <Badge className="text-xs bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Colis livré
+                  </Badge>
+                ) : (
+                  <>
+                    <Badge variant={request.status === "open" ? "default" : "secondary"} className="text-xs">
+                      {request.status === "open" ? "Ouvert" : request.status === "matched" ? "Associé" : "Fermé"}
+                    </Badge>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingRequest(request)} className="h-8 w-8 p-0">
+                      <Pencil className="w-4 h-4 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
