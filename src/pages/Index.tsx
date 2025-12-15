@@ -124,17 +124,17 @@ const Index = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch only open shipment requests - no completed ones on landing page
+      // Fetch both open and completed shipment requests
       const {
         data,
         error: fetchError
       } = await supabase
         .from("shipment_requests")
         .select("*")
-        .eq("status", "open")
+        .in("status", ["open", "completed"])
         .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(30);
       
       if (fetchError) throw fetchError;
       if (data && data.length > 0) {
@@ -181,7 +181,15 @@ const Index = () => {
             avatar_url: senderInfoMap[r.sender_id].avatar_url
           } : undefined
         }));
-        setShipmentRequests(enrichedData);
+        
+        // Sort: open first, then completed
+        const sortedData = enrichedData.sort((a, b) => {
+          if (a.status === 'open' && b.status === 'completed') return -1;
+          if (a.status === 'completed' && b.status === 'open') return 1;
+          return 0;
+        });
+        
+        setShipmentRequests(sortedData);
       } else {
         setShipmentRequests(data || []);
       }
@@ -540,7 +548,7 @@ connectant voyageurs et expéditeurs pour le transport de colis.
           </div>}
 
         {!isLoading && filteredRequests.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredRequests.map(request => <div key={request.id} role="button" className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col relative cursor-pointer" onClick={() => handleShipmentClick(request)}>
+            {filteredRequests.map(request => <div key={request.id} role="button" className={`group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col relative cursor-pointer ${request.status === 'completed' ? 'opacity-80' : ''}`} onClick={() => handleShipmentClick(request)}>
                 {/* Header : Badge Type + Prix */}
                 <div className="p-3 sm:p-4 pb-2 flex items-center justify-between border-b border-gray-50">
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs flex items-center gap-1">
@@ -635,10 +643,17 @@ connectant voyageurs et expéditeurs pour le transport de colis.
 
                 {/* Bouton CTA */}
                 <div className="p-3 sm:p-4 pt-2 mt-auto">
-                  <div className="w-full bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
-                    Proposer mon voyage
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
+                  {request.status === 'completed' ? (
+                    <div className="w-full bg-green-50 text-green-600 border border-green-200 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Colis livré
+                    </div>
+                  ) : (
+                    <div className="w-full bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
+                      Proposer mon voyage
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  )}
                 </div>
               </div>)}
           </div>}
