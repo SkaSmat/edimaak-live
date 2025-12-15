@@ -278,7 +278,7 @@ const Legal = () => {
       </p>
       <div className="bg-muted p-3 rounded-lg text-sm">
         <p className="text-foreground">
-          <strong>Email :</strong> <a href="mailto:contact@edimaak.com" className="text-primary hover:underline">contact@edimaak.com</a>
+          <strong>Email :</strong> <a href="mailto:skandersmatii@gmail.com" className="text-primary hover:underline">skandersmatii@gmail.com</a>
         </p>
         <p className="text-foreground mt-1">
           <strong>Site web :</strong> <a href="https://edimaak.com" className="text-primary hover:underline">https://edimaak.com</a>
