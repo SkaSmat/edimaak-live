@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Upload, X, AlertTriangle, Shield, Clock, XCircle } from "lucide-react";
+import { Loader2, Upload, X, AlertTriangle } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { WORLD_COUNTRIES } from "@/lib/worldData";
 import { z } from "zod";
@@ -15,14 +14,26 @@ import { z } from "zod";
 interface ShipmentRequestFormProps {
   userId: string;
   onSuccess: () => void;
+  editData?: {
+    id: string;
+    from_country: string;
+    from_city: string;
+    to_country: string;
+    to_city: string;
+    earliest_date: string;
+    latest_date: string;
+    weight_kg: number;
+    item_type: string;
+    notes: string | null;
+    price: number | null;
+    image_url: string | null;
+  };
 }
-
-type KycStatus = "verified" | "pending" | "rejected" | "not_submitted" | null;
 
 const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
 const VALID_ITEM_TYPES = ["Documents", "Vêtements", "Médicaments", "Argent", "Autres"] as const;
 
-// Zod schema for shipment request validation
+// Zod schema for shipment request validation - sans limite de poids
 const shipmentSchema = z.object({
   fromCountry: z.string().min(1, "Pays d'origine requis"),
   fromCity: z.string().min(1, "Ville d'origine requise").max(100, "Nom de ville trop long"),
@@ -34,7 +45,7 @@ const shipmentSchema = z.object({
     const num = parseFloat(val);
     if (isNaN(num)) throw new Error("Poids invalide");
     return num;
-  }).refine((val) => val > 0 && val <= 100, "Le poids doit être entre 0.1 et 100 kg"),
+  }).refine((val) => val > 0, "Le poids doit être supérieur à 0"),
   itemType: z.enum(VALID_ITEM_TYPES, { errorMap: () => ({ message: "Type d'objet invalide" }) }),
   notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
   price: z.string().optional().transform((val) => {
@@ -51,57 +62,28 @@ const shipmentSchema = z.object({
   path: ["latestDate"],
 });
 
-const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) => {
-  const navigate = useNavigate();
+const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFormProps) => {
   const [loading, setLoading] = useState(false);
-  const [kycStatus, setKycStatus] = useState<KycStatus>(null);
-  const [kycLoading, setKycLoading] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(editData?.image_url || null);
 
   const [formData, setFormData] = useState({
-    fromCountry: "France",
-    fromCity: "",
-    toCountry: "Algérie",
-    toCity: "",
-    earliestDate: "",
-    latestDate: "",
-    weightKg: "",
-    itemType: "" as typeof VALID_ITEM_TYPES[number] | "",
-    notes: "",
-    price: "",
+    fromCountry: editData?.from_country || "France",
+    fromCity: editData?.from_city || "",
+    toCountry: editData?.to_country || "Algérie",
+    toCity: editData?.to_city || "",
+    earliestDate: editData?.earliest_date || "",
+    latestDate: editData?.latest_date || "",
+    weightKg: editData?.weight_kg?.toString() || "",
+    itemType: (editData?.item_type || "") as typeof VALID_ITEM_TYPES[number] | "",
+    notes: editData?.notes || "",
+    price: editData?.price?.toString() || "",
   });
 
-  const [valueLimitConfirmed, setValueLimitConfirmed] = useState(false);
+  const [valueLimitConfirmed, setValueLimitConfirmed] = useState(!!editData);
 
   const today = new Date().toISOString().split("T")[0];
-
-  // Vérifier le statut KYC
-  useEffect(() => {
-    const checkKycStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("private_info")
-          .select("kyc_status")
-          .eq("id", userId)
-          .single();
-
-        if (error) {
-          console.error("Error fetching KYC status:", error);
-          setKycStatus("not_submitted");
-        } else {
-          setKycStatus((data?.kyc_status as KycStatus) || "not_submitted");
-        }
-      } catch (err) {
-        console.error("Error:", err);
-        setKycStatus("not_submitted");
-      } finally {
-        setKycLoading(false);
-      }
-    };
-
-    checkKycStatus();
-  }, [userId]);
+  const isEditing = !!editData;
 
   // LOGIQUE ANTI-DOUBLON
   useEffect(() => {
@@ -118,7 +100,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         toast.error("L'image ne doit pas dépasser 5 Mo");
         return;
       }
-      // Validate MIME type
       const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
       if (!validTypes.includes(file.type)) {
         toast.error("Format d'image non supporté. Utilisez JPG, PNG, WebP ou GIF.");
@@ -139,7 +120,6 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Vérifier la confirmation de limite de valeur
     if (!valueLimitConfirmed) {
       toast.error("Veuillez confirmer que la valeur de votre colis ne dépasse pas 200€");
       return;
@@ -148,23 +128,21 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
     setLoading(true);
 
     try {
-      // Validate with zod
       const validatedData = shipmentSchema.parse(formData);
 
-      let imageUrl: string | null = null;
+      let imageUrl: string | null = editData?.image_url || null;
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${userId}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from("shipment-images").upload(fileName, imageFile);
         if (uploadError) throw uploadError;
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("shipment-images").getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage.from("shipment-images").getPublicUrl(fileName);
         imageUrl = publicUrl;
+      } else if (imagePreview === null && editData?.image_url) {
+        imageUrl = null;
       }
 
-      const { error } = await supabase.from("shipment_requests").insert({
-        sender_id: userId,
+      const dataToSave = {
         from_country: validatedData.fromCountry,
         from_city: validatedData.fromCity,
         to_country: validatedData.toCountry,
@@ -176,92 +154,37 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         notes: validatedData.notes || null,
         image_url: imageUrl,
         price: validatedData.price,
-        status: "open",
-      });
+      };
 
-      if (error) throw error;
-      toast.success("Demande créée avec succès");
+      if (isEditing) {
+        const { error } = await supabase
+          .from("shipment_requests")
+          .update(dataToSave)
+          .eq("id", editData.id)
+          .eq("sender_id", userId);
+        if (error) throw error;
+        toast.success("Demande modifiée avec succès");
+      } else {
+        const { error } = await supabase.from("shipment_requests").insert({
+          sender_id: userId,
+          ...dataToSave,
+          status: "open",
+        });
+        if (error) throw error;
+        toast.success("Demande créée avec succès");
+      }
       onSuccess();
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         toast.error(firstError.message);
       } else {
-        toast.error(error.message || "Erreur lors de la création");
+        toast.error(error.message || "Erreur lors de la sauvegarde");
       }
     } finally {
       setLoading(false);
     }
   };
-
-  // Afficher le loader pendant la vérification KYC
-  if (kycLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Bloquer si KYC non vérifié
-  if (kycStatus !== "verified") {
-    return (
-      <div className="max-w-2xl mx-auto p-8 text-center">
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-8">
-          {kycStatus === "pending" ? (
-            <>
-              <Clock className="w-16 h-16 mx-auto text-orange-600 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                ⏳ Vérification en cours
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Votre demande de vérification KYC est en cours de traitement (24-48h).
-                Vous pourrez publier dès que votre profil sera validé.
-              </p>
-              <div className="bg-white rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-gray-600 mb-2">✓ Documents soumis avec succès</p>
-                <p className="text-sm text-gray-600 mb-2">✓ Validation par notre équipe en cours</p>
-                <p className="text-sm text-gray-600">✓ Notification par email dès validation</p>
-              </div>
-            </>
-          ) : kycStatus === "rejected" ? (
-            <>
-              <XCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                ❌ Vérification rejetée
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Votre demande de vérification KYC a été rejetée. 
-                Veuillez soumettre à nouveau vos documents.
-              </p>
-              <Button onClick={() => navigate('/profile')} size="lg">
-                Soumettre à nouveau
-              </Button>
-            </>
-          ) : (
-            <>
-              <Shield className="w-16 h-16 mx-auto text-orange-600 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                🔒 Vérification d'identité requise
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Pour garantir la sécurité de notre communauté, vous devez 
-                compléter votre vérification KYC avant de publier une demande.
-              </p>
-              <div className="bg-white rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-gray-600 mb-2">✓ Processus simple et sécurisé</p>
-                <p className="text-sm text-gray-600 mb-2">✓ Validation en 24-48h</p>
-                <p className="text-sm text-gray-600">✓ Badge "Vérifié" sur votre profil</p>
-              </div>
-              <Button onClick={() => navigate('/profile')} size="lg">
-                Compléter ma vérification (5 min)
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg bg-card">
@@ -275,12 +198,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
             required
           >
             {COUNTRIES.map((c) => (
-              <option
-                key={c}
-                value={c}
-                disabled={c === formData.toCountry}
-                className={c === formData.toCountry ? "text-gray-300" : ""}
-              >
+              <option key={c} value={c} disabled={c === formData.toCountry} className={c === formData.toCountry ? "text-gray-300" : ""}>
                 {c}
               </option>
             ))}
@@ -306,12 +224,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
             required
           >
             {COUNTRIES.map((c) => (
-              <option
-                key={c}
-                value={c}
-                disabled={c === formData.fromCountry}
-                className={c === formData.fromCountry ? "text-gray-300" : ""}
-              >
+              <option key={c} value={c} disabled={c === formData.fromCountry} className={c === formData.fromCountry ? "text-gray-300" : ""}>
                 {c}
               </option>
             ))}
@@ -330,36 +243,15 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
 
         <div className="space-y-2">
           <Label>Dispo à partir du *</Label>
-          <Input
-            type="date"
-            min={today}
-            value={formData.earliestDate}
-            onChange={(e) => setFormData({ ...formData, earliestDate: e.target.value })}
-            required
-          />
+          <Input type="date" min={today} value={formData.earliestDate} onChange={(e) => setFormData({ ...formData, earliestDate: e.target.value })} required />
         </div>
         <div className="space-y-2">
           <Label>Jusqu'au *</Label>
-          <Input
-            type="date"
-            min={formData.earliestDate || today}
-            value={formData.latestDate}
-            onChange={(e) => setFormData({ ...formData, latestDate: e.target.value })}
-            required
-          />
+          <Input type="date" min={formData.earliestDate || today} value={formData.latestDate} onChange={(e) => setFormData({ ...formData, latestDate: e.target.value })} required />
         </div>
         <div className="space-y-2">
-          <Label>Poids (kg) * <span className="text-muted-foreground font-normal">(max 100kg)</span></Label>
-          <Input
-            type="number"
-            step="0.1"
-            min="0.1"
-            max="100"
-            value={formData.weightKg}
-            onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })}
-            required
-            placeholder="Ex: 2"
-          />
+          <Label>Poids (kg) *</Label>
+          <Input type="number" step="0.1" min="0.1" value={formData.weightKg} onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })} required placeholder="Ex: 2" />
         </div>
         <div className="space-y-2">
           <Label>Type d'objet *</Label>
@@ -377,15 +269,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         </div>
         <div className="space-y-2">
           <Label>Prix proposé (€) <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
-          <Input
-            type="number"
-            step="1"
-            min="1"
-            max="10000"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            placeholder="Ex: 50"
-          />
+          <Input type="number" step="1" min="1" max="10000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="Ex: 50" />
         </div>
       </div>
       <div className="space-y-2">
@@ -393,15 +277,8 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         {imagePreview ? (
           <div className="relative">
             <img src={imagePreview} alt="Aperçu" className="w-full h-48 object-cover rounded-lg border" />
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              className="absolute top-2 right-2"
-              onClick={removeImage}
-            >
-              {" "}
-              <X className="w-4 h-4" />{" "}
+            <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
+              <X className="w-4 h-4" />
             </Button>
           </div>
         ) : (
@@ -428,23 +305,14 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1 space-y-3">
-            <p className="text-sm text-amber-800 font-medium">
-              ⚠️ Limite de valeur : 200€ maximum pour débuter
-            </p>
+            <p className="text-sm text-amber-800 font-medium">⚠️ Limite de valeur : 200€ maximum pour débuter</p>
             <p className="text-xs text-amber-700">
-              Pour votre sécurité, les colis de grande valeur (électronique, bijoux, argent liquide) ne sont pas couverts. 
+              Pour votre sécurité, les colis de grande valeur (électronique, bijoux, argent liquide) ne sont pas couverts.
               <a href="/securite" className="underline hover:text-amber-900 ml-1">En savoir plus</a>
             </p>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="value-limit" 
-                checked={valueLimitConfirmed}
-                onCheckedChange={(checked) => setValueLimitConfirmed(checked === true)}
-              />
-              <label 
-                htmlFor="value-limit" 
-                className="text-sm text-amber-900 cursor-pointer"
-              >
+              <Checkbox id="value-limit" checked={valueLimitConfirmed} onCheckedChange={(checked) => setValueLimitConfirmed(checked === true)} />
+              <label htmlFor="value-limit" className="text-sm text-amber-900 cursor-pointer">
                 Je confirme que la valeur de mon colis ne dépasse pas 200€
               </label>
             </div>
@@ -453,7 +321,7 @@ const ShipmentRequestForm = ({ userId, onSuccess }: ShipmentRequestFormProps) =>
       </div>
 
       <Button type="submit" disabled={loading || !valueLimitConfirmed} className="w-full">
-        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Créer la demande"}
+        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isEditing ? "Enregistrer les modifications" : "Créer la demande"}
       </Button>
     </form>
   );

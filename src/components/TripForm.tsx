@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, ArrowRightLeft, Shield, Clock, XCircle } from "lucide-react";
+import { Loader2, ArrowRightLeft } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { WORLD_COUNTRIES } from "@/lib/worldData";
 import { z } from "zod";
@@ -14,13 +13,22 @@ import { z } from "zod";
 interface TripFormProps {
   userId: string;
   onSuccess: () => void;
+  editData?: {
+    id: string;
+    from_country: string;
+    from_city: string;
+    to_country: string;
+    to_city: string;
+    departure_date: string;
+    arrival_date: string | null;
+    max_weight_kg: number;
+    notes: string | null;
+  };
 }
-
-type KycStatus = "verified" | "pending" | "rejected" | "not_submitted" | null;
 
 const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
 
-// Zod schema for trip form validation
+// Zod schema for trip form validation - sans limite de poids
 const tripSchema = z.object({
   fromCountry: z.string().min(1, "Pays de départ requis"),
   fromCity: z.string().min(1, "Ville de départ requise").max(100, "Nom de ville trop long"),
@@ -32,7 +40,7 @@ const tripSchema = z.object({
     if (!val || val === "") return 0;
     const num = parseFloat(val);
     return isNaN(num) ? 0 : num;
-  }).refine((val) => val >= 0 && val <= 500, "Le poids doit être entre 0 et 500 kg"),
+  }).refine((val) => val >= 0, "Le poids doit être positif ou nul"),
   notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
 }).refine((data) => data.fromCountry !== data.toCountry, {
   message: "Le départ et l'arrivée ne peuvent pas être le même pays",
@@ -45,56 +53,25 @@ const tripSchema = z.object({
   path: ["arrivalDate"],
 });
 
-const TripForm = ({ userId, onSuccess }: TripFormProps) => {
-  const navigate = useNavigate();
+const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
   const [loading, setLoading] = useState(false);
-  const [kycStatus, setKycStatus] = useState<KycStatus>(null);
-  const [kycLoading, setKycLoading] = useState(true);
   const [formData, setFormData] = useState({
-    fromCountry: "France",
-    fromCity: "",
-    toCountry: "Algérie",
-    toCity: "",
-    departureDate: "",
-    arrivalDate: "",
-    maxWeightKg: "",
-    notes: "",
+    fromCountry: editData?.from_country || "France",
+    fromCity: editData?.from_city || "",
+    toCountry: editData?.to_country || "Algérie",
+    toCity: editData?.to_city || "",
+    departureDate: editData?.departure_date || "",
+    arrivalDate: editData?.arrival_date || "",
+    maxWeightKg: editData?.max_weight_kg?.toString() || "",
+    notes: editData?.notes || "",
   });
 
   const today = new Date().toISOString().split("T")[0];
-
-  // Vérifier le statut KYC
-  useEffect(() => {
-    const checkKycStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("private_info")
-          .select("kyc_status")
-          .eq("id", userId)
-          .single();
-
-        if (error) {
-          console.error("Error fetching KYC status:", error);
-          setKycStatus("not_submitted");
-        } else {
-          setKycStatus((data?.kyc_status as KycStatus) || "not_submitted");
-        }
-      } catch (err) {
-        console.error("Error:", err);
-        setKycStatus("not_submitted");
-      } finally {
-        setKycLoading(false);
-      }
-    };
-
-    checkKycStatus();
-  }, [userId]);
+  const isEditing = !!editData;
 
   // LOGIQUE INTELLIGENTE : Anti-Doublon
-  // Si le pays de départ devient égal au pays d'arrivée, on change l'arrivée
   useEffect(() => {
     if (formData.fromCountry === formData.toCountry) {
-      // On cherche un autre pays dans la liste pour éviter le blocage
       const otherCountry = COUNTRIES.find((c) => c !== formData.fromCountry) || "Algérie";
       setFormData((prev) => ({ ...prev, toCountry: otherCountry, toCity: "" }));
     }
@@ -115,11 +92,9 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
     setLoading(true);
 
     try {
-      // Validate with zod
       const validatedData = tripSchema.parse(formData);
 
-      const { error } = await supabase.from("trips").insert({
-        traveler_id: userId,
+      const dataToSave = {
         from_country: validatedData.fromCountry,
         from_city: validatedData.fromCity,
         to_country: validatedData.toCountry,
@@ -128,10 +103,24 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
         arrival_date: validatedData.arrivalDate || null,
         max_weight_kg: validatedData.maxWeightKg,
         notes: validatedData.notes || null,
-      });
+      };
 
-      if (error) throw error;
-      toast.success("Voyage créé avec succès !");
+      if (isEditing) {
+        const { error } = await supabase
+          .from("trips")
+          .update(dataToSave)
+          .eq("id", editData.id)
+          .eq("traveler_id", userId);
+        if (error) throw error;
+        toast.success("Voyage modifié avec succès !");
+      } else {
+        const { error } = await supabase.from("trips").insert({
+          traveler_id: userId,
+          ...dataToSave,
+        });
+        if (error) throw error;
+        toast.success("Voyage créé avec succès !");
+      }
       onSuccess();
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -145,75 +134,6 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
     }
   };
 
-  // Afficher le loader pendant la vérification KYC
-  if (kycLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Bloquer si KYC non vérifié
-  if (kycStatus !== "verified") {
-    return (
-      <div className="max-w-2xl mx-auto p-8 text-center">
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-8">
-          {kycStatus === "pending" ? (
-            <>
-              <Clock className="w-16 h-16 mx-auto text-orange-600 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                ⏳ Vérification en cours
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Votre demande de vérification KYC est en cours de traitement (24-48h).
-                Vous pourrez publier dès que votre profil sera validé.
-              </p>
-              <div className="bg-white rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-gray-600 mb-2">✓ Documents soumis avec succès</p>
-                <p className="text-sm text-gray-600 mb-2">✓ Validation par notre équipe en cours</p>
-                <p className="text-sm text-gray-600">✓ Notification par email dès validation</p>
-              </div>
-            </>
-          ) : kycStatus === "rejected" ? (
-            <>
-              <XCircle className="w-16 h-16 mx-auto text-red-600 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                ❌ Vérification rejetée
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Votre demande de vérification KYC a été rejetée. 
-                Veuillez soumettre à nouveau vos documents.
-              </p>
-              <Button onClick={() => navigate('/profile')} size="lg">
-                Soumettre à nouveau
-              </Button>
-            </>
-          ) : (
-            <>
-              <Shield className="w-16 h-16 mx-auto text-orange-600 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                🔒 Vérification d'identité requise
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Pour garantir la sécurité de notre communauté, vous devez 
-                compléter votre vérification KYC avant de publier un voyage.
-              </p>
-              <div className="bg-white rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-gray-600 mb-2">✓ Processus simple et sécurisé</p>
-                <p className="text-sm text-gray-600 mb-2">✓ Validation en 24-48h</p>
-                <p className="text-sm text-gray-600">✓ Badge "Vérifié" sur votre profil</p>
-              </div>
-              <Button onClick={() => navigate('/profile')} size="lg">
-                Compléter ma vérification (5 min)
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-5 border rounded-xl bg-card shadow-sm">
       {/* HEADER AVEC BOUTON D'INVERSION */}
@@ -221,13 +141,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
         <span className="text-sm font-medium text-muted-foreground">Sens du voyage :</span>
         <div className="flex items-center gap-3">
           <span className="font-bold text-primary">{formData.fromCountry}</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={toggleDirection}
-            className="h-8 w-8 rounded-full hover:bg-primary/10"
-          >
+          <Button type="button" variant="ghost" size="icon" onClick={toggleDirection} className="h-8 w-8 rounded-full hover:bg-primary/10">
             <ArrowRightLeft className="w-4 h-4 text-primary" />
           </Button>
           <span className="font-bold text-primary">{formData.toCountry}</span>
@@ -247,12 +161,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
               className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             >
               {COUNTRIES.map((c) => (
-                <option
-                  key={c}
-                  value={c}
-                  disabled={c === formData.toCountry} // GRISÉ SI DÉJÀ SÉLECTIONNÉ EN ARRIVÉE
-                  className={c === formData.toCountry ? "text-gray-300" : ""}
-                >
+                <option key={c} value={c} disabled={c === formData.toCountry} className={c === formData.toCountry ? "text-gray-300" : ""}>
                   {c}
                 </option>
               ))}
@@ -261,23 +170,12 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Ville</Label>
-            <CityAutocomplete
-              value={formData.fromCity}
-              onChange={(val) => setFormData({ ...formData, fromCity: val })}
-              limitToCountry={formData.fromCountry as any}
-              placeholder={`Ville de départ`}
-            />
+            <CityAutocomplete value={formData.fromCity} onChange={(val) => setFormData({ ...formData, fromCity: val })} limitToCountry={formData.fromCountry as any} placeholder={`Ville de départ`} />
           </div>
 
           <div className="space-y-1">
             <Label>Date</Label>
-            <Input
-              type="date"
-              min={today}
-              value={formData.departureDate}
-              onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
-              required
-            />
+            <Input type="date" min={today} value={formData.departureDate} onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })} required />
           </div>
         </div>
 
@@ -293,12 +191,7 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
               className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             >
               {COUNTRIES.map((c) => (
-                <option
-                  key={c}
-                  value={c}
-                  disabled={c === formData.fromCountry} // GRISÉ SI DÉJÀ SÉLECTIONNÉ EN DÉPART
-                  className={c === formData.fromCountry ? "text-gray-300" : ""}
-                >
+                <option key={c} value={c} disabled={c === formData.fromCountry} className={c === formData.fromCountry ? "text-gray-300" : ""}>
                   {c}
                 </option>
               ))}
@@ -307,49 +200,28 @@ const TripForm = ({ userId, onSuccess }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Ville</Label>
-            <CityAutocomplete
-              value={formData.toCity}
-              onChange={(val) => setFormData({ ...formData, toCity: val })}
-              limitToCountry={formData.toCountry as any}
-              placeholder={`Ville d'arrivée`}
-            />
+            <CityAutocomplete value={formData.toCity} onChange={(val) => setFormData({ ...formData, toCity: val })} limitToCountry={formData.toCountry as any} placeholder={`Ville d'arrivée`} />
           </div>
 
           <div className="space-y-1">
-            <Label>
-              Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel, max 500kg)</span>
-            </Label>
-            <Input
-              type="number"
-              step="0.5"
-              min="0"
-              max="500"
-              value={formData.maxWeightKg}
-              onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
-              placeholder="Ex: 23"
-            />
+            <Label>Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span></Label>
+            <Input type="number" step="0.5" min="0" value={formData.maxWeightKg} onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })} placeholder="Ex: 23" />
           </div>
         </div>
       </div>
 
       <div className="space-y-2 pt-2">
         <Label>Notes (optionnel) <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span></Label>
-        <Textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })}
-          maxLength={1000}
-          placeholder="Ex: Je pars de Orly, je peux prendre des objets fragiles..."
-          rows={2}
-        />
+        <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })} maxLength={1000} placeholder="Ex: Je pars de Orly, je peux prendre des objets fragiles..." rows={2} />
       </div>
 
       <Button type="submit" disabled={loading} className="w-full h-11 text-base">
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Publication...
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {isEditing ? "Modification..." : "Publication..."}
           </>
         ) : (
-          "Publier ce voyage"
+          isEditing ? "Enregistrer les modifications" : "Publier ce voyage"
         )}
       </Button>
     </form>

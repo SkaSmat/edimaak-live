@@ -218,9 +218,24 @@ const Index = () => {
       }, 100);
     }
   };
-  const handleShipmentClick = useCallback((shipment: ShipmentRequest) => {
+  const handleShipmentClick = useCallback(async (shipment: ShipmentRequest) => {
     setSelectedShipment(shipment);
-  }, []);
+    
+    // Incrémenter le compteur de vues (uniquement si l'utilisateur n'est pas le créateur)
+    if (session?.user?.id && session.user.id !== shipment.sender_id) {
+      // Vérifier si l'utilisateur a déjà vu cette demande dans les dernières 24h
+      const viewKey = `viewed_shipment_${shipment.id}`;
+      const lastViewed = localStorage.getItem(viewKey);
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      
+      if (!lastViewed || (now - parseInt(lastViewed)) > twentyFourHours) {
+        // Incrémenter le compteur dans la base de données
+        await supabase.rpc('increment_shipment_view_count', { shipment_id: shipment.id });
+        localStorage.setItem(viewKey, now.toString());
+      }
+    }
+  }, [session?.user?.id]);
   const handleSignUp = useCallback(() => {
     if (selectedShipment) {
       localStorage.setItem("targetShipmentId", selectedShipment.id);
