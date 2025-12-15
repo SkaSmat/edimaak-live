@@ -3,10 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, MapPin, Calendar, Weight, Package } from "lucide-react";
+import { Trash2, Pencil, Calendar, Weight, Package, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ShipmentRequestForm from "./ShipmentRequestForm";
 
 interface ShipmentRequest {
   id: string;
@@ -21,6 +28,9 @@ interface ShipmentRequest {
   notes: string | null;
   status: string;
   created_at: string;
+  price: number | null;
+  image_url: string | null;
+  view_count: number;
 }
 
 interface ShipmentRequestListProps {
@@ -32,6 +42,7 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<ShipmentRequest | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -72,6 +83,11 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
     }
   };
 
+  const handleEditSuccess = () => {
+    setEditingRequest(null);
+    fetchRequests();
+  };
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
@@ -93,53 +109,83 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
   }
 
   return (
-    <div className="space-y-4">
-      {requests.map((request) => (
-        <div
-          key={request.id}
-          className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-accent flex-shrink-0" />
-              <h3 className="font-semibold text-sm sm:text-base truncate">
-                {request.from_city} → {request.to_city}
-              </h3>
+    <>
+      <div className="space-y-4">
+        {requests.map((request) => (
+          <div
+            key={request.id}
+            className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-accent flex-shrink-0" />
+                <h3 className="font-semibold text-sm sm:text-base truncate">
+                  {request.from_city} → {request.to_city}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <Badge variant={request.status === "open" ? "default" : "secondary"} className="text-xs">
+                  {request.status === "open" ? "Ouvert" : request.status === "matched" ? "Associé" : "Fermé"}
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={() => setEditingRequest(request)} className="h-8 w-8 p-0">
+                  <Pencil className="w-4 h-4 text-primary" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <Badge variant={request.status === "open" ? "default" : "secondary"} className="text-xs">
-                {request.status === "open" ? "Ouvert" : request.status === "matched" ? "Associé" : "Fermé"}
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0">
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="truncate">
-                {format(new Date(request.earliest_date), "d MMM", { locale: fr })} -{" "}
-                {format(new Date(request.latest_date), "d MMM yyyy", { locale: fr })}
-              </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">
+                  {format(new Date(request.earliest_date), "d MMM", { locale: fr })} -{" "}
+                  {format(new Date(request.latest_date), "d MMM yyyy", { locale: fr })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>{request.weight_kg} kg</span>
+              </div>
+              {request.view_count > 5 && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span>{request.view_count} vues</span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span>{request.weight_kg} kg</span>
+
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className="text-xs">{request.item_type}</Badge>
+              {request.price && (
+                <Badge variant="secondary" className="text-xs">💶 {request.price}€</Badge>
+              )}
             </div>
-          </div>
 
-          <div className="mt-2 sm:mt-3">
-            <Badge variant="outline" className="text-xs">{request.item_type}</Badge>
+            {request.notes && (
+              <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground border-t pt-2 sm:pt-3 line-clamp-2">{request.notes}</p>
+            )}
           </div>
+        ))}
+      </div>
 
-          {request.notes && (
-            <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground border-t pt-2 sm:pt-3 line-clamp-2">{request.notes}</p>
+      {/* Modal d'édition */}
+      <Dialog open={!!editingRequest} onOpenChange={(open) => !open && setEditingRequest(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier la demande d'expédition</DialogTitle>
+          </DialogHeader>
+          {editingRequest && (
+            <ShipmentRequestForm
+              userId={userId}
+              onSuccess={handleEditSuccess}
+              editData={editingRequest}
+            />
           )}
-        </div>
-      ))}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

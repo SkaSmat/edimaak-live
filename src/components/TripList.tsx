@@ -3,10 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, MapPin, Calendar, Weight, Plane } from "lucide-react";
+import { Trash2, Pencil, MapPin, Calendar, Weight, Plane } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import TripForm from "./TripForm";
 
 interface Trip {
   id: string;
@@ -31,6 +38,7 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
 
   useEffect(() => {
     fetchTrips();
@@ -71,6 +79,11 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
     }
   };
 
+  const handleEditSuccess = () => {
+    setEditingTrip(null);
+    fetchTrips();
+  };
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
@@ -92,52 +105,75 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
   }
 
   return (
-    <div className="space-y-4">
-      {trips.map((trip) => (
-        <div
-          key={trip.id}
-          className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-              <h3 className="font-semibold text-sm sm:text-base truncate">
-                {trip.from_city} → {trip.to_city}
-              </h3>
+    <>
+      <div className="space-y-4">
+        {trips.map((trip) => (
+          <div
+            key={trip.id}
+            className="p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-shadow"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                <h3 className="font-semibold text-sm sm:text-base truncate">
+                  {trip.from_city} → {trip.to_city}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <Badge variant={trip.status === "open" ? "default" : "secondary"} className="text-xs">
+                  {trip.status === "open" ? "Ouvert" : trip.status === "matched" ? "Associé" : "Fermé"}
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={() => setEditingTrip(trip)} className="h-8 w-8 p-0">
+                  <Pencil className="w-4 h-4 text-primary" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(trip.id)} className="h-8 w-8 p-0">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <Badge variant={trip.status === "open" ? "default" : "secondary"} className="text-xs">
-                {trip.status === "open" ? "Ouvert" : trip.status === "matched" ? "Associé" : "Fermé"}
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(trip.id)} className="h-8 w-8 p-0">
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="truncate">Départ: {format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}</span>
-            </div>
-            {trip.arrival_date && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="truncate">Arrivée: {format(new Date(trip.arrival_date), "d MMM yyyy", { locale: fr })}</span>
+                <span className="truncate">Départ: {format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}</span>
               </div>
-            )}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span>Max: {trip.max_weight_kg} kg</span>
+              {trip.arrival_date && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="truncate">Arrivée: {format(new Date(trip.arrival_date), "d MMM yyyy", { locale: fr })}</span>
+                </div>
+              )}
+              {trip.max_weight_kg > 0 && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span>Max: {trip.max_weight_kg} kg</span>
+                </div>
+              )}
             </div>
-          </div>
 
-          {trip.notes && (
-            <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground border-t pt-2 sm:pt-3 line-clamp-2">{trip.notes}</p>
+            {trip.notes && (
+              <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground border-t pt-2 sm:pt-3 line-clamp-2">{trip.notes}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Modal d'édition */}
+      <Dialog open={!!editingTrip} onOpenChange={(open) => !open && setEditingTrip(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier le voyage</DialogTitle>
+          </DialogHeader>
+          {editingTrip && (
+            <TripForm
+              userId={userId}
+              onSuccess={handleEditSuccess}
+              editData={editingTrip}
+            />
           )}
-        </div>
-      ))}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

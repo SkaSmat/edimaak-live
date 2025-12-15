@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight, AlertCircle } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight, AlertCircle, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -33,6 +33,7 @@ interface ShipmentRequest {
   image_url: string | null;
   sender_id: string;
   price?: number | null;
+  view_count?: number;
   public_profiles?: {
     id: string;
     display_first_name: string;
@@ -205,6 +206,16 @@ export const ShipmentDetailModal = ({
               </div>
               <p className="font-medium text-sm sm:text-base">{shipment.weight_kg} kg</p>
             </div>
+
+            {shipment.view_count && shipment.view_count > 5 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span>Vues</span>
+                </div>
+                <p className="font-medium text-sm sm:text-base">{shipment.view_count} vues</p>
+              </div>
+            )}
 
             <div className="space-y-1 sm:col-span-2">
               <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
