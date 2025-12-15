@@ -161,64 +161,140 @@ const Legal = () => {
             )}
 
             {activeTab === "privacy" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="border-b border-border pb-4 mb-6">
-                  <h2 className="text-2xl font-bold text-foreground">Politique de Confidentialité</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Protection de vos données (RGPD)</p>
-                </div>
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="border-b border-border pb-4 mb-6">
+      <h2 className="text-2xl font-bold text-foreground">Politique de Confidentialité</h2>
+      <p className="text-sm text-muted-foreground mt-1">Dernière mise à jour : 15 décembre 2025</p>
+    </div>
 
-                <section className="space-y-3">
-                  <h3 className="text-lg font-semibold text-foreground">1. Données Collectées</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Pour assurer la sécurité de la communauté (KYC), nous collectons :
-                    <ul className="list-disc pl-5 mt-2 space-y-1">
-                      <li>Informations d'identité (Nom, Prénom, Pièce d'identité).</li>
-                      <li>Coordonnées (Téléphone, Email).</li>
-                      <li>Détails des voyages et des colis.</li>
-                    </ul>
-                  </p>
-                </section>
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">Introduction</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        EdiMaak s'engage à protéger la confidentialité de vos données personnelles. 
+        Cette politique décrit comment nous collectons, utilisons et protégons vos informations 
+        lorsque vous utilisez notre plateforme de mise en relation entre voyageurs et expéditeurs de colis.
+      </p>
+    </section>
 
-                <section className="space-y-3">
-                  <h3 className="text-lg font-semibold text-foreground">2. Stockage Sécurisé</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Vos données sensibles (pièce d'identité, adresse exacte) sont stockées dans une table sécurisée (<code className="bg-muted px-1 rounded">private_info</code>) et ne sont jamais affichées publiquement. Seuls vous et les administrateurs habilités y avez accès pour validation.
-                  </p>
-                </section>
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">1. Données Collectées</h3>
+      
+      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-3">
+        <p className="font-semibold text-foreground text-sm mb-2">
+          Via connexion Google ou Facebook (OAuth)
+        </p>
+        <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+          <li><strong>Nom et prénom</strong> : pour créer votre profil utilisateur</li>
+          <li><strong>Adresse email</strong> : pour l'authentification et les communications liées au service</li>
+          <li><strong>Photo de profil</strong> (optionnel) : pour personnaliser votre profil</li>
+        </ul>
+      </div>
 
-                <section className="space-y-3">
-                  <h3 className="text-lg font-semibold text-foreground">3. Vos Droits</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Vous pouvez à tout moment demander la suppression complète de votre compte et de vos données en contactant le support ou via le bouton "Supprimer mon compte" dans votre profil.
-                  </p>
-                </section>
-              </div>
-            )}
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Pour vérifier votre identité (KYC), nous collectons également :
+      </p>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+        <li><strong>Pièce d'identité</strong> : pour la sécurité de tous les utilisateurs</li>
+        <li><strong>Numéro de téléphone</strong> : pour les communications relatives aux transactions</li>
+        <li><strong>Détails des voyages et des colis</strong> : pour faciliter la mise en relation</li>
+      </ul>
+    </section>
 
-            {activeTab === "mentions" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="border-b border-border pb-4 mb-6">
-                  <h2 className="text-2xl font-bold text-foreground">Mentions Légales</h2>
-                </div>
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">2. Utilisation des Données</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Vos données sont utilisées uniquement pour :
+      </p>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+        <li>Créer et gérer votre compte EdiMaak</li>
+        <li>Faciliter la mise en relation entre voyageurs et expéditeurs</li>
+        <li>Vérifier votre identité pour la sécurité de la plateforme</li>
+        <li>Vous envoyer des notifications concernant vos annonces et transactions</li>
+        <li>Améliorer nos services</li>
+      </ul>
+      <p className="text-sm font-bold text-foreground mt-3">
+        ⚠️ Nous ne vendons jamais vos données à des tiers.
+      </p>
+    </section>
 
-                <section className="space-y-3">
-                  <h3 className="text-lg font-semibold text-foreground">Éditeur du site</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    <strong className="text-foreground">Nom du projet :</strong> EdiM3ak<br/>
-                    <strong className="text-foreground">Statut :</strong> Plateforme en version Bêta (MVP)<br/>
-                    <strong className="text-foreground">Contact :</strong> contact@edim3ak.com<br/>
-                  </p>
-                </section>
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">3. Partage des Données</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Vos informations de profil (nom, photo) sont visibles par les autres utilisateurs 
+        uniquement lorsque vous publiez une annonce ou contactez un autre utilisateur. 
+        <strong className="text-foreground"> Vos données de KYC (pièce d'identité, adresse exacte) restent strictement confidentielles</strong> et 
+        ne sont jamais partagées avec d'autres utilisateurs.
+      </p>
+    </section>
 
-                <section className="space-y-3">
-                  <h3 className="text-lg font-semibold text-foreground">Hébergement</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Ce site est hébergé par <strong className="text-foreground">Lovable / Netlify / Vercel</strong> (selon ton déploiement final).<br/>
-                    Les données sont stockées par <strong className="text-foreground">Supabase</strong> (AWS Europe).
-                  </p>
-                </section>
-              </div>
-            )}
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">4. Sécurité et Stockage</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Vos données sont stockées de manière sécurisée via <strong className="text-foreground">Supabase</strong> (infrastructure AWS Europe), 
+        notre fournisseur d'infrastructure qui respecte les normes de sécurité les plus élevées (ISO 27001, SOC 2). 
+        Toutes les communications sont chiffrées via HTTPS.
+      </p>
+      <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+        Vos données sensibles (pièce d'identité) sont stockées dans une table sécurisée séparée 
+        et ne sont accessibles qu'aux administrateurs habilités pour validation KYC.
+      </p>
+    </section>
+
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">5. Conservation des Données</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Vos données sont conservées tant que votre compte est actif. Vous pouvez demander 
+        la suppression de votre compte et de toutes vos données à tout moment en nous contactant 
+        ou via le bouton "Supprimer mon compte" dans votre profil.
+      </p>
+    </section>
+
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">6. Vos Droits (RGPD)</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez des droits suivants :
+      </p>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+        <li><strong>Droit d'accès</strong> : consulter les données que nous détenons sur vous</li>
+        <li><strong>Droit de rectification</strong> : corriger vos informations personnelles</li>
+        <li><strong>Droit à l'effacement</strong> : supprimer votre compte et vos données</li>
+        <li><strong>Droit à la portabilité</strong> : récupérer vos données dans un format exploitable</li>
+        <li><strong>Droit d'opposition</strong> : vous opposer au traitement de vos données</li>
+      </ul>
+    </section>
+
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">7. Cookies</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        EdiMaak utilise uniquement des cookies essentiels pour le fonctionnement du site 
+        (session d'authentification). Nous n'utilisons pas de cookies publicitaires ou de tracking tiers.
+      </p>
+    </section>
+
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">8. Contact</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, contactez-nous :
+      </p>
+      <div className="bg-muted p-3 rounded-lg text-sm">
+        <p className="text-foreground">
+          <strong>Email :</strong> <a href="mailto:contact@edimaak.com" className="text-primary hover:underline">contact@edimaak.com</a>
+        </p>
+        <p className="text-foreground mt-1">
+          <strong>Site web :</strong> <a href="https://edimaak.com" className="text-primary hover:underline">https://edimaak.com</a>
+        </p>
+      </div>
+    </section>
+
+    <section className="space-y-3">
+      <h3 className="text-lg font-semibold text-foreground">9. Modifications</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Nous nous réservons le droit de modifier cette politique de confidentialité à tout moment. 
+        Les modifications seront publiées sur cette page avec une date de mise à jour actualisée.
+      </p>
+    </section>
+  </div>
+)}
 
           </div>
         </div>
