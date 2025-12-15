@@ -9,6 +9,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ActivityBadge, VerifiedBadge } from "@/components/UserProfileBadges";
+import TransactionTracking from "@/components/TransactionTracking";
+import ReviewModal from "@/components/ReviewModal";
 
 interface Message {
   id: string;
@@ -38,21 +40,36 @@ interface OtherUserPrivateInfo {
   id_number: string | null;
 }
 
+interface MatchTracking {
+  status: string;
+  sender_handed_over: boolean;
+  traveler_picked_up: boolean;
+  traveler_delivered: boolean;
+  sender_received: boolean;
+  completed_at: string | null;
+}
+
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [matchDetails, setMatchDetails] = useState<any | null>(null);
+  const [matchTracking, setMatchTracking] = useState<MatchTracking | null>(null);
   const [otherUser, setOtherUser] = useState<OtherUserProfile | null>(null);
   const [otherUserPrivateInfo, setOtherUserPrivateInfo] = useState<OtherUserPrivateInfo | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [isSender, setIsSender] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMessages();
     fetchMatchDetails();
+    fetchCurrentUserName();
 
     const channel = supabase
       .channel(`messages:${matchId}`)
@@ -64,14 +81,32 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           table: "messages",
           filter: `match_id=eq.${matchId}`,
         },
-        (payload) => {
+        () => {
           fetchMessages();
+        },
+      )
+      .subscribe();
+
+    // Subscribe to match updates for tracking
+    const matchChannel = supabase
+      .channel(`match:${matchId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "matches",
+          filter: `id=eq.${matchId}`,
+        },
+        () => {
+          fetchMatchTracking();
         },
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(matchChannel);
     };
   }, [matchId]);
 
@@ -79,8 +114,39 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     scrollToBottom();
   }, [messages]);
 
+  // Check if should show review modal when match becomes completed
+  useEffect(() => {
+    if (matchTracking?.status === "completed" && !hasReviewed && otherUser) {
+      checkIfReviewed();
+    }
+  }, [matchTracking?.status, otherUser]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const fetchCurrentUserName = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .maybeSingle();
+    if (data) setCurrentUserName(data.full_name || "Vous");
+  };
+
+  const checkIfReviewed = async () => {
+    const { data } = await supabase
+      .from("reviews")
+      .select("id")
+      .eq("match_id", matchId)
+      .eq("reviewer_id", userId)
+      .maybeSingle();
+
+    if (!data) {
+      setShowReviewModal(true);
+    } else {
+      setHasReviewed(true);
+    }
   };
 
   const fetchMessages = async () => {
@@ -100,12 +166,28 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     }
   };
 
+  const fetchMatchTracking = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("status, sender_handed_over, traveler_picked_up, traveler_delivered, sender_received, completed_at")
+        .eq("id", matchId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) setMatchTracking(data as MatchTracking);
+    } catch (error) {
+      console.error("Error fetching match tracking:", error);
+    }
+  };
+
   const fetchMatchDetails = async () => {
     try {
       const { data, error } = await supabase
         .from("matches")
         .select(
           `
+          status, sender_handed_over, traveler_picked_up, traveler_delivered, sender_received, completed_at,
           trips:trip_id(from_city, to_city, departure_date, traveler_id),
           shipment_requests:shipment_request_id(from_city, to_city, item_type, sender_id)
         `,
@@ -121,10 +203,22 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       }
 
       setMatchDetails(data);
+      setMatchTracking({
+        status: data.status,
+        sender_handed_over: data.sender_handed_over || false,
+        traveler_picked_up: data.traveler_picked_up || false,
+        traveler_delivered: data.traveler_delivered || false,
+        sender_received: data.sender_received || false,
+        completed_at: data.completed_at,
+      });
 
       let targetUserId = null;
       const trip = data.trips as any;
       const request = data.shipment_requests as any;
+
+      // Determine if current user is sender
+      const userIsSender = request?.sender_id === userId;
+      setIsSender(userIsSender);
 
       if (trip?.traveler_id === userId) {
         targetUserId = request?.sender_id;
@@ -189,6 +283,10 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       otherUserPrivateInfo?.id_number?.trim(),
   );
 
+  // Get names for tracking display
+  const senderName = isSender ? currentUserName : (otherUser?.full_name || "Expéditeur");
+  const travelerName = !isSender ? currentUserName : (otherUser?.full_name || "Voyageur");
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Chargement de la conversation...</div>;
   }
@@ -235,6 +333,22 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         </div>
       )}
 
+      {/* Transaction Tracking - Only show for accepted matches */}
+      {matchTracking && matchTracking.status !== "pending" && (
+        <TransactionTracking
+          matchId={matchId}
+          userId={userId}
+          isSender={isSender}
+          senderHandedOver={matchTracking.sender_handed_over}
+          travelerPickedUp={matchTracking.traveler_picked_up}
+          travelerDelivered={matchTracking.traveler_delivered}
+          senderReceived={matchTracking.sender_received}
+          senderName={senderName}
+          travelerName={travelerName}
+          onUpdate={fetchMatchTracking}
+        />
+      )}
+
       {/* Match details */}
       {matchDetails && matchDetails.trips && (
         <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-xs sm:text-sm">
@@ -263,7 +377,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         ) : (
           messages.map((message: any) => {
             const isOwn = message.sender_id === userId;
-            const senderName = message.profiles?.full_name || "Utilisateur inconnu";
+            const senderDisplayName = message.profiles?.full_name || "Utilisateur inconnu";
 
             return (
               <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
@@ -276,7 +390,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
                 >
                   {!isOwn && (
                     <p className="text-[9px] sm:text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider truncate">
-                      {senderName}
+                      {senderDisplayName}
                     </p>
                   )}
                   <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
@@ -307,6 +421,21 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           <Send className="w-4 h-4" />
         </Button>
       </form>
+
+      {/* Review Modal */}
+      {otherUser && (
+        <ReviewModal
+          isOpen={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false);
+            setHasReviewed(true);
+          }}
+          matchId={matchId}
+          reviewerId={userId}
+          reviewedId={otherUser.id}
+          reviewedName={otherUser.full_name}
+        />
+      )}
     </div>
   );
 };

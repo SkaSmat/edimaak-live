@@ -16,27 +16,42 @@ export type Database = {
     Tables: {
       matches: {
         Row: {
+          completed_at: string | null
           created_at: string
           id: string
           notes: string | null
+          sender_handed_over: boolean | null
+          sender_received: boolean | null
           shipment_request_id: string
           status: string
+          traveler_delivered: boolean | null
+          traveler_picked_up: boolean | null
           trip_id: string
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
+          sender_handed_over?: boolean | null
+          sender_received?: boolean | null
           shipment_request_id: string
           status?: string
+          traveler_delivered?: boolean | null
+          traveler_picked_up?: boolean | null
           trip_id: string
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
+          sender_handed_over?: boolean | null
+          sender_received?: boolean | null
           shipment_request_id?: string
           status?: string
+          traveler_delivered?: boolean | null
+          traveler_picked_up?: boolean | null
           trip_id?: string
         }
         Relationships: [
@@ -227,6 +242,44 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          match_id: string
+          rating: number
+          reviewed_id: string
+          reviewer_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          match_id: string
+          rating: number
+          reviewed_id: string
+          reviewer_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          rating?: number
+          reviewed_id?: string
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shipment_alerts: {
         Row: {
@@ -437,6 +490,13 @@ export type Database = {
         Returns: {
           email: string
           user_id: string
+        }[]
+      }
+      get_user_rating: {
+        Args: { user_id: string }
+        Returns: {
+          average_rating: number
+          reviews_count: number
         }[]
       }
       has_match_with_user: { Args: { _profile_id: string }; Returns: boolean }
