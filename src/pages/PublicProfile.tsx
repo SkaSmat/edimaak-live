@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { ArrowLeft, Star, Package, Plane, CheckCircle, MapPin, Calendar, Shield } from "lucide-react";
+import { ArrowLeft, Star, Package, Plane, CheckCircle, Calendar, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import ReviewsList from "@/components/ReviewsList";
 
 interface UserProfile {
   id: string;
@@ -46,8 +47,6 @@ const PublicProfile = () => {
     try {
       setIsLoading(true);
 
-      console.log("🔍 Chargement profil pour userId:", userId);
-
       // Utiliser la fonction SECURITY DEFINER pour accéder au profil public
       const { data: profileData, error: profileError } = await supabase
         .rpc("get_public_profile", { profile_id: userId })
@@ -58,20 +57,20 @@ const PublicProfile = () => {
         throw profileError;
       }
 
-      console.log("📊 Résultat:", profileData);
-
       // Mapper les données vers notre interface
       if (profileData) {
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        
         setProfile({
-          id: profileData.id,
-          full_name: profileData.display_first_name || "Utilisateur",
-          avatar_url: profileData.avatar_url,
-          created_at: profileData.created_at,
+          id: profile.id,
+          full_name: profile.display_first_name || "Utilisateur",
+          avatar_url: profile.avatar_url,
+          created_at: profile.created_at,
           private_info: null,
         });
 
-        // Charger le statut KYC public et les statistiques en parallèle
-        const [kycRes, shipmentsRes, tripsRes, matchesRes] = await Promise.all([
+        // Charger le statut KYC public, les statistiques et la note en parallèle
+        const [kycRes, shipmentsRes, tripsRes, matchesRes, ratingRes] = await Promise.all([
           supabase.rpc("get_public_kyc_status", { profile_id: userId }),
           supabase
             .from("shipment_requests")
@@ -83,18 +82,23 @@ const PublicProfile = () => {
             .select("id", { count: "exact", head: true })
             .eq("traveler_id", userId)
             .eq("status", "open"),
-          supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "accepted"),
+          supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "completed"),
+          supabase.rpc("get_user_rating", { user_id: userId }),
         ]);
 
         // Définir le statut KYC
         setIsKycVerified(kycRes.data === true);
 
+        // Parse rating data
+        const ratingData = ratingRes.data;
+        const rating = Array.isArray(ratingData) ? ratingData[0] : ratingData;
+
         setStats({
           shipmentsCount: shipmentsRes.count || 0,
           tripsCount: tripsRes.count || 0,
           matchesCount: matchesRes.count || 0,
-          averageRating: 0,
-          reviewsCount: 0,
+          averageRating: rating?.average_rating ? Number(rating.average_rating) : 0,
+          reviewsCount: rating?.reviews_count ? Number(rating.reviews_count) : 0,
         });
       }
     } catch (error) {
@@ -158,16 +162,27 @@ const PublicProfile = () => {
           <div className="md:col-span-2 space-y-6">
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-start gap-6">
+                <div className="flex items-start gap-4 sm:gap-6">
                   <UserAvatar fullName={profile.full_name} avatarUrl={profile.avatar_url} size="xl" />
 
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 flex flex-wrap items-center gap-2">
-                          {profile.full_name}
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+                            {profile.full_name}
+                          </h1>
                           {isKycVerified && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0" />}
-                        </h1>
+                          
+                          {/* Rating display */}
+                          {stats && stats.reviewsCount > 0 && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-orange-400 text-orange-400" />
+                              <span className="font-bold text-sm sm:text-base">{stats.averageRating.toFixed(1)}</span>
+                              <span className="text-muted-foreground text-xs sm:text-sm">({stats.reviewsCount})</span>
+                            </div>
+                          )}
+                        </div>
                         {isKycVerified && (
                           <Badge className="bg-green-100 text-green-800 border-0">Identité vérifiée</Badge>
                         )}
@@ -176,7 +191,7 @@ const PublicProfile = () => {
 
                     <div className="flex items-center gap-2 text-muted-foreground mb-4">
                       <Calendar className="w-4 h-4" />
-                      <span>Membre depuis {memberSince}</span>
+                      <span className="text-sm">Membre depuis {memberSince}</span>
                     </div>
                   </div>
                 </div>
@@ -206,21 +221,22 @@ const PublicProfile = () => {
               </CardContent>
             </Card>
 
-            {stats && stats.reviewsCount > 0 && (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-foreground">Avis reçus</h2>
+            {/* Reviews Section */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-foreground">Avis reçus</h2>
+                  {stats && stats.reviewsCount > 0 && (
                     <div className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                      <Star className="w-5 h-5 text-orange-400 fill-orange-400" />
                       <span className="text-lg font-bold">{stats.averageRating.toFixed(1)}</span>
                       <span className="text-muted-foreground">({stats.reviewsCount} avis)</span>
                     </div>
-                  </div>
-                  <p className="text-muted-foreground text-center py-8">Les avis seront bientôt disponibles</p>
-                </CardContent>
-              </Card>
-            )}
+                  )}
+                </div>
+                {userId && <ReviewsList userId={userId} limit={3} />}
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
