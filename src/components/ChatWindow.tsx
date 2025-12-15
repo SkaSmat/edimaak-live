@@ -47,6 +47,8 @@ interface MatchTracking {
   traveler_delivered: boolean;
   sender_received: boolean;
   completed_at: string | null;
+  trip_id: string;
+  shipment_request_id: string;
 }
 
 const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
@@ -170,7 +172,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
     try {
       const { data, error } = await supabase
         .from("matches")
-        .select("status, sender_handed_over, traveler_picked_up, traveler_delivered, sender_received, completed_at")
+        .select("status, sender_handed_over, traveler_picked_up, traveler_delivered, sender_received, completed_at, trip_id, shipment_request_id")
         .eq("id", matchId)
         .maybeSingle();
 
@@ -187,7 +189,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         .from("matches")
         .select(
           `
-          status, sender_handed_over, traveler_picked_up, traveler_delivered, sender_received, completed_at,
+          status, sender_handed_over, traveler_picked_up, traveler_delivered, sender_received, completed_at, trip_id, shipment_request_id,
           trips:trip_id(from_city, to_city, departure_date, traveler_id),
           shipment_requests:shipment_request_id(from_city, to_city, item_type, sender_id)
         `,
@@ -210,6 +212,8 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         traveler_delivered: data.traveler_delivered || false,
         sender_received: data.sender_received || false,
         completed_at: data.completed_at,
+        trip_id: data.trip_id,
+        shipment_request_id: data.shipment_request_id,
       });
 
       let targetUserId = null;
@@ -337,6 +341,8 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       {matchTracking && matchTracking.status !== "pending" && (
         <TransactionTracking
           matchId={matchId}
+          tripId={matchTracking.trip_id}
+          shipmentRequestId={matchTracking.shipment_request_id}
           userId={userId}
           isSender={isSender}
           senderHandedOver={matchTracking.sender_handed_over}

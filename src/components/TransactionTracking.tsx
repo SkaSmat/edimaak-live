@@ -6,6 +6,8 @@ import { Check, Lock, Circle, Loader2 } from "lucide-react";
 
 interface TransactionTrackingProps {
   matchId: string;
+  tripId: string;
+  shipmentRequestId: string;
   userId: string;
   isSender: boolean;
   senderHandedOver: boolean;
@@ -62,6 +64,8 @@ const Step = ({ number, title, isComplete, isLocked, confirmedBy, actionButton }
 
 const TransactionTracking = ({
   matchId,
+  tripId,
+  shipmentRequestId,
   userId,
   isSender,
   senderHandedOver,
@@ -80,21 +84,37 @@ const TransactionTracking = ({
       const updateData: Record<string, any> = { [field]: true };
       
       // Si les deux confirmations de livraison sont faites, marquer comme completed
-      if (field === "traveler_delivered" && senderReceived) {
-        updateData.status = "completed";
-        updateData.completed_at = new Date().toISOString();
-      }
-      if (field === "sender_received" && travelerDelivered) {
+      const isCompleting = 
+        (field === "traveler_delivered" && senderReceived) ||
+        (field === "sender_received" && travelerDelivered);
+      
+      if (isCompleting) {
         updateData.status = "completed";
         updateData.completed_at = new Date().toISOString();
       }
 
+      // Update match
       const { error } = await supabase
         .from("matches")
         .update(updateData)
         .eq("id", matchId);
 
       if (error) throw error;
+
+      // Si transaction complétée, mettre à jour aussi le shipment_request et le trip
+      if (isCompleting) {
+        // Update shipment_request status to 'completed'
+        await supabase
+          .from("shipment_requests")
+          .update({ status: "completed" })
+          .eq("id", shipmentRequestId);
+
+        // Update trip status to 'completed'
+        await supabase
+          .from("trips")
+          .update({ status: "completed" })
+          .eq("id", tripId);
+      }
 
       const messages: Record<string, string> = {
         sender_handed_over: "Remise du colis confirmée !",

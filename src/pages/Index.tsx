@@ -34,7 +34,7 @@ interface ShipmentRequest {
   sender_id: string;
   price: number | null;
   status: string;
-  is_completed?: boolean; // True if shipment has a completed match
+  
   public_profiles?: {
     id: string;
     display_first_name: string;
@@ -124,10 +124,10 @@ const Index = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Fetch open shipment requests
+      // Fetch only open shipment requests - no completed ones on landing page
       const {
-        data: openData,
-        error: openError
+        data,
+        error: fetchError
       } = await supabase
         .from("shipment_requests")
         .select("*")
@@ -136,35 +136,7 @@ const Index = () => {
         .order("created_at", { ascending: false })
         .limit(20);
       
-      if (openError) throw openError;
-
-      // 2. Fetch shipment_request_ids that have completed matches
-      const { data: completedMatches } = await supabase
-        .from("matches")
-        .select("shipment_request_id")
-        .eq("status", "completed");
-      
-      const completedShipmentIds = new Set((completedMatches || []).map(m => m.shipment_request_id));
-      
-      // 3. Fetch those completed shipments (that aren't already in open list)
-      let completedShipments: any[] = [];
-      if (completedShipmentIds.size > 0) {
-        const completedIds = Array.from(completedShipmentIds);
-        const { data: completedData } = await supabase
-          .from("shipment_requests")
-          .select("*")
-          .in("id", completedIds)
-          .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
-          .order("created_at", { ascending: false })
-          .limit(10);
-        
-        completedShipments = (completedData || []).map(s => ({ ...s, is_completed: true }));
-      }
-
-      // Combine: open first, then completed (excluding duplicates)
-      const openIds = new Set((openData || []).map(s => s.id));
-      const filteredCompleted = completedShipments.filter(s => !openIds.has(s.id));
-      const data = [...(openData || []).map(s => ({ ...s, is_completed: false })), ...filteredCompleted];
+      if (fetchError) throw fetchError;
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map(r => r.sender_id))];
         
@@ -568,17 +540,7 @@ connectant voyageurs et expéditeurs pour le transport de colis.
           </div>}
 
         {!isLoading && filteredRequests.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredRequests.map(request => <div key={request.id} role="button" className={`group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col relative ${request.is_completed ? 'opacity-80 cursor-default' : 'cursor-pointer'}`} onClick={() => !request.is_completed && handleShipmentClick(request)}>
-                
-                {/* Completed Badge overlay */}
-                {request.is_completed && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-green-50 text-green-600 border border-green-200 text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" />
-                      Colis livré
-                    </div>
-                  </div>
-                )}
+            {filteredRequests.map(request => <div key={request.id} role="button" className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col relative cursor-pointer" onClick={() => handleShipmentClick(request)}>
                 {/* Header : Badge Type + Prix */}
                 <div className="p-3 sm:p-4 pb-2 flex items-center justify-between border-b border-gray-50">
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs flex items-center gap-1">
@@ -671,19 +633,12 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                   </div>
                 )}
 
-                {/* Bouton CTA ou Badge Completed */}
+                {/* Bouton CTA */}
                 <div className="p-3 sm:p-4 pt-2 mt-auto">
-                  {request.is_completed ? (
-                    <div className="w-full bg-green-50 text-green-600 border border-green-200 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Colis livré
-                    </div>
-                  ) : (
-                    <div className="w-full bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
-                      Proposer mon voyage
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </div>
-                  )}
+                  <div className="w-full bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
+                    Proposer mon voyage
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>)}
           </div>}
