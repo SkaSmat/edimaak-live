@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle, Loader2, Star } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -42,6 +42,8 @@ interface ShipmentRequest {
   };
   sender_request_count?: number;
   sender_kyc_verified?: boolean;
+  sender_rating?: number | null;
+  sender_reviews_count?: number;
 }
 
 // Import world countries for intelligent selection
@@ -124,7 +126,9 @@ const Index = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch both open and completed shipment requests
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch both open and completed shipment requests, exclude expired ones
       const {
         data,
         error: fetchError
@@ -133,6 +137,7 @@ const Index = () => {
         .select("*")
         .in("status", ["open", "completed"])
         .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
+        .gte("latest_date", today) // BUG 6 FIX: Exclude expired shipments
         .order("created_at", { ascending: false })
         .limit(30);
       
@@ -140,17 +145,19 @@ const Index = () => {
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map(r => r.sender_id))];
         
-        // 2. Fetch sender display info and KYC status in parallel batches
+        // 2. Fetch sender display info, KYC status, and ratings in parallel batches
         const senderInfoMap: Record<string, { display_name: string; avatar_url: string | null }> = {};
         const senderKycMap: Record<string, boolean> = {};
+        const senderRatingMap: Record<string, { rating: number | null; reviews_count: number }> = {};
         
         if (session) {
           // Batch all RPC calls for better performance
           const senderPromises = senderIds.map(senderId => 
             Promise.all([
               supabase.rpc('get_sender_display_info', { sender_uuid: senderId }),
-              supabase.rpc('get_public_kyc_status', { profile_id: senderId })
-            ]).then(([senderResult, kycResult]) => {
+              supabase.rpc('get_public_kyc_status', { profile_id: senderId }),
+              supabase.rpc('get_user_rating', { user_id: senderId })
+            ]).then(([senderResult, kycResult, ratingResult]) => {
               if (senderResult.data && senderResult.data.length > 0) {
                 senderInfoMap[senderId] = {
                   display_name: senderResult.data[0].display_name,
@@ -158,6 +165,10 @@ const Index = () => {
                 };
               }
               senderKycMap[senderId] = kycResult.data === true;
+              senderRatingMap[senderId] = {
+                rating: ratingResult.data?.[0]?.average_rating || null,
+                reviews_count: ratingResult.data?.[0]?.reviews_count || 0
+              };
             })
           );
           await Promise.all(senderPromises);
@@ -175,6 +186,8 @@ const Index = () => {
           ...r,
           sender_request_count: countMap[r.sender_id] || 0,
           sender_kyc_verified: senderKycMap[r.sender_id] || false,
+          sender_rating: senderRatingMap[r.sender_id]?.rating || null,
+          sender_reviews_count: senderRatingMap[r.sender_id]?.reviews_count || 0,
           public_profiles: senderInfoMap[r.sender_id] ? {
             id: r.sender_id,
             display_first_name: senderInfoMap[r.sender_id].display_name,
@@ -548,7 +561,16 @@ connectant voyageurs et expéditeurs pour le transport de colis.
           </div>}
 
         {!isLoading && filteredRequests.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredRequests.map(request => <div key={request.id} role="button" className={`group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col relative cursor-pointer ${request.status === 'completed' ? 'opacity-80' : ''}`} onClick={() => handleShipmentClick(request)}>
+            {filteredRequests.map(request => <div 
+              key={request.id} 
+              role={request.status === 'completed' ? undefined : "button"} 
+              className={`group bg-white rounded-xl overflow-hidden border border-gray-100 transition-all duration-300 flex flex-col relative ${
+                request.status === 'completed' 
+                  ? 'opacity-70 cursor-default' 
+                  : 'hover:border-gray-200 hover:shadow-xl cursor-pointer'
+              }`} 
+              onClick={() => request.status !== 'completed' && handleShipmentClick(request)}
+            >
                 {/* Header : Badge Type + Prix */}
                 <div className="p-3 sm:p-4 pb-2 flex items-center justify-between border-b border-gray-50">
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs flex items-center gap-1">
@@ -608,6 +630,13 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                           >
                             {request.public_profiles?.display_first_name || "Utilisateur"}
                             {request.sender_kyc_verified && <CheckCircle className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                            {/* BUG 1 & 8 FIX: Show rating next to name */}
+                            {request.sender_rating && request.sender_rating > 0 && (
+                              <span className="flex items-center gap-0.5 text-amber-500 font-medium ml-1">
+                                <Star className="w-3 h-3 fill-current" />
+                                {request.sender_rating}
+                              </span>
+                            )}
                           </button>
                           {request.sender_kyc_verified && (
                             <p className="text-[10px] sm:text-xs text-green-600 font-medium">

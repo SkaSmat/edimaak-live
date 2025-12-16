@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight, AlertCircle, Eye } from "lucide-react";
+import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight, AlertCircle, Eye, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -34,6 +34,7 @@ interface ShipmentRequest {
   sender_id: string;
   price?: number | null;
   view_count?: number;
+  status?: string;
   public_profiles?: {
     id: string;
     display_first_name: string;
@@ -247,7 +248,13 @@ export const ShipmentDetailModal = ({
 
           {/* Actions */}
           <div className="pt-2">
-            {!isAuthenticated ? (
+            {/* BUG 4: Don't show actions for completed shipments */}
+            {shipment.status === 'completed' ? (
+              <div className="w-full bg-green-50 text-green-600 border border-green-200 font-medium text-sm py-3 rounded-lg flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                Ce colis a été livré
+              </div>
+            ) : !isAuthenticated ? (
               <div className="space-y-3 text-center">
                 <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                   Connectez-vous pour proposer votre voyage à cet expéditeur.

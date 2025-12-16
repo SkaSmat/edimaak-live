@@ -14,6 +14,7 @@ import {
   PlusCircle,
   CheckCircle,
   XCircle,
+  Star,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -35,6 +36,8 @@ interface ShipmentRequest {
   notes: string | null;
   sender_display_name?: string;
   sender_avatar_url?: string;
+  sender_rating?: number | null;
+  sender_reviews_count?: number;
 }
 
 interface CompatibleMatch {
@@ -121,28 +124,46 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const fetchCompatibleShipments = async () => {
     setError(false);
     try {
-      const { data: trips } = await supabase.from("trips").select("*").eq("traveler_id", userId).eq("status", "open");
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch only trips that are not expired (departure_date >= today)
+      const { data: trips } = await supabase
+        .from("trips")
+        .select("*")
+        .eq("traveler_id", userId)
+        .eq("status", "open")
+        .gte("departure_date", today);
 
       setHasTrips(trips && trips.length > 0);
 
+      // Fetch only shipments that are not expired (latest_date >= today)
+      // BUG 2 FIX: Exclude own shipments (sender_id !== userId)
       const { data: shipments, error } = await supabase
         .from("shipment_requests")
         .select("*")
-        .eq("status", "open");
+        .eq("status", "open")
+        .neq("sender_id", userId) // Exclude own shipments
+        .gte("latest_date", today); // Exclude expired shipments
 
       if (error) throw error;
 
-      // Récupérer les infos d'affichage des expéditeurs via la fonction sécurisée
+      // Récupérer les infos d'affichage des expéditeurs et leurs ratings via la fonction sécurisée
       const senderIds = [...new Set((shipments || []).map((s: any) => s.sender_id))];
-      const senderInfos: Record<string, { display_name: string; avatar_url: string | null }> = {};
+      const senderInfos: Record<string, { display_name: string; avatar_url: string | null; rating: number | null; reviews_count: number }> = {};
       
       await Promise.all(
         senderIds.map(async (senderId) => {
-          const { data } = await supabase.rpc("get_sender_display_info", { sender_uuid: senderId });
-          if (data && data.length > 0) {
+          const [senderResult, ratingResult] = await Promise.all([
+            supabase.rpc("get_sender_display_info", { sender_uuid: senderId }),
+            supabase.rpc("get_user_rating", { user_id: senderId })
+          ]);
+          
+          if (senderResult.data && senderResult.data.length > 0) {
             senderInfos[senderId] = {
-              display_name: data[0].display_name,
-              avatar_url: data[0].avatar_url,
+              display_name: senderResult.data[0].display_name,
+              avatar_url: senderResult.data[0].avatar_url,
+              rating: ratingResult.data?.[0]?.average_rating || null,
+              reviews_count: ratingResult.data?.[0]?.reviews_count || 0,
             };
           }
         })
@@ -185,6 +206,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
               ...shipment,
               sender_display_name: senderInfo?.display_name || "Anonyme",
               sender_avatar_url: senderInfo?.avatar_url || null,
+              sender_rating: senderInfo?.rating || null,
+              sender_reviews_count: senderInfo?.reviews_count || 0,
             } as ShipmentRequest,
             matchingTrip: {
               id: matchingTrip.id,
@@ -422,9 +445,15 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                           e.stopPropagation();
                           setSelectedProfileId(shipment.sender_id);
                         }}
-                        className="text-xs sm:text-sm text-muted-foreground truncate hover:text-primary hover:underline transition-colors"
+                        className="text-xs sm:text-sm text-muted-foreground truncate hover:text-primary hover:underline transition-colors flex items-center gap-1"
                       >
                         {shipment.sender_display_name || "Anonyme"}
+                        {shipment.sender_rating && shipment.sender_rating > 0 && (
+                          <span className="flex items-center gap-0.5 text-amber-500 font-medium">
+                            <Star className="w-3 h-3 fill-current" />
+                            {shipment.sender_rating}
+                          </span>
+                        )}
                       </button>
                     </div>
                   </div>

@@ -76,6 +76,7 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
     latestDate: editData?.latest_date || "",
     weightKg: editData?.weight_kg?.toString() || "",
     itemType: (editData?.item_type || "") as typeof VALID_ITEM_TYPES[number] | "",
+    itemTypeOther: "", // BUG 7: Field for "Autres, précisez"
     notes: editData?.notes || "",
     price: editData?.price?.toString() || "",
   });
@@ -125,6 +126,12 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
       return;
     }
 
+    // BUG 7: Validate "Autres" requires specification
+    if (formData.itemType === "Autres" && !formData.itemTypeOther.trim()) {
+      toast.error("Veuillez préciser le type de colis");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -151,6 +158,7 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
         latest_date: validatedData.latestDate,
         weight_kg: validatedData.weightKg,
         item_type: validatedData.itemType,
+        item_type_other: formData.itemType === "Autres" ? formData.itemTypeOther.trim() : null, // BUG 7
         notes: validatedData.notes || null,
         image_url: imageUrl,
         price: validatedData.price,
@@ -257,7 +265,7 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
           <Label>Type d'objet *</Label>
           <select
             value={formData.itemType}
-            onChange={(e) => setFormData({ ...formData, itemType: e.target.value as typeof VALID_ITEM_TYPES[number] })}
+            onChange={(e) => setFormData({ ...formData, itemType: e.target.value as typeof VALID_ITEM_TYPES[number], itemTypeOther: "" })}
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
           >
@@ -267,6 +275,21 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
             ))}
           </select>
         </div>
+        
+        {/* BUG 7: Conditional field for "Autres, précisez" */}
+        {formData.itemType === "Autres" && (
+          <div className="space-y-2">
+            <Label>Précisez le type *</Label>
+            <Input 
+              type="text" 
+              value={formData.itemTypeOther} 
+              onChange={(e) => setFormData({ ...formData, itemTypeOther: e.target.value })}
+              placeholder="Ex: Jouets, Livres, Accessoires..."
+              required
+              maxLength={100}
+            />
+          </div>
+        )}
         <div className="space-y-2">
           <Label>Prix proposé (€) <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
           <Input type="number" step="1" min="1" max="10000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="Ex: 50" />

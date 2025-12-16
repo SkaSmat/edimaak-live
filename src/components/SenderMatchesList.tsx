@@ -95,11 +95,42 @@ const SenderMatchesList = ({ embedded = false, userId }: SenderMatchesListProps)
 
   const handleUpdateStatus = async (matchId: string, newStatus: "accepted" | "rejected") => {
     try {
+      // First get the match details for email notification
+      const matchToUpdate = matches.find(m => m.id === matchId);
+      
       const { error } = await supabase.from("matches").update({ status: newStatus }).eq("id", matchId);
 
       if (error) throw error;
 
       toast.success(newStatus === "accepted" ? "Proposition acceptée !" : "Proposition refusée");
+
+      // BUG 3: Send email to traveler when match is accepted
+      if (newStatus === "accepted" && matchToUpdate?.trips?.traveler_id) {
+        try {
+          // Get sender name from current user's profile
+          const { data: senderProfile } = await supabase
+            .from("profiles")
+            .select("full_name, first_name")
+            .eq("id", userId)
+            .single();
+          
+          const senderName = senderProfile?.first_name || senderProfile?.full_name || "L'expéditeur";
+          const shipmentRoute = `${matchToUpdate.shipment_requests?.from_city} → ${matchToUpdate.shipment_requests?.to_city}`;
+          
+          // Call the edge function to send acceptance email
+          await supabase.functions.invoke("notify-match-accepted", {
+            body: {
+              match_id: matchId,
+              traveler_id: matchToUpdate.trips.traveler_id,
+              sender_name: senderName,
+              shipment_route: shipmentRoute,
+            },
+          });
+        } catch (emailError) {
+          console.error("Error sending acceptance email:", emailError);
+          // Don't block the UI if email fails
+        }
+      }
 
       // Rafraîchir la liste
       fetchMatches();
