@@ -331,6 +331,7 @@ export type Database = {
           id: string
           image_url: string | null
           item_type: string
+          item_type_other: string | null
           latest_date: string
           notes: string | null
           price: number | null
@@ -349,6 +350,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           item_type: string
+          item_type_other?: string | null
           latest_date: string
           notes?: string | null
           price?: number | null
@@ -367,6 +369,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           item_type?: string
+          item_type_other?: string | null
           latest_date?: string
           notes?: string | null
           price?: number | null

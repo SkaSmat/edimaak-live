@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.notify-match-proposal]
 verify_jwt = false
+
+[functions.notify-match-accepted]
+verify_jwt = false
