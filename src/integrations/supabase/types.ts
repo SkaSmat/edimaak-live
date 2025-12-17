@@ -517,6 +517,7 @@ export type Database = {
       is_admin:
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
+      user_has_match_for_trip: { Args: { trip_uuid: string }; Returns: boolean }
     }
     Enums: {
       app_role: "traveler" | "sender" | "admin"
