@@ -11,6 +11,12 @@ function formatDateFr(date: Date): string {
   return `${day} ${month} ${year}`;
 }
 
+function formatTimeFr(date: Date): string {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}h${minutes}`;
+}
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
@@ -36,12 +42,17 @@ function isAuthorizedRequest(req: Request): boolean {
   return false;
 }
 
-const MatchPayloadSchema = z.object({
-  match_id: z.string().uuid(),
-  sender_id: z.string().uuid(),
-  traveler_name: z.string(),
-  shipment_route: z.string(),
-  trip_id: z.string().uuid().optional(),
+const MessagePayloadSchema = z.object({
+  type: z.literal("INSERT"),
+  table: z.literal("messages"),
+  schema: z.literal("public"),
+  record: z.object({
+    id: z.string().uuid(),
+    match_id: z.string().uuid(),
+    sender_id: z.string().uuid(),
+    content: z.string(),
+    created_at: z.string(),
+  }),
 });
 
 async function sendEmail(to: string, subject: string, html: string) {
@@ -70,7 +81,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   if (!isAuthorizedRequest(req)) {
-    console.error("Unauthorized request to notify-match-proposal");
+    console.error("Unauthorized request to notify-new-message");
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -79,9 +90,9 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const rawPayload = await req.json();
-    console.log("Received match notification payload:", JSON.stringify(rawPayload));
+    console.log("Received message notification payload:", JSON.stringify(rawPayload));
     
-    const parseResult = MatchPayloadSchema.safeParse(rawPayload);
+    const parseResult = MessagePayloadSchema.safeParse(rawPayload);
     
     if (!parseResult.success) {
       console.error("Invalid payload:", parseResult.error.errors);
@@ -91,14 +102,58 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { match_id, sender_id, traveler_name, shipment_route, trip_id } = parseResult.data;
+    const { record } = parseResult.data;
+    const { match_id, sender_id, content, created_at } = record;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       SUPABASE_SERVICE_ROLE_KEY ?? ""
     );
 
-    // Get sender profile info
+    // Get match details to find the recipient
+    const { data: matchData, error: matchError } = await supabaseAdmin
+      .from("matches")
+      .select(`
+        trip_id,
+        shipment_request_id,
+        trips:trip_id(traveler_id, from_city, to_city, departure_date),
+        shipment_requests:shipment_request_id(sender_id)
+      `)
+      .eq("id", match_id)
+      .maybeSingle();
+
+    if (matchError || !matchData) {
+      console.error("Error fetching match:", matchError);
+      return new Response(
+        JSON.stringify({ error: "Could not fetch match details" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const trip = matchData.trips as any;
+    const shipmentRequest = matchData.shipment_requests as any;
+
+    // Determine recipient (the person who didn't send the message)
+    let recipientId: string;
+    let typeAnnonce: string;
+    
+    if (sender_id === trip?.traveler_id) {
+      recipientId = shipmentRequest?.sender_id;
+      typeAnnonce = "demande de colis";
+    } else {
+      recipientId = trip?.traveler_id;
+      typeAnnonce = "voyage";
+    }
+
+    if (!recipientId) {
+      console.log("Could not determine recipient");
+      return new Response(
+        JSON.stringify({ success: false, error: "No recipient found" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get sender's profile
     const { data: senderProfile } = await supabaseAdmin
       .from("profiles")
       .select("first_name, full_name")
@@ -106,66 +161,65 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     const senderFirstName = senderProfile?.first_name || senderProfile?.full_name?.split(" ")[0] || "Utilisateur";
+    const senderInitial = senderFirstName.charAt(0).toUpperCase();
 
-    // Get trip details if trip_id is provided
-    let tripDetails = {
-      from_city: "",
-      to_city: "",
-      departure_date: "",
-      max_weight_kg: 0,
-    };
+    // Get recipient's profile
+    const { data: recipientProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("first_name, full_name")
+      .eq("id", recipientId)
+      .maybeSingle();
 
-    if (trip_id) {
-      const { data: tripData } = await supabaseAdmin
-        .from("trips")
-        .select("from_city, to_city, departure_date, max_weight_kg")
-        .eq("id", trip_id)
-        .maybeSingle();
-      
-      if (tripData) {
-        tripDetails = tripData;
-      }
+    const recipientFirstName = recipientProfile?.first_name || recipientProfile?.full_name?.split(" ")[0] || "Utilisateur";
+
+    // Get recipient's email
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(recipientId);
+
+    if (userError || !userData?.user?.email) {
+      console.error("Error fetching recipient email:", userError);
+      return new Response(
+        JSON.stringify({ error: "Could not fetch recipient email" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Parse route for fallback
-    const [fromCity, toCity] = shipment_route.split(" → ");
-    const villeDepart = tripDetails.from_city || fromCity || "Départ";
-    const villeArrivee = tripDetails.to_city || toCity || "Arrivée";
-    
-    // Format date
+    const recipientEmail = userData.user.email;
+
+    // Format message time
+    let heureMessage = "Aujourd'hui";
+    try {
+      const messageDate = new Date(created_at);
+      heureMessage = `Aujourd'hui à ${formatTimeFr(messageDate)}`;
+    } catch (e) {
+      console.log("Error formatting time:", e);
+    }
+
+    // Truncate message to 100 chars
+    const apercuMessage = content.length > 100 ? content.substring(0, 100) + "..." : content;
+
+    // Trip details
+    const villeDepart = trip?.from_city || "Départ";
+    const villeArrivee = trip?.to_city || "Arrivée";
     let dateVoyage = "Date à confirmer";
-    if (tripDetails.departure_date) {
+    if (trip?.departure_date) {
       try {
-        const date = new Date(tripDetails.departure_date);
+        const date = new Date(trip.departure_date);
         dateVoyage = formatDateFr(date);
       } catch (e) {
         console.log("Error formatting date:", e);
       }
     }
 
-    const capacite = tripDetails.max_weight_kg || "À confirmer";
-    const lienProposition = `https://edimaak.com/dashboard/sender/matches`;
+    const lienConversation = `https://edimaak.com/messages?match=${match_id}`;
 
-    // Get sender's email
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(sender_id);
-
-    if (userError || !userData?.user?.email) {
-      console.error("Error fetching sender email:", userError);
-      return new Response(
-        JSON.stringify({ error: "Could not fetch sender email" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const senderEmail = userData.user.email;
-    console.log(`Sending match notification email to ${senderEmail}`);
+    console.log(`Sending message notification email to ${recipientEmail}`);
 
     const emailHtml = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EdiMaak - Un voyageur pour votre colis !</title>
+  <title>EdiMaak - Nouveau message</title>
   <style>
     @media screen and (max-width: 600px) {
       .container { width: 100% !important; max-width: 100% !important; }
@@ -181,48 +235,34 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #E75C3C, #FF7A3A); padding: 40px; text-align: center; border-radius: 16px 16px 0 0;">
-              <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Bonne nouvelle !</h1>
-              <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Un voyageur pour votre colis</p>
+              <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Nouveau message</h1>
             </td>
           </tr>
           <!-- Content -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 16px 16px;">
-              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${senderFirstName},</p>
-              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${traveler_name} se rend à ${villeArrivee} et propose de transporter votre colis !</p>
+              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${recipientFirstName},</p>
+              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${senderFirstName} vous a envoyé un message concernant votre ${typeAnnonce}.</p>
               
-              <!-- Trip Details Card -->
+              <!-- Message Card -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f4f0; border-radius: 12px; margin-bottom: 24px;">
                 <tr>
-                  <td style="padding: 24px;">
-                    <p style="margin: 0 0 16px 0; font-size: 14px; color: #666666; text-transform: uppercase; letter-spacing: 1px;">📍 Détails du trajet</p>
+                  <td style="padding: 20px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                       <tr>
-                        <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                          <span style="color: #666666; font-size: 14px;">Départ</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${villeDepart}</span>
+                        <td width="48" valign="top">
+                          <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #E75C3C, #FF7A3A); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; line-height: 40px; text-align: center;">${senderInitial}</div>
                         </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                          <span style="color: #666666; font-size: 14px;">Arrivée</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${villeArrivee}</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                          <span style="color: #666666; font-size: 14px;">Date</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${dateVoyage}</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0;">
-                          <span style="color: #666666; font-size: 14px;">Capacité disponible</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${capacite} kg</span>
+                        <td style="padding-left: 12px;" valign="top">
+                          <p style="margin: 0; font-weight: 600; color: #333333; font-size: 14px;">${senderFirstName}</p>
+                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #999999;">${heureMessage}</p>
                         </td>
                       </tr>
                     </table>
+                    <div style="margin-top: 16px; padding: 16px; background-color: #ffffff; border-radius: 8px; border-left: 3px solid #E75C3C;">
+                      <p style="margin: 0; font-size: 14px; color: #333333; font-style: italic;">"${apercuMessage}"</p>
+                    </div>
                   </td>
                 </tr>
               </table>
@@ -231,28 +271,27 @@ const handler = async (req: Request): Promise<Response> => {
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td style="text-align: center; padding: 16px 0;">
-                    <a href="${lienProposition}" style="display: inline-block; background: linear-gradient(135deg, #E75C3C, #FF7A3A); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Voir la proposition →</a>
+                    <a href="${lienConversation}" style="display: inline-block; background: linear-gradient(135deg, #E75C3C, #FF7A3A); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Répondre →</a>
                   </td>
                 </tr>
               </table>
               
-              <p style="margin: 24px 0 0 0; font-size: 14px; color: #666666; text-align: center;">Consultez le profil de ${traveler_name} et échangez directement avec lui/elle.</p>
-              
-              <!-- Warning -->
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
-                <tr>
-                  <td style="background-color: #fff8e6; border-radius: 8px; padding: 16px; text-align: center;">
-                    <p style="margin: 0; font-size: 14px; color: #856404;">⏰ Ce voyageur attend votre réponse.<br>Ne tardez pas, les places sont limitées !</p>
-                  </td>
-                </tr>
-              </table>
-              
-              <!-- WhatsApp -->
+              <!-- Trip Info -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px;">
                 <tr>
-                  <td style="text-align: center;">
-                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #666666;">Une question ?</p>
-                    <a href="https://wa.me/33612345678" style="color: #25D366; text-decoration: none; font-size: 14px;">📱 M'écrire sur WhatsApp</a>
+                  <td style="text-align: center; padding: 16px; background-color: #f8f4f0; border-radius: 8px;">
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #666666; text-transform: uppercase; letter-spacing: 1px;">📍 Trajet concerné</p>
+                    <p style="margin: 0; font-size: 16px; color: #333333; font-weight: 600;">${villeDepart} → ${villeArrivee}</p>
+                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #666666;">${dateVoyage}</p>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Tip -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px;">
+                <tr>
+                  <td style="background-color: #e8f4fd; border-radius: 8px; padding: 16px; text-align: center;">
+                    <p style="margin: 0; font-size: 14px; color: #0066cc;">💡 Conseil : Répondez rapidement pour finaliser votre accord.</p>
                   </td>
                 </tr>
               </table>
@@ -269,7 +308,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <a href="https://edimaak.com/securite" style="color: #999999; text-decoration: none;">Sécurité</a> • 
                 <a href="mailto:contact@edimaak.com?subject=Se%20désinscrire" style="color: #999999; text-decoration: none;">Se désinscrire</a>
               </p>
-              <p style="margin: 0; font-size: 11px; color: #cccccc;">Vous recevez cet email car vous avez publié une annonce sur EdiMaak.</p>
+              <p style="margin: 0; font-size: 11px; color: #cccccc;">Vous recevez cet email car vous avez une conversation active sur EdiMaak.</p>
             </td>
           </tr>
         </table>
@@ -280,18 +319,18 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     const emailData = await sendEmail(
-      senderEmail, 
-      `🎉 ${traveler_name} propose de transporter votre colis !`, 
+      recipientEmail, 
+      `💬 ${senderFirstName} vous a envoyé un message`, 
       emailHtml
     );
-    console.log("Match notification email sent successfully:", emailData);
+    console.log("Message notification email sent successfully:", emailData);
 
     return new Response(
       JSON.stringify({ success: true, emailId: emailData?.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Error in notify-match-proposal function:", error);
+    console.error("Error in notify-new-message function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
