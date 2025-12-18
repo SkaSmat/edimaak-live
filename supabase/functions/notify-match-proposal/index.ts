@@ -2,7 +2,20 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-const MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const MONTHS_FR = [
+  "janvier",
+  "février",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "août",
+  "septembre",
+  "octobre",
+  "novembre",
+  "décembre",
+];
 
 function formatDateFr(date: Date): string {
   const day = date.getDate();
@@ -23,16 +36,16 @@ const corsHeaders = {
 function isAuthorizedRequest(req: Request): boolean {
   const webhookSecret = req.headers.get("x-webhook-secret");
   if (webhookSecret && webhookSecret === WEBHOOK_SECRET) return true;
-  
+
   const authHeader = req.headers.get("authorization");
   if (authHeader) {
     const token = authHeader.replace("Bearer ", "");
     if (token === SUPABASE_SERVICE_ROLE_KEY) return true;
   }
-  
+
   const clientInfo = req.headers.get("x-client-info");
   if (clientInfo === "supabase-db-trigger") return true;
-  
+
   return false;
 }
 
@@ -48,7 +61,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -71,32 +84,29 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (!isAuthorizedRequest(req)) {
     console.error("Unauthorized request to notify-match-proposal");
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
     const rawPayload = await req.json();
     console.log("Received match notification payload:", JSON.stringify(rawPayload));
-    
+
     const parseResult = MatchPayloadSchema.safeParse(rawPayload);
-    
+
     if (!parseResult.success) {
       console.error("Invalid payload:", parseResult.error.errors);
-      return new Response(
-        JSON.stringify({ error: "Invalid payload", details: parseResult.error.errors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid payload", details: parseResult.error.errors }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { match_id, sender_id, traveler_name, shipment_route, trip_id } = parseResult.data;
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      SUPABASE_SERVICE_ROLE_KEY ?? ""
-    );
+    const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL") ?? "", SUPABASE_SERVICE_ROLE_KEY ?? "");
 
     // Get sender profile info
     const { data: senderProfile } = await supabaseAdmin
@@ -121,7 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
         .select("from_city, to_city, departure_date, max_weight_kg")
         .eq("id", trip_id)
         .maybeSingle();
-      
+
       if (tripData) {
         tripDetails = tripData;
       }
@@ -131,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
     const [fromCity, toCity] = shipment_route.split(" → ");
     const villeDepart = tripDetails.from_city || fromCity || "Départ";
     const villeArrivee = tripDetails.to_city || toCity || "Arrivée";
-    
+
     // Format date
     let dateVoyage = "Date à confirmer";
     if (tripDetails.departure_date) {
@@ -151,10 +161,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (userError || !userData?.user?.email) {
       console.error("Error fetching sender email:", userError);
-      return new Response(
-        JSON.stringify({ error: "Could not fetch sender email" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Could not fetch sender email" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const senderEmail = userData.user.email;
@@ -252,7 +262,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <tr>
                   <td style="text-align: center;">
                     <p style="margin: 0 0 8px 0; font-size: 14px; color: #666666;">Une question ?</p>
-                    <a href="https://wa.me/33612345678" style="color: #25D366; text-decoration: none; font-size: 14px;">📱 M'écrire sur WhatsApp</a>
+                    <a href="https://wa.me/33669367997" style="color: #25D366; text-decoration: none; font-size: 14px;">📱 M'écrire sur WhatsApp</a>
                   </td>
                 </tr>
               </table>
@@ -280,22 +290,22 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     const emailData = await sendEmail(
-      senderEmail, 
-      `🎉 ${traveler_name} propose de transporter votre colis !`, 
-      emailHtml
+      senderEmail,
+      `🎉 ${traveler_name} propose de transporter votre colis !`,
+      emailHtml,
     );
     console.log("Match notification email sent successfully:", emailData);
 
-    return new Response(
-      JSON.stringify({ success: true, emailId: emailData?.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, emailId: emailData?.id }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: any) {
     console.error("Error in notify-match-proposal function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 };
 
