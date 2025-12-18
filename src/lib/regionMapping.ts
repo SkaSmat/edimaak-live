@@ -13,7 +13,7 @@ export interface RegionInfo {
 export const REGIONS_BY_COUNTRY: Record<string, RegionInfo[]> = {
   DZ: [
   // Grande région Nord Centre : Alger + Kabylie + Mitidja
-  { name: "Nord Centre", cities: [ "Alger", "Tizi Ouzou", "Béjaïa", "Blida", "Boumerdès","Tipaza", "Bouira", "Bordj Bou Arreridj", "Médéa", "Chlef"], estimatedRadius: 120 },
+  { name: "Nord Centre", cities: [ "Alger", "Tizi Ouzou", "Béjaïa", "Blida", "Boumerdès","Tipaza", "Bouira", "Médéa", "Chlef"], estimatedRadius: 120 },
   // Grande région Nord Est : Constantine + Annaba + Sétif + Aurès
   { name: "Nord Est", cities: [ "Constantine", "Annaba", "Sétif", "Jijel", "Skikda", "Mila", "El Tarf", "Guelma", "Batna", "Oum El Bouaghi", "Khenchela", "Tébessa", "Souk Ahras", "Bordj Bou Arréridj"], estimatedRadius: 150 },
   // Grande région Nord Ouest : Oran + Tlemcen + Ouest
