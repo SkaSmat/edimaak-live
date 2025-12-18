@@ -418,7 +418,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
         <EmptyState
           icon={Search}
           title="Aucune demande compatible"
-          description="Aucun colis ne correspond à vos destinations ou dates. Le matching flexible (±3 jours, villes proches) est activé."
+          description="Aucun colis ne correspond à vos destinations ou dates. Le matching flexible (±5 jours, villes proches) est activé."
         />
       ) : (
         <div className="space-y-3 sm:space-y-4">

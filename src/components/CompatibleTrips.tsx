@@ -213,7 +213,7 @@ const CompatibleTrips = ({ userId }: CompatibleTripsProps) => {
         <EmptyState
           icon={Search}
           title="Aucun voyageur compatible"
-          description="Aucun voyageur ne correspond à vos trajets ou dates. Le matching flexible (±3 jours, villes proches) est activé."
+          description="Aucun voyageur ne correspond à vos trajets ou dates. Le matching flexible (±5 jours, villes proches) est activé."
         />
       ) : (
         <div className="space-y-3 sm:space-y-4">
