@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getFlexibleMatchInfo, areCitiesInSameRegion } from "@/lib/regionMapping";
+import { getFlexibleMatchInfo, FlexibleMatchInfo, areCitiesInSameRegion } from "@/lib/regionMapping";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Calendar, Weight, Search, Plane, Star } from "lucide-react";
