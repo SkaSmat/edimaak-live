@@ -11,22 +11,21 @@ export interface RegionInfo {
 
 // Region mappings by country code
 export const REGIONS_BY_COUNTRY: Record<string, RegionInfo[]> = {
-  // Algeria - Grouped by geographic regions (refined for better precision)
   DZ: [
-    { name: "Région d'Alger", cities: ["Alger", "Blida", "Boumerdès", "Tipaza", "Médéa", "Chlef"], estimatedRadius: 50 },
-    { name: "Kabylie", cities: ["Tizi Ouzou", "Béjaïa", "Bouira", "Bordj Bou Arreridj"], estimatedRadius: 80 },
-    { name: "Région de Constantine", cities: ["Constantine", "Mila", "Jijel", "Skikda", "Oum El Bouaghi"], estimatedRadius: 70 },
-    { name: "Région d'Annaba", cities: ["Annaba", "El Tarf", "Guelma", "Souk Ahras"], estimatedRadius: 60 },
-    { name: "Région d'Oran", cities: ["Oran", "Aïn Témouchent", "Mostaganem", "Mascara", "Sidi Bel Abbès", "Relizane"], estimatedRadius: 100 },
-    { name: "Région de Tlemcen", cities: ["Tlemcen", "Saïda"], estimatedRadius: 80 },
-    { name: "Région de Sétif", cities: ["Sétif", "Bordj Bou Arréridj"], estimatedRadius: 60 },
-    { name: "Région de Batna", cities: ["Batna", "Khenchela", "Tébessa"], estimatedRadius: 80 },
-    // Refined Southern Algeria - split into 4 distinct regions
-    { name: "Hauts-Plateaux", cities: ["Djelfa", "Laghouat", "M'Sila"], estimatedRadius: 150 },
-    { name: "Sahara Nord", cities: ["Biskra", "Ouargla", "Ghardaïa", "El Oued"], estimatedRadius: 200 },
-    { name: "Sahara Ouest", cities: ["Béchar", "Adrar", "Tindouf"], estimatedRadius: 300 },
-    { name: "Grand Sud", cities: ["Tamanrasset", "Illizi", "Djanet"], estimatedRadius: 400 },
-  ],
+  // Grande région Nord Centre : Alger + Kabylie + Mitidja
+  { name: "Nord Centre", cities: [ "Alger", "Tizi Ouzou", "Béjaïa", "Blida", "Boumerdès","Tipaza", "Bouira", "Bordj Bou Arreridj", "Médéa", "Chlef"], estimatedRadius: 120 },
+  // Grande région Nord Est : Constantine + Annaba + Sétif + Aurès
+  { name: "Nord Est", cities: [ "Constantine", "Annaba", "Sétif", "Jijel", "Skikda", "Mila", "El Tarf", "Guelma", "Batna", "Oum El Bouaghi", "Khenchela", "Tébessa", "Souk Ahras", "Bordj Bou Arréridj"], estimatedRadius: 150 },
+  // Grande région Nord Ouest : Oran + Tlemcen + Ouest
+  { name: "Nord Ouest", cities: ["Oran", "Tlemcen", "Sidi Bel Abbès", "Aïn Témouchent", "Mostaganem", "Mascara", "Relizane", "Saïda", "Tiaret"], estimatedRadius: 150 },
+  // Hauts-Plateaux et Sahara Nord
+  { name: "Hauts-Plateaux & Sahara Nord", cities: ["Djelfa", "Laghouat", "M'Sila", "Biskra", "Ouargla", "Ghardaïa", "El Oued", "Touggourt"], estimatedRadius: 250 },
+  // Grand Sud - Chaque ville isolée (distances trop grandes)
+  { name: "Béchar", cities: ["Béchar"], estimatedRadius: 50 },
+  { name: "Adrar", cities: ["Adrar", "Timimoun"], estimatedRadius: 100 },
+  { name: "Tamanrasset", cities: ["Tamanrasset"], estimatedRadius: 50 },
+  { name: "Illizi", cities: ["Illizi", "Djanet"], estimatedRadius: 150 },
+],
 
   // France - Grouped by regions
   FR: [
