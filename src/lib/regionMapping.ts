@@ -6,37 +6,42 @@ import { WORLD_COUNTRIES } from "./worldData";
 export interface RegionInfo {
   name: string;
   cities: string[];
+  estimatedRadius?: number; // Distance moyenne en km
 }
 
 // Region mappings by country code
 export const REGIONS_BY_COUNTRY: Record<string, RegionInfo[]> = {
-  // Algeria - Grouped by geographic regions
+  // Algeria - Grouped by geographic regions (refined for better precision)
   DZ: [
-    { name: "Région d'Alger", cities: ["Alger", "Blida", "Boumerdès", "Tipaza", "Médéa", "Chlef"] },
-    { name: "Kabylie", cities: ["Tizi Ouzou", "Béjaïa", "Bouira", "Bordj Bou Arreridj"] },
-    { name: "Région de Constantine", cities: ["Constantine", "Mila", "Jijel", "Skikda", "Oum El Bouaghi"] },
-    { name: "Région d'Annaba", cities: ["Annaba", "El Tarf", "Guelma", "Souk Ahras"] },
-    { name: "Région d'Oran", cities: ["Oran", "Aïn Témouchent", "Mostaganem", "Mascara", "Sidi Bel Abbès", "Relizane"] },
-    { name: "Région de Tlemcen", cities: ["Tlemcen", "Saïda"] },
-    { name: "Région de Sétif", cities: ["Sétif", "Bordj Bou Arréridj", "M'Sila"] },
-    { name: "Région de Batna", cities: ["Batna", "Khenchela", "Tébessa", "Biskra"] },
-    { name: "Sud algérien", cities: ["Ouargla", "Ghardaïa", "El Oued", "Laghouat", "Béchar", "Djelfa", "Adrar", "Tamanrasset"] },
+    { name: "Région d'Alger", cities: ["Alger", "Blida", "Boumerdès", "Tipaza", "Médéa", "Chlef"], estimatedRadius: 50 },
+    { name: "Kabylie", cities: ["Tizi Ouzou", "Béjaïa", "Bouira", "Bordj Bou Arreridj"], estimatedRadius: 80 },
+    { name: "Région de Constantine", cities: ["Constantine", "Mila", "Jijel", "Skikda", "Oum El Bouaghi"], estimatedRadius: 70 },
+    { name: "Région d'Annaba", cities: ["Annaba", "El Tarf", "Guelma", "Souk Ahras"], estimatedRadius: 60 },
+    { name: "Région d'Oran", cities: ["Oran", "Aïn Témouchent", "Mostaganem", "Mascara", "Sidi Bel Abbès", "Relizane"], estimatedRadius: 100 },
+    { name: "Région de Tlemcen", cities: ["Tlemcen", "Saïda"], estimatedRadius: 80 },
+    { name: "Région de Sétif", cities: ["Sétif", "Bordj Bou Arréridj"], estimatedRadius: 60 },
+    { name: "Région de Batna", cities: ["Batna", "Khenchela", "Tébessa"], estimatedRadius: 80 },
+    // Refined Southern Algeria - split into 4 distinct regions
+    { name: "Hauts-Plateaux", cities: ["Djelfa", "Laghouat", "M'Sila"], estimatedRadius: 150 },
+    { name: "Sahara Nord", cities: ["Biskra", "Ouargla", "Ghardaïa", "El Oued"], estimatedRadius: 200 },
+    { name: "Sahara Ouest", cities: ["Béchar", "Adrar", "Tindouf"], estimatedRadius: 300 },
+    { name: "Grand Sud", cities: ["Tamanrasset", "Illizi", "Djanet"], estimatedRadius: 400 },
   ],
 
   // France - Grouped by regions
   FR: [
-    { name: "Île-de-France", cities: ["Paris", "Versailles", "Saint-Denis", "Argenteuil", "Montreuil", "Créteil", "Nanterre", "Boulogne-Billancourt"] },
-    { name: "Provence-Alpes-Côte d'Azur", cities: ["Marseille", "Nice", "Toulon", "Aix-en-Provence", "Avignon", "Cannes", "Antibes"] },
-    { name: "Auvergne-Rhône-Alpes", cities: ["Lyon", "Saint-Étienne", "Grenoble", "Villeurbanne", "Clermont-Ferrand", "Annecy", "Valence"] },
-    { name: "Nouvelle-Aquitaine", cities: ["Bordeaux", "Limoges", "Poitiers", "Pau", "La Rochelle", "Bayonne", "Angoulême"] },
-    { name: "Occitanie", cities: ["Toulouse", "Montpellier", "Nîmes", "Perpignan", "Béziers", "Narbonne", "Carcassonne"] },
-    { name: "Hauts-de-France", cities: ["Lille", "Amiens", "Roubaix", "Tourcoing", "Dunkerque", "Calais", "Valenciennes"] },
-    { name: "Grand Est", cities: ["Strasbourg", "Reims", "Metz", "Nancy", "Mulhouse", "Colmar", "Troyes"] },
-    { name: "Pays de la Loire", cities: ["Nantes", "Angers", "Le Mans", "Saint-Nazaire", "Laval"] },
-    { name: "Bretagne", cities: ["Rennes", "Brest", "Quimper", "Lorient", "Vannes", "Saint-Malo", "Saint-Brieuc"] },
-    { name: "Normandie", cities: ["Rouen", "Le Havre", "Caen", "Cherbourg", "Évreux", "Dieppe"] },
-    { name: "Centre-Val de Loire", cities: ["Tours", "Orléans", "Bourges", "Blois", "Chartres"] },
-    { name: "Bourgogne-Franche-Comté", cities: ["Dijon", "Besançon", "Chalon-sur-Saône", "Auxerre", "Mâcon"] },
+    { name: "Île-de-France", cities: ["Paris", "Versailles", "Saint-Denis", "Argenteuil", "Montreuil", "Créteil", "Nanterre", "Boulogne-Billancourt"], estimatedRadius: 30 },
+    { name: "Provence-Alpes-Côte d'Azur", cities: ["Marseille", "Nice", "Toulon", "Aix-en-Provence", "Avignon", "Cannes", "Antibes"], estimatedRadius: 100 },
+    { name: "Auvergne-Rhône-Alpes", cities: ["Lyon", "Saint-Étienne", "Grenoble", "Villeurbanne", "Clermont-Ferrand", "Annecy", "Valence"], estimatedRadius: 120 },
+    { name: "Nouvelle-Aquitaine", cities: ["Bordeaux", "Limoges", "Poitiers", "Pau", "La Rochelle", "Bayonne", "Angoulême"], estimatedRadius: 150 },
+    { name: "Occitanie", cities: ["Toulouse", "Montpellier", "Nîmes", "Perpignan", "Béziers", "Narbonne", "Carcassonne"], estimatedRadius: 130 },
+    { name: "Hauts-de-France", cities: ["Lille", "Amiens", "Roubaix", "Tourcoing", "Dunkerque", "Calais", "Valenciennes"], estimatedRadius: 80 },
+    { name: "Grand Est", cities: ["Strasbourg", "Reims", "Metz", "Nancy", "Mulhouse", "Colmar", "Troyes"], estimatedRadius: 120 },
+    { name: "Pays de la Loire", cities: ["Nantes", "Angers", "Le Mans", "Saint-Nazaire", "Laval"], estimatedRadius: 80 },
+    { name: "Bretagne", cities: ["Rennes", "Brest", "Quimper", "Lorient", "Vannes", "Saint-Malo", "Saint-Brieuc"], estimatedRadius: 100 },
+    { name: "Normandie", cities: ["Rouen", "Le Havre", "Caen", "Cherbourg", "Évreux", "Dieppe"], estimatedRadius: 90 },
+    { name: "Centre-Val de Loire", cities: ["Tours", "Orléans", "Bourges", "Blois", "Chartres"], estimatedRadius: 100 },
+    { name: "Bourgogne-Franche-Comté", cities: ["Dijon", "Besançon", "Chalon-sur-Saône", "Auxerre", "Mâcon"], estimatedRadius: 110 },
   ],
 
   // Belgium
