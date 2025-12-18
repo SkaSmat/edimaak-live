@@ -15,6 +15,7 @@ const SenderDashboard = lazy(() => import("./pages/SenderDashboard"));
 const SenderShipments = lazy(() => import("./pages/SenderShipments"));
 const SenderMatches = lazy(() => import("./pages/SenderMatches"));
 const Messages = lazy(() => import("./pages/Messages"));
+const DirectChat = lazy(() => import("./pages/DirectChat"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Legal = lazy(() => import("./pages/Legal"));
@@ -123,6 +124,14 @@ const App = () => (
             element={
               <Suspense fallback={<PageLoader />}>
                 <Messages />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/messages/direct/:conversationId"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <DirectChat />
               </Suspense>
             }
           />
