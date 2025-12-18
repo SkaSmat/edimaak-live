@@ -4,19 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { getFlexibleMatchInfo, areCitiesInSameRegion } from "@/lib/regionMapping";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import {
-  Calendar,
-  Weight,
-  Search,
-  Plane,
-  Star,
-} from "lucide-react";
+import { Calendar, Weight, Search, Plane, Star } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { PublicProfileModal } from "@/components/PublicProfileModal";
-import { getFlexibleMatchInfo, FlexibleMatchInfo } from "@/lib/regionMapping";
 import FlexibleMatchBadge from "@/components/FlexibleMatchBadge";
 import DirectMessageButton from "@/components/DirectMessageButton";
 
@@ -73,8 +66,8 @@ const CompatibleTrips = ({ userId }: CompatibleTripsProps) => {
     setLoading(true);
     setError(false);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+
       // Fetch sender's active shipment requests
       const { data: shipments } = await supabase
         .from("shipment_requests")
@@ -103,15 +96,18 @@ const CompatibleTrips = ({ userId }: CompatibleTripsProps) => {
 
       // Fetch traveler info
       const travelerIds = [...new Set((trips || []).map((t: any) => t.traveler_id))];
-      const travelerInfos: Record<string, { display_name: string; avatar_url: string | null; rating: number | null; reviews_count: number }> = {};
-      
+      const travelerInfos: Record<
+        string,
+        { display_name: string; avatar_url: string | null; rating: number | null; reviews_count: number }
+      > = {};
+
       await Promise.all(
         travelerIds.map(async (travelerId) => {
           const [travelerResult, ratingResult] = await Promise.all([
             supabase.rpc("get_sender_display_info", { sender_uuid: travelerId }),
-            supabase.rpc("get_user_rating", { user_id: travelerId })
+            supabase.rpc("get_user_rating", { user_id: travelerId }),
           ]);
-          
+
           if (travelerResult.data && travelerResult.data.length > 0) {
             travelerInfos[travelerId] = {
               display_name: travelerResult.data[0].display_name,
@@ -120,7 +116,7 @@ const CompatibleTrips = ({ userId }: CompatibleTripsProps) => {
               reviews_count: ratingResult.data?.[0]?.reviews_count || 0,
             };
           }
-        })
+        }),
       );
 
       const foundMatches: CompatibleTripMatch[] = [];
@@ -134,23 +130,20 @@ const CompatibleTrips = ({ userId }: CompatibleTripsProps) => {
           // Check country match (origin and destination)
           const isSameFromCountry = normalize(trip.from_country) === normalize(shipment.from_country);
           const isSameToCountry = normalize(trip.to_country) === normalize(shipment.to_country);
-          
+
           if (!isSameFromCountry || !isSameToCountry) continue;
 
           // Check origin city (with regional matching)
-const tripFromCity = normalize(trip.from_city);
-const shipFromCity = normalize(shipment.from_city);
-const isSameFromCity = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
+          const tripFromCity = normalize(trip.from_city);
+          const shipFromCity = normalize(shipment.from_city);
+          const isSameFromCity = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
 
-// If not exact match, check if same region
-const isSameFromRegion = !isSameFromCity && areCitiesInSameRegion(
-  trip.from_city,
-  trip.from_country, 
-  shipment.from_city,
-  shipment.from_country
-);
+          // If not exact match, check if same region
+          const isSameFromRegion =
+            !isSameFromCity &&
+            areCitiesInSameRegion(trip.from_city, trip.from_country, shipment.from_city, shipment.from_country);
 
-if (!isSameFromCity && !isSameFromRegion) continue;
+          if (!isSameFromCity && !isSameFromRegion) continue;
 
           // Check weight (optional constraint)
           if (trip.max_weight_kg && trip.max_weight_kg > 0 && trip.max_weight_kg < shipment.weight_kg) continue;
@@ -163,12 +156,12 @@ if (!isSameFromCity && !isSameFromRegion) continue;
             shipment.earliest_date,
             shipment.latest_date,
             shipment.to_city,
-            shipment.to_country
+            shipment.to_country,
           );
 
           if (matchInfo) {
             // Prioritize exact matches
-            if (!bestMatch || (matchInfo.matchType === 'exact' && bestMatch.matchInfo.matchType !== 'exact')) {
+            if (!bestMatch || (matchInfo.matchType === "exact" && bestMatch.matchInfo.matchType !== "exact")) {
               bestMatch = { shipment, matchInfo };
             }
           }
@@ -192,8 +185,8 @@ if (!isSameFromCity && !isSameFromRegion) continue;
 
       // Sort: exact matches first, then by date difference
       foundMatches.sort((a, b) => {
-        if (a.flexibleMatchInfo.matchType === 'exact' && b.flexibleMatchInfo.matchType !== 'exact') return -1;
-        if (a.flexibleMatchInfo.matchType !== 'exact' && b.flexibleMatchInfo.matchType === 'exact') return 1;
+        if (a.flexibleMatchInfo.matchType === "exact" && b.flexibleMatchInfo.matchType !== "exact") return -1;
+        if (a.flexibleMatchInfo.matchType !== "exact" && b.flexibleMatchInfo.matchType === "exact") return 1;
         return a.flexibleMatchInfo.dateDifference - b.flexibleMatchInfo.dateDifference;
       });
 
@@ -206,9 +199,10 @@ if (!isSameFromCity && !isSameFromRegion) continue;
     }
   };
 
-  const isFlexibleMatch = (matchInfo: FlexibleMatchInfo) => matchInfo.matchType !== 'exact';
+  const isFlexibleMatch = (matchInfo: FlexibleMatchInfo) => matchInfo.matchType !== "exact";
 
-  if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement des voyages compatibles...</div>;
+  if (loading)
+    return <div className="text-center py-8 text-muted-foreground">Chargement des voyages compatibles...</div>;
   if (error) return <ErrorState onRetry={fetchCompatibleTrips} />;
 
   return (
@@ -234,7 +228,7 @@ if (!isSameFromCity && !isSameFromRegion) continue;
               <div
                 key={trip.id}
                 className={`p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-all duration-500 ${
-                  isFlexibleMatch(flexibleMatchInfo) ? 'border-amber-200' : ''
+                  isFlexibleMatch(flexibleMatchInfo) ? "border-amber-200" : ""
                 }`}
               >
                 {/* Match badge */}
@@ -296,19 +290,20 @@ if (!isSameFromCity && !isSameFromRegion) continue;
                   </div>
                   <div className="flex items-center gap-2">
                     <Weight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
-                    <span>
-                      Capacité : {trip.max_weight_kg} kg
-                    </span>
+                    <span>Capacité : {trip.max_weight_kg} kg</span>
                   </div>
                 </div>
 
                 {trip.notes && (
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic line-clamp-2">{trip.notes}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic line-clamp-2">
+                    {trip.notes}
+                  </p>
                 )}
 
                 {/* Reference shipment */}
                 <div className="text-xs text-muted-foreground bg-primary/5 p-2 rounded mb-3">
-                  <span className="font-medium">Pour votre colis :</span> {matchingShipment.from_city} → {matchingShipment.to_city}
+                  <span className="font-medium">Pour votre colis :</span> {matchingShipment.from_city} →{" "}
+                  {matchingShipment.to_city}
                 </div>
 
                 {/* Action button */}
