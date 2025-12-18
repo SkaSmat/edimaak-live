@@ -13,6 +13,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getPhoneCodeOptions, getPhoneCodeById } from "@/lib/countryData";
 import { validatePhoneNumber, formatFullPhoneNumber } from "@/lib/phoneValidation";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { SocialLoginCompletionModal } from "@/components/SocialLoginCompletionModal";
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -35,6 +36,14 @@ const GoogleIcon = () => (
   </svg>
 );
 
+// Facebook icon SVG
+const FacebookIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 9C18 4.02943 13.9706 0 9 0C4.02943 0 0 4.02943 0 9C0 13.4921 3.29117 17.2155 7.59375 17.8907V11.6016H5.30859V9H7.59375V7.01719C7.59375 4.76156 8.93742 3.51562 10.9932 3.51562C11.9776 3.51562 13.0078 3.69141 13.0078 3.69141V5.90625H11.873C10.755 5.90625 10.4062 6.60006 10.4062 7.3125V9H12.9023L12.5033 11.6016H10.4062V17.8907C14.7088 17.2155 18 13.4921 18 9Z" fill="#1877F2"/>
+    <path d="M12.5033 11.6016L12.9023 9H10.4062V7.3125C10.4062 6.60006 10.755 5.90625 11.873 5.90625H13.0078V3.69141C13.0078 3.69141 11.9776 3.51562 10.9932 3.51562C8.93742 3.51562 7.59375 4.76156 7.59375 7.01719V9H5.30859V11.6016H7.59375V17.8907C8.12268 17.9693 8.6608 18.0004 9.2002 17.9999C9.73958 18.0004 10.2777 17.9693 10.8066 17.8907V11.6016H12.5033Z" fill="white"/>
+  </svg>
+);
+
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,6 +54,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showSocialCompletion, setShowSocialCompletion] = useState(false);
+  const [socialUserId, setSocialUserId] = useState<string>("");
   // Use ref instead of state to prevent race condition with onAuthStateChange
   const isNewSignupRef = useRef(false);
 
@@ -92,20 +103,56 @@ const Auth = () => {
     }
   };
 
+  // Check if user needs to complete profile (social login without phone)
+  const checkSocialLoginCompletion = async (userId: string) => {
+    try {
+      const { data: privateInfo } = await supabase
+        .from("private_info")
+        .select("phone")
+        .eq("id", userId)
+        .maybeSingle();
+
+      // If no phone number, show completion modal
+      if (!privateInfo?.phone) {
+        setSocialUserId(userId);
+        setShowSocialCompletion(true);
+        return true; // needs completion
+      }
+      return false; // profile complete
+    } catch (error) {
+      console.error("Error checking profile completion:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // 1. Vérif session classique (only for returning users, not new signups)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !isNewSignupRef.current) handleSmartRedirect(session.user.id);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session && !isNewSignupRef.current) {
+        // Check if social login needs completion
+        const needsCompletion = await checkSocialLoginCompletion(session.user.id);
+        if (!needsCompletion) {
+          handleSmartRedirect(session.user.id);
+        }
+      }
     });
 
     // 2. Écouteur d'événements (C'est ici qu'on gère le cas Mobile)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       // On ne gère ici que la récupération de mot de passe pour éviter
       // de rediriger automatiquement après un SIGNED_IN (qui ferme le modal onboarding)
       if (event === "PASSWORD_RECOVERY") {
         navigate("/profile");
+      }
+      
+      // Handle social login return (SIGNED_IN event from OAuth)
+      if (event === "SIGNED_IN" && session && !isNewSignupRef.current) {
+        const needsCompletion = await checkSocialLoginCompletion(session.user.id);
+        if (!needsCompletion) {
+          handleSmartRedirect(session.user.id);
+        }
       }
     });
 
@@ -219,6 +266,27 @@ const Auth = () => {
     }
   };
 
+  const handleFacebookSignIn = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "facebook",
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Erreur avec Facebook");
+      setLoading(false);
+    }
+  };
+
+  const handleSocialCompletionDone = () => {
+    setShowSocialCompletion(false);
+    setShowOnboarding(true);
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg shadow-lg rounded-2xl border-0">
@@ -257,17 +325,30 @@ const Auth = () => {
             </form>
           ) : (
             <div className="space-y-4">
-              {/* Google Auth Button */}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-11 flex items-center justify-center gap-3 border-gray-300 hover:bg-gray-50"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-              >
-                <GoogleIcon />
-                <span>Continuer avec Google</span>
-              </Button>
+              {/* Social Auth Buttons */}
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 flex items-center justify-center gap-3 border-border hover:bg-muted/50"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                >
+                  <GoogleIcon />
+                  <span>Continuer avec Google</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 flex items-center justify-center gap-3 border-border hover:bg-muted/50"
+                  onClick={handleFacebookSignIn}
+                  disabled={loading}
+                >
+                  <FacebookIcon />
+                  <span>Continuer avec Facebook</span>
+                </Button>
+              </div>
 
               {/* Separator */}
               <div className="relative">
@@ -420,6 +501,13 @@ const Auth = () => {
       <OnboardingModal 
         isOpen={showOnboarding} 
         onClose={() => setShowOnboarding(false)} 
+      />
+
+      {/* Social Login Completion Modal - for Google/Facebook signups missing phone */}
+      <SocialLoginCompletionModal
+        isOpen={showSocialCompletion}
+        userId={socialUserId}
+        onComplete={handleSocialCompletionDone}
       />
     </div>
   );
