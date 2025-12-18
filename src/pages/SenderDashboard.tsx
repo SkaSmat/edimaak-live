@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import SenderMatchesList from "@/components/SenderMatchesList";
+import CompatibleTrips from "@/components/CompatibleTrips";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Package, Handshake, ChevronRight, Loader2, CheckCircle, Clock, XCircle, AlertCircle, ArrowRight, Plane } from "lucide-react";
+import { Package, Handshake, ChevronRight, Loader2, CheckCircle, Clock, XCircle, AlertCircle, ArrowRight, Plane, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -280,6 +281,20 @@ const SenderDashboard = () => {
               </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Section Voyageurs compatibles */}
+        <div className="pt-2 sm:pt-4">
+          <div className="mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg sm:text-xl font-bold text-foreground">Voyageurs compatibles</h2>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Voyageurs dont le trajet correspond à vos demandes (matching flexible : ±3 jours, villes proches)
+            </p>
+          </div>
+          <CompatibleTrips userId={profile?.id} />
         </div>
 
         {/* Section Matches / Demandes de voyageurs */}
