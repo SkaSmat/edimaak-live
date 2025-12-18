@@ -22,7 +22,6 @@ import { fr } from "date-fns/locale";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { PublicProfileModal } from "@/components/PublicProfileModal";
-import { getFlexibleMatchInfo, FlexibleMatchInfo, MatchType } from "@/lib/regionMapping";
 import FlexibleMatchBadge from "@/components/FlexibleMatchBadge";
 import DirectMessageButton from "@/components/DirectMessageButton";
 
@@ -90,10 +89,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
   const fetchData = async () => {
     setLoading(true);
-    await Promise.all([
-      fetchCompatibleShipments(),
-      fetchMatchStatuses(),
-    ]);
+    await Promise.all([fetchCompatibleShipments(), fetchMatchStatuses()]);
     setLoading(false);
   };
 
@@ -124,8 +120,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
   const fetchCompatibleShipments = async () => {
     setError(false);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+
       // Fetch traveler's active trips
       const { data: trips } = await supabase
         .from("trips")
@@ -148,15 +144,18 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
       // Fetch sender info
       const senderIds = [...new Set((shipments || []).map((s: any) => s.sender_id))];
-      const senderInfos: Record<string, { display_name: string; avatar_url: string | null; rating: number | null; reviews_count: number }> = {};
-      
+      const senderInfos: Record<
+        string,
+        { display_name: string; avatar_url: string | null; rating: number | null; reviews_count: number }
+      > = {};
+
       await Promise.all(
         senderIds.map(async (senderId) => {
           const [senderResult, ratingResult] = await Promise.all([
             supabase.rpc("get_sender_display_info", { sender_uuid: senderId }),
-            supabase.rpc("get_user_rating", { user_id: senderId })
+            supabase.rpc("get_user_rating", { user_id: senderId }),
           ]);
-          
+
           if (senderResult.data && senderResult.data.length > 0) {
             senderInfos[senderId] = {
               display_name: senderResult.data[0].display_name,
@@ -165,7 +164,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
               reviews_count: ratingResult.data?.[0]?.reviews_count || 0,
             };
           }
-        })
+        }),
       );
 
       const foundMatches: CompatibleMatch[] = [];
@@ -181,7 +180,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           // Check country match (origin and destination)
           const isSameFromCountry = normalize(trip.from_country) === normalize(shipment.from_country);
           const isSameToCountry = normalize(trip.to_country) === normalize(shipment.to_country);
-          
+
           if (!isSameFromCountry || !isSameToCountry) continue;
 
           // Check origin city (with regional matching)
@@ -190,14 +189,11 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           const isSameFromCity = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
 
           // If not exact match, check if same region
-          const isSameFromRegion = !isSameFromCity && areCitiesInSameRegion(
-          trip.from_city, 
-          trip.from_country,
-          shipment.from_city,
-          shipment.from_country
-          );
+          const isSameFromRegion =
+            !isSameFromCity &&
+            areCitiesInSameRegion(trip.from_city, trip.from_country, shipment.from_city, shipment.from_country);
 
-        if (!isSameFromCity && !isSameFromRegion) continue;
+          if (!isSameFromCity && !isSameFromRegion) continue;
 
           // Check weight (optional constraint)
           if (trip.max_weight_kg && trip.max_weight_kg > 0 && trip.max_weight_kg < shipment.weight_kg) continue;
@@ -210,12 +206,12 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
             shipment.earliest_date,
             shipment.latest_date,
             shipment.to_city,
-            shipment.to_country
+            shipment.to_country,
           );
 
           if (matchInfo) {
             // Prioritize exact matches
-            if (!bestMatch || (matchInfo.matchType === 'exact' && bestMatch.matchInfo.matchType !== 'exact')) {
+            if (!bestMatch || (matchInfo.matchType === "exact" && bestMatch.matchInfo.matchType !== "exact")) {
               bestMatch = { trip, matchInfo };
             }
           }
@@ -245,8 +241,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
       // Sort: exact matches first, then by date difference
       foundMatches.sort((a, b) => {
-        if (a.flexibleMatchInfo.matchType === 'exact' && b.flexibleMatchInfo.matchType !== 'exact') return -1;
-        if (a.flexibleMatchInfo.matchType !== 'exact' && b.flexibleMatchInfo.matchType === 'exact') return 1;
+        if (a.flexibleMatchInfo.matchType === "exact" && b.flexibleMatchInfo.matchType !== "exact") return -1;
+        if (a.flexibleMatchInfo.matchType !== "exact" && b.flexibleMatchInfo.matchType === "exact") return 1;
         return a.flexibleMatchInfo.dateDifference - b.flexibleMatchInfo.dateDifference;
       });
 
@@ -292,9 +288,9 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
           .select("*")
           .eq("id", highlightId)
           .maybeSingle();
-        
+
         if (!error && data) {
-          const { data: senderInfo } = await supabase.rpc('get_sender_display_info', { sender_uuid: data.sender_id });
+          const { data: senderInfo } = await supabase.rpc("get_sender_display_info", { sender_uuid: data.sender_id });
           setTargetShipment({
             ...data,
             sender_display_name: senderInfo?.[0]?.display_name || "Anonyme",
@@ -368,7 +364,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
     }
   };
 
-  const isFlexibleMatch = (matchInfo: FlexibleMatchInfo) => matchInfo.matchType !== 'exact';
+  const isFlexibleMatch = (matchInfo: FlexibleMatchInfo) => matchInfo.matchType !== "exact";
 
   return (
     <div className="space-y-6">
@@ -441,7 +437,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                 key={shipment.id}
                 id={`shipment-${shipment.id}`}
                 className={`p-3 sm:p-4 border rounded-lg bg-card hover:shadow-md transition-all duration-500 relative overflow-hidden ${
-                  isFlexibleMatch(flexibleMatchInfo) ? 'border-amber-200' : ''
+                  isFlexibleMatch(flexibleMatchInfo) ? "border-amber-200" : ""
                 }`}
               >
                 {/* Match badge */}
@@ -498,7 +494,8 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">
-                      {format(new Date(shipment.earliest_date), "d MMM")} - {format(new Date(shipment.latest_date), "d MMM")}
+                      {format(new Date(shipment.earliest_date), "d MMM")} -{" "}
+                      {format(new Date(shipment.latest_date), "d MMM")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -510,7 +507,9 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                 </div>
 
                 {shipment.notes && (
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic line-clamp-2">{shipment.notes}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic line-clamp-2">
+                    {shipment.notes}
+                  </p>
                 )}
 
                 {/* Action buttons */}
@@ -523,7 +522,7 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
                   >
                     {getButtonContent(currentStatus, matchingTrip.departure_date)}
                   </Button>
-                  
+
                   {/* Contact button for flexible matches */}
                   {showContactButton && (
                     <DirectMessageButton
