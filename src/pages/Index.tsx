@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle, Loader2, Star } from "lucide-react";
+import { Search, Package, MapPin, Calendar, Shield, TrendingUp, Zap, ShieldCheck, Bell, MessageCircle, ArrowRightLeft, ChevronDown, ArrowRight, CheckCircle, Loader2, Star, Eye } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
@@ -598,10 +598,10 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                   />
                   {/* View count overlay badge */}
                   {request.view_count > 5 && (
-                    <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px]">
-                      👁 {request.view_count} vues
-                    </div>
-                  )}
+  <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px] flex items-center gap-1">
+    <Eye className="w-3.5 h-3.5" /> {request.view_count} vues
+  </div>
+)}
                 </div>
 
                 {/* Trajet Principal */}
