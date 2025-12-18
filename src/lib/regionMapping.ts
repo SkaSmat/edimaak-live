@@ -1,6 +1,8 @@
 // Region mapping for geographic proximity matching
 // Cities in the same region are considered "close" (~100km)
 
+import { WORLD_COUNTRIES } from "./worldData";
+
 export interface RegionInfo {
   name: string;
   cities: string[];
@@ -202,10 +204,29 @@ export const areCitiesInSameRegion = (
   return region1.name === region2.name;
 };
 
-// Get country code from country name
+// Get country code from country name - uses worldData for comprehensive mapping
 const getCountryCode = (countryName: string): string | null => {
-  const countryMap: Record<string, string> = {
-    "algérie": "DZ", "algeria": "DZ",
+  const normalized = countryName.toLowerCase().trim();
+  
+  // First, check against WORLD_COUNTRIES from worldData
+  for (const country of WORLD_COUNTRIES) {
+    // Check exact name match (case insensitive)
+    if (country.name.toLowerCase() === normalized) {
+      return country.code;
+    }
+    // Check if the country name is in the search terms
+    if (country.searchTerms.toLowerCase().includes(normalized)) {
+      return country.code;
+    }
+    // Check code match
+    if (country.code.toLowerCase() === normalized) {
+      return country.code;
+    }
+  }
+  
+  // Fallback: Extended manual mapping for common variations
+  const fallbackMap: Record<string, string> = {
+    "algérie": "DZ", "algeria": "DZ", "algerie": "DZ",
     "france": "FR",
     "belgique": "BE", "belgium": "BE",
     "maroc": "MA", "morocco": "MA",
@@ -215,14 +236,14 @@ const getCountryCode = (countryName: string): string | null => {
     "italie": "IT", "italy": "IT",
     "royaume-uni": "GB", "united kingdom": "GB", "uk": "GB",
     "pays-bas": "NL", "netherlands": "NL",
-    "états-unis": "US", "united states": "US", "usa": "US",
+    "états-unis": "US", "etats-unis": "US", "united states": "US", "usa": "US",
     "canada": "CA",
     "turquie": "TR", "turkey": "TR",
-    "émirats arabes unis": "AE", "uae": "AE",
+    "émirats arabes unis": "AE", "emirats arabes unis": "AE", "uae": "AE",
     "arabie saoudite": "SA", "saudi arabia": "SA",
   };
   
-  return countryMap[countryName.toLowerCase()] || null;
+  return fallbackMap[normalized] || null;
 };
 
 // Get the region name for display
