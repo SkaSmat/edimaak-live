@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getFlexibleMatchInfo, areCitiesInSameRegion } from "@/lib/regionMapping";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -136,11 +137,20 @@ const CompatibleTrips = ({ userId }: CompatibleTripsProps) => {
           
           if (!isSameFromCountry || !isSameToCountry) continue;
 
-          // Check origin city
-          const tripFromCity = normalize(trip.from_city);
-          const shipFromCity = normalize(shipment.from_city);
-          const isSameFromCity = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
-          if (!isSameFromCity) continue;
+          // Check origin city (with regional matching)
+const tripFromCity = normalize(trip.from_city);
+const shipFromCity = normalize(shipment.from_city);
+const isSameFromCity = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
+
+// If not exact match, check if same region
+const isSameFromRegion = !isSameFromCity && areCitiesInSameRegion(
+  trip.from_city,
+  trip.from_country, 
+  shipment.from_city,
+  shipment.from_country
+);
+
+if (!isSameFromCity && !isSameFromRegion) continue;
 
           // Check weight (optional constraint)
           if (trip.max_weight_kg && trip.max_weight_kg > 0 && trip.max_weight_kg < shipment.weight_kg) continue;
