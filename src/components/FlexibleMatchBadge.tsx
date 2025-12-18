@@ -74,13 +74,6 @@ const FlexibleMatchBadge = ({
           Votre voyage : {tripDate} • Demande : {shipmentDateRange}
         </div>
       )}
-      
-      {/* Show region info for flexible locations */}
-      {!matchInfo.isExactLocation && matchInfo.regionName && (
-        <div className="text-xs text-muted-foreground bg-blue-50/50 px-2 py-1 rounded">
-          📍 Même région : {matchInfo.regionName}
-        </div>
-      )}
     </div>
   );
 };
