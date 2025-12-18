@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, MapPin, AlertTriangle } from "lucide-react";
-import { FlexibleMatchInfo, MatchType } from "@/lib/regionMapping";
+import { CheckCircle, Clock, MapPin } from "lucide-react";
+import { FlexibleMatchInfo } from "@/lib/regionMapping";
 
 interface FlexibleMatchBadgeProps {
   matchInfo: FlexibleMatchInfo;
@@ -35,23 +35,27 @@ const FlexibleMatchBadge = ({
       
       case "flexible_location":
         return (
-          <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${className}`}>
-            <MapPin className="w-3 h-3 mr-1" />
-            Destination proche
-          </Badge>
+          <div className="space-y-1">
+            <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${className}`}>
+              <MapPin className="w-3 h-3 mr-1" />
+              {matchInfo.regionName ? `Même région : ${matchInfo.regionName}` : 'Destination proche'}
+            </Badge>
+          </div>
         );
       
       case "flexible_both":
         return (
-          <div className="flex flex-wrap gap-1">
-            <Badge variant="outline" className={`bg-amber-50 text-amber-700 border-amber-200 ${className}`}>
-              <Clock className="w-3 h-3 mr-1" />
-              Dates proches ({matchInfo.dateDifference}j)
-            </Badge>
-            <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${className}`}>
-              <MapPin className="w-3 h-3 mr-1" />
-              Destination proche
-            </Badge>
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className={`bg-amber-50 text-amber-700 border-amber-200 ${className}`}>
+                <Clock className="w-3 h-3 mr-1" />
+                Dates proches ({matchInfo.dateDifference}j)
+              </Badge>
+              <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${className}`}>
+                <MapPin className="w-3 h-3 mr-1" />
+                {matchInfo.regionName || 'Proche'}
+              </Badge>
+            </div>
           </div>
         );
       
