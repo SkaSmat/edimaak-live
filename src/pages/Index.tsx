@@ -9,6 +9,7 @@ import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
@@ -578,23 +579,29 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                     {request.item_type}
                   </Badge>
                   {request.price ? (
-                    <div className="bg-green-100 text-green-700 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <div className="bg-emerald-500 text-white text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
                       💶 {request.price}€
                     </div>
                   ) : (
-                    <div className="bg-gray-100 text-gray-500 text-[10px] sm:text-xs px-2 py-1 rounded-md">
+                    <div className="bg-orange-500 text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md">
                       Prix à discuter
                     </div>
                   )}
                 </div>
 
-                {/* Image (avec fallback par défaut) */}
+                {/* Image with overlay */}
                 <div className="relative h-32 sm:h-40 bg-gray-100">
-                  <img 
-                    src={getShipmentImageUrl(request.image_url, request.item_type)} 
+                  <ImageLightbox
+                    src={getShipmentImageUrl(request.image_url, request.item_type)}
                     alt={request.item_type}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                   />
+                  {/* View count overlay badge */}
+                  {request.view_count > 5 && (
+                    <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px]">
+                      👁 {request.view_count} vues
+                    </div>
+                  )}
                 </div>
 
                 {/* Trajet Principal */}
@@ -612,13 +619,13 @@ connectant voyageurs et expéditeurs pour le transport de colis.
 
                 {/* Expéditeur + Poids */}
                 <div className="px-3 sm:px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     <UserAvatar 
                       fullName={session ? request.public_profiles?.display_first_name || "" : ""} 
                       avatarUrl={session ? request.public_profiles?.avatar_url : null} 
                       size="sm" 
                     />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       {session ? (
                         <>
                           <button 
@@ -629,17 +636,16 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                             className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left flex items-center gap-1"
                           >
                             {request.public_profiles?.display_first_name || "Utilisateur"}
-                            {request.sender_kyc_verified && <CheckCircle className="w-3 h-3 text-green-600 flex-shrink-0" />}
-                            {/* BUG 1 & 8 FIX: Show rating next to name */}
                             {request.sender_rating && request.sender_rating > 0 && (
                               <span className="flex items-center gap-0.5 text-amber-500 font-medium ml-1">
                                 <Star className="w-3 h-3 fill-current" />
-                                {request.sender_rating}
+                                {request.sender_rating.toFixed(1)}
                               </span>
                             )}
                           </button>
                           {request.sender_kyc_verified && (
-                            <p className="text-[10px] sm:text-xs text-green-600 font-medium">
+                            <p className="text-[10px] sm:text-xs text-green-600 font-medium flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
                               Identité vérifiée
                             </p>
                           )}
@@ -649,23 +655,18 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                           Utilisateur anonyme
                         </span>
                       )}
-                      {!request.sender_kyc_verified && (request.sender_request_count || 0) > 1 && (
-                        <p className="text-[10px] sm:text-xs text-gray-400">
-                          {request.sender_request_count} colis actifs
-                        </p>
-                      )}
                     </div>
                   </div>
-                  <div className="bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0">
+                  <div className="bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0 ml-2">
                     📦 {request.weight_kg} kg
                   </div>
                 </div>
 
-                {/* Tags si notes */}
+                {/* Tags si description */}
                 {request.notes && (
                   <div className="px-3 sm:px-4 pb-2 flex flex-wrap gap-1">
                     <span className="bg-amber-50 text-amber-700 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full">
-                      📝 Note
+                      📝 Description disponible
                     </span>
                   </div>
                 )}

@@ -247,7 +247,7 @@ export const isDateFlexiblyCompatible = (
   tripDate: string,
   earliestDate: string,
   latestDate: string,
-  toleranceDays: number = 3
+  toleranceDays: number = 5
 ): { isCompatible: boolean; isExact: boolean; daysDifference: number } => {
   const trip = new Date(tripDate);
   const earliest = new Date(earliestDate);

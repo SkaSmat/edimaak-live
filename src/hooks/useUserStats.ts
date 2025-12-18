@@ -24,17 +24,21 @@ export const useUserStats = (userId: string | undefined) => {
 
     const fetchStats = async () => {
       try {
-        // Fetch trips count
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Fetch active trips count (not expired)
         const { count: tripsCount } = await supabase
           .from("trips")
           .select("*", { count: "exact", head: true })
-          .eq("traveler_id", userId);
+          .eq("traveler_id", userId)
+          .gte("departure_date", today);
 
-        // Fetch shipments count
+        // Fetch active shipments count (not expired)
         const { count: shipmentsCount } = await supabase
           .from("shipment_requests")
           .select("*", { count: "exact", head: true })
-          .eq("sender_id", userId);
+          .eq("sender_id", userId)
+          .gte("latest_date", today);
 
         // Fetch matches count (where user is involved as traveler or sender)
         const { data: userTrips } = await supabase.from("trips").select("id").eq("traveler_id", userId);
