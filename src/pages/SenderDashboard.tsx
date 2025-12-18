@@ -291,7 +291,7 @@ const SenderDashboard = () => {
               <h2 className="text-lg sm:text-xl font-bold text-foreground">Voyageurs compatibles</h2>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Voyageurs dont le trajet correspond à vos demandes (matching flexible : ±3 jours, villes proches)
+              Voyageurs dont le trajet correspond à vos demandes (matching flexible : ±5 jours, villes proches)
             </p>
           </div>
           <CompatibleTrips userId={profile?.id} />
