@@ -162,7 +162,7 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background relative">
         <DashboardSidebar
-          role={role === "admin" ? "traveler" : role}
+          role={role}
           isAdmin={effectiveIsAdmin}
           onLogout={handleInternalLogout}
           unreadCount={unreadCount}

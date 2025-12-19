@@ -111,12 +111,9 @@ export const DashboardSidebar = ({
     },
   ];
   const adminNavItems = [
-    {
-      title: "Administration",
-      icon: ShieldCheck,
-      path: "/admin",
-    },
-  ];
+  { title: "Recherche", icon: Search, path: "/" },
+  { title: "Administration", icon: ShieldCheck, path: "/admin" },
+];
   const mainNavItems = role === "admin" ? adminNavItems : role === "traveler" ? travelerNavItems : senderNavItems;
   const accountNavItems = [
     {
