@@ -18,19 +18,26 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
     --popover: 0 0% 100%;
     --popover-foreground: 20 15% 15%;
 
-    --primary: 14 80% 55%;
+    --primary: 14 80% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 14 85% 60%;
+    --primary-glow: 14 85% 55%;
+    --primary-dark: 14 85% 38%;
 
     --secondary: 40 20% 92%;
     --secondary-foreground: 20 15% 15%;
 
     --muted: 40 15% 92%;
-    --muted-foreground: 20 10% 45%;
+    --muted-foreground: 20 10% 40%;
 
-    --accent: 14 85% 50%;
+    --accent: 14 85% 42%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 14 90% 45%;
+    --accent-hover: 14 90% 38%;
+    
+    /* Accessible badge colors */
+    --badge-primary-bg: 14 75% 94%;
+    --badge-primary-text: 14 85% 32%;
+    --badge-emerald-bg: 158 64% 38%;
+    --badge-orange-bg: 25 95% 40%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -72,9 +79,10 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
     --popover: 20 15% 12%;
     --popover-foreground: 40 20% 95%;
 
-    --primary: 14 80% 55%;
+    --primary: 14 80% 50%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 14 85% 65%;
+    --primary-dark: 14 85% 42%;
 
     --secondary: 20 15% 18%;
     --secondary-foreground: 40 20% 95%;
@@ -82,9 +90,15 @@ EDIM3AK Brand: Warm red-orange primary, cream white background
     --muted: 20 15% 18%;
     --muted-foreground: 40 10% 60%;
 
-    --accent: 14 85% 50%;
+    --accent: 14 85% 45%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 14 90% 45%;
+    --accent-hover: 14 90% 40%;
+    
+    /* Accessible badge colors - dark mode */
+    --badge-primary-bg: 14 50% 20%;
+    --badge-primary-text: 14 80% 70%;
+    --badge-emerald-bg: 158 64% 35%;
+    --badge-orange-bg: 25 90% 42%;
 
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;

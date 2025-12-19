@@ -27,6 +27,13 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           glow: "hsl(var(--primary-glow))",
+          dark: "hsl(var(--primary-dark))",
+        },
+        badge: {
+          "primary-bg": "hsl(var(--badge-primary-bg))",
+          "primary-text": "hsl(var(--badge-primary-text))",
+          "emerald-bg": "hsl(var(--badge-emerald-bg))",
+          "orange-bg": "hsl(var(--badge-orange-bg))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
