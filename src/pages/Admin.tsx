@@ -9,7 +9,7 @@ import AdminUsers from "@/components/AdminUsers";
 import AdminTrips from "@/components/AdminTrips";
 import AdminShipments from "@/components/AdminShipments";
 import AdminMatches from "@/components/AdminMatches";
-import { AdminStats } from "@/components/AdminStats";
+import AdminStatsEnhanced from "@/components/AdminStatsEnhanced";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 const Admin = () => {
@@ -86,7 +86,7 @@ const Admin = () => {
         </div>
 
         {/* Stats Section */}
-        <AdminStats />
+        <AdminStatsEnhanced />
 
         {/* Tabs Section */}
         <Tabs defaultValue="users" className="space-y-4">
