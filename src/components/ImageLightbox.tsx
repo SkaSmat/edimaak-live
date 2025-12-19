@@ -46,6 +46,7 @@ export const ImageLightbox = ({ src, alt, className = "" }: ImageLightboxProps) 
         <img 
           src={src} 
           alt={alt}
+          loading="lazy"
           className="w-full h-full object-cover"
         />
         {/* Hover overlay with zoom icon */}
