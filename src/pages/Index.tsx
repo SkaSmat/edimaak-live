@@ -591,6 +591,7 @@ connectant voyageurs et expéditeurs pour le transport de colis.
 
                 {/* Image with overlay */}
                 <div className="relative h-32 sm:h-40 bg-gray-100">
+                   <div className={request.status === 'completed' ? 'pointer-events-none' : ''}>
                   <ImageLightbox
                     src={getShipmentImageUrl(request.image_url, request.item_type)}
                     alt={request.item_type}
