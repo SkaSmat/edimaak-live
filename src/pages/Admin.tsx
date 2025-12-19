@@ -31,17 +31,22 @@ const Admin = () => {
       return;
     }
 
+    // Use server-side has_role function via user_roles table for proper admin validation
+    const { data: isAdminResult, error: adminError } = await supabase
+      .rpc('has_role', { _user_id: session.user.id, _role: 'admin' });
+
+    if (adminError || !isAdminResult) {
+      navigate("/");
+      toast.error("Accès non autorisé");
+      return;
+    }
+
+    // Fetch profile data for display purposes only (not for authorization)
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", session.user.id)
       .single();
-
-    if (profileData?.role !== "admin") {
-      navigate("/");
-      toast.error("Accès non autorisé");
-      return;
-    }
 
     setUser(session.user);
     setProfile(profileData);
