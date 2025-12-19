@@ -593,11 +593,10 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                 <div className="relative h-32 sm:h-40 bg-gray-100">
                   <div className={`h-full ${request.status === 'completed' ? 'pointer-events-none' : ''}`}>
                     <ImageLightbox
-  src={getShipmentImageUrl(request.image_url, request.item_type)}
-  alt={request.item_type}
-  className="w-full h-full"
-  loading="lazy" {/* Ajout pour différer le chargement des images hors écran */}
-/>
+                      src={getShipmentImageUrl(request.image_url, request.item_type)}
+                      alt={request.item_type}
+                      className="w-full h-full"
+                    />
                   </div>
                   {/* View count overlay badge */}
                   {request.view_count > 5 && (
