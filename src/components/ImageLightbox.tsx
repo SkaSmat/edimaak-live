@@ -5,20 +5,25 @@ interface ImageLightboxProps {
   src: string;
   alt: string;
   className?: string;
+  loading?: "lazy" | "eager"; // 👈 AJOUT : On autorise la propriété loading
 }
 
-export const ImageLightbox = ({ src, alt, className = "" }: ImageLightboxProps) => {
+// 👇 AJOUT : On récupère 'loading' ici (avec "lazy" par défaut)
+export const ImageLightbox = ({ src, alt, className = "", loading = "lazy" }: ImageLightboxProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
   }, []);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleClose();
-    }
-  }, [handleClose]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    },
+    [handleClose],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -43,10 +48,10 @@ export const ImageLightbox = ({ src, alt, className = "" }: ImageLightboxProps) 
           setIsOpen(true);
         }}
       >
-        <img 
-          src={src} 
+        <img
+          src={src}
           alt={alt}
-          loading="lazy"
+          loading={loading} // 👈 MODIFICATION : On utilise la variable dynamique
           className="w-full h-full object-cover"
         />
         {/* Hover overlay with zoom icon */}
@@ -57,13 +62,10 @@ export const ImageLightbox = ({ src, alt, className = "" }: ImageLightboxProps) 
 
       {/* Lightbox modal */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center"
-          onClick={handleClose}
-        >
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={handleClose}>
           {/* Dark backdrop */}
           <div className="absolute inset-0 bg-black/95" />
-          
+
           {/* Close button */}
           <button
             onClick={handleClose}
