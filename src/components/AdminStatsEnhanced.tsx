@@ -384,21 +384,21 @@ export const AdminStatsEnhanced = () => {
   };
 
   const getActivityBadge = (type: RecentActivity['type']) => {
-    switch (type) {
-      case 'match_proposal':
-        return <Badg></Badg> variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs">Proposition</Badge>;
-      case 'match_accepted':
-        return <Badge className="bg-green-500 text-xs">Accepté</Badge>;
-      case 'match_rejected':
-        return <Badge variant="destructive" className="text-xs">Refusé</Badge>;
-      case 'new_trip':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">Voyage</Badge>;
-      case 'new_shipment':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">Demande</Badge>;
-      default:
-        return null;
-    }
-  };
+  switch (type) {
+    case 'match_proposal':
+      return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs">Proposition</Badge>;
+    case 'match_accepted':
+      return <Badge className="bg-green-500 text-xs">Accepté</Badge>;
+    case 'match_rejected':
+      return <Badge variant="destructive" className="text-xs">Refusé</Badge>;
+    case 'new_trip':
+      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">Voyage</Badge>;
+    case 'new_shipment':
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">Demande</Badge>;
+    default:
+      return null;
+  }
+};
 
   return (
     <div className="space-y-6">
