@@ -597,7 +597,7 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                     alt={request.item_type}
                     className="w-full h-full"
                   />
-                    </div>
+                  
                   {/* View count overlay badge */}
                   {request.view_count > 5 && (
   <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px] flex items-center gap-1">
