@@ -303,7 +303,7 @@ const Index = () => {
                 <Button variant="ghost" onClick={() => navigate("/auth?role=sender")} size="sm" className="hidden md:inline-flex text-gray-600 text-xs sm:text-sm">
                   Devenir expéditeur
                 </Button>
-                <Button onClick={() => navigate("/auth")} size="sm" className="rounded-full px-3 sm:px-6 shadow-sm text-xs sm:text-sm h-8 sm:h-10 bg-primary text-white hover:bg-primary/90">
+                <Button onClick={() => navigate("/auth")} size="sm" className="rounded-full px-3 sm:px-6 shadow-sm text-xs sm:text-sm h-8 sm:h-10">
                   <span className="hidden sm:inline">Se connecter</span>
                   <span className="sm:hidden">Connexion</span>
                 </Button>
@@ -574,16 +574,16 @@ connectant voyageurs et expéditeurs pour le transport de colis.
             >
                 {/* Header : Badge Type + Prix */}
                 <div className="p-3 sm:p-4 pb-2 flex items-center justify-between border-b border-gray-50">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-xs flex items-center gap-1">
+                  <Badge variant="secondary" className="bg-[hsl(var(--badge-primary-bg))] text-[hsl(var(--badge-primary-text))] border-0 text-xs flex items-center gap-1 font-semibold">
                     <Package className="w-3 h-3" />
                     {request.item_type}
                   </Badge>
                   {request.price ? (
-                    <div className="bg-emerald-500 text-white text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <div className="bg-[hsl(var(--badge-emerald-bg))] text-white text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
                       💶 {request.price}€
                     </div>
                   ) : (
-                    <div className="bg-orange-500 text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md">
+                    <div className="bg-[hsl(var(--badge-orange-bg))] text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md">
                       Prix à discuter
                     </div>
                   )}
@@ -651,13 +651,13 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                           )}
                         </>
                       ) : (
-                        <span className="text-xs sm:text-sm font-medium text-gray-400 truncate">
+                        <span className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                           Utilisateur anonyme
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0 ml-2">
+                  <div className="bg-gray-200 text-gray-800 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0 ml-2">
                     📦 {request.weight_kg} kg
                   </div>
                 </div>
@@ -674,12 +674,12 @@ connectant voyageurs et expéditeurs pour le transport de colis.
                 {/* Bouton CTA */}
                 <div className="p-3 sm:p-4 pt-2 mt-auto">
                   {request.status === 'completed' ? (
-                    <div className="w-full bg-green-50 text-green-600 border border-green-200 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
+                    <div className="w-full bg-green-100 text-green-800 border border-green-300 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
                       <CheckCircle className="w-3.5 h-3.5" />
                       Colis livré
                     </div>
                   ) : (
-                    <div className="w-full bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
+                    <div className="w-full bg-primary/15 hover:bg-primary/20 text-[hsl(var(--primary-dark))] font-semibold text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
                       Proposer mon voyage
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
@@ -700,7 +700,7 @@ connectant voyageurs et expéditeurs pour le transport de colis.
               Mentions légales
             </button>
           </div>
-          <p className="text-center text-xs sm:text-sm text-gray-400">
+          <p className="text-center text-xs sm:text-sm text-gray-600">
             © 2025 EDIM3AK. La plateforme de confiance.
           </p>
         </div>
