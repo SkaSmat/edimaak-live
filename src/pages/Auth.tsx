@@ -98,14 +98,6 @@ const Auth = () => {
   // Check if user needs to complete profile (social login without phone)
   const checkSocialLoginCompletion = async (userId: string) => {
     try {
-      // First check if user is admin - admins don't need to complete profile
-      const { data: isAdminResult } = await supabase
-        .rpc('has_role', { _user_id: userId, _role: 'admin' });
-      
-      if (isAdminResult) {
-        return false; // Admin, no completion needed
-      }
-      
       const { data: privateInfo } = await supabase
         .from("private_info")
         .select("phone")

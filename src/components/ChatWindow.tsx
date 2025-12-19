@@ -388,7 +388,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
             return (
               <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[80%] sm:max-w-[75%] rounded-2xl p-2.5 sm:p-3 px-3 sm:px-4 ${
+                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-2.5 sm:p-3 px-3 sm:px-4 ${
                     isOwn
                       ? "bg-primary text-primary-foreground rounded-br-sm"
                       : "bg-white dark:bg-slate-800 border shadow-sm rounded-bl-sm"
