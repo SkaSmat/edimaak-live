@@ -27,6 +27,8 @@ interface Trip {
   notes: string | null;
   status: string;
   created_at: string;
+  stopover_city_1: string | null;
+  stopover_city_2: string | null;
 }
 
 interface TripListProps {
@@ -152,6 +154,39 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
             )}
           </div>
         </div>
+
+        {/* Stopover cities display */}
+        {(trip.stopover_city_1 || trip.stopover_city_2) && (
+          <div className="mb-3 bg-primary/5 border border-primary/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              <span className="text-sm font-medium whitespace-nowrap">{trip.from_city}</span>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <div className="w-8 h-0.5 bg-primary/30"></div>
+              </div>
+              {trip.stopover_city_1 && (
+                <>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{trip.stopover_city_1}</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-primary/60 rounded-full"></div>
+                    <div className="w-8 h-0.5 bg-primary/30"></div>
+                  </div>
+                </>
+              )}
+              {trip.stopover_city_2 && (
+                <>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{trip.stopover_city_2}</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-primary/60 rounded-full"></div>
+                    <div className="w-8 h-0.5 bg-primary/30"></div>
+                  </div>
+                </>
+              )}
+              <span className="text-sm font-medium whitespace-nowrap">{trip.to_city}</span>
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">

@@ -502,6 +502,8 @@ export type Database = {
           max_weight_kg: number
           notes: string | null
           status: string
+          stopover_city_1: string | null
+          stopover_city_2: string | null
           to_city: string
           to_country: string
           traveler_id: string
@@ -516,6 +518,8 @@ export type Database = {
           max_weight_kg: number
           notes?: string | null
           status?: string
+          stopover_city_1?: string | null
+          stopover_city_2?: string | null
           to_city: string
           to_country: string
           traveler_id: string
@@ -530,6 +534,8 @@ export type Database = {
           max_weight_kg?: number
           notes?: string | null
           status?: string
+          stopover_city_1?: string | null
+          stopover_city_2?: string | null
           to_city?: string
           to_country?: string
           traveler_id?: string
