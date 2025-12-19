@@ -591,19 +591,20 @@ connectant voyageurs et expéditeurs pour le transport de colis.
 
                 {/* Image with overlay */}
                 <div className="relative h-32 sm:h-40 bg-gray-100">
-                   <div className={request.status === 'completed' ? 'pointer-events-none' : ''}>
-                  <ImageLightbox
-                    src={getShipmentImageUrl(request.image_url, request.item_type)}
-                    alt={request.item_type}
-                    className="w-full h-full"
-                  />
+                  <div className={request.status === 'completed' ? 'pointer-events-none' : ''}>
+                    <ImageLightbox
+                      src={getShipmentImageUrl(request.image_url, request.item_type)}
+                      alt={request.item_type}
+                      className="w-full h-full"
+                    />
+                  </div>
                   
                   {/* View count overlay badge */}
                   {request.view_count > 5 && (
-  <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px] flex items-center gap-1">
-    <Eye className="w-3.5 h-3.5" /> {request.view_count} vues
-  </div>
-)}
+                    <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px] flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" /> {request.view_count} vues
+                    </div>
+                  )}
                 </div>
 
                 {/* Trajet Principal */}
