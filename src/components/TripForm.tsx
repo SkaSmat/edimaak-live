@@ -23,6 +23,8 @@ interface TripFormProps {
     arrival_date: string | null;
     max_weight_kg: number;
     notes: string | null;
+    stopover_city_1: string | null;
+    stopover_city_2: string | null;
   };
 }
 
@@ -55,6 +57,9 @@ const tripSchema = z.object({
 
 const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
   const [loading, setLoading] = useState(false);
+  const [hasStops, setHasStops] = useState(
+    !!(editData?.stopover_city_1 || editData?.stopover_city_2)
+  );
   const [formData, setFormData] = useState({
     fromCountry: editData?.from_country || "France",
     fromCity: editData?.from_city || "",
@@ -64,6 +69,8 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
     arrivalDate: editData?.arrival_date || "",
     maxWeightKg: editData?.max_weight_kg?.toString() || "",
     notes: editData?.notes || "",
+    stopoverCity1: editData?.stopover_city_1 || "",
+    stopoverCity2: editData?.stopover_city_2 || "",
   });
 
   const today = new Date().toISOString().split("T")[0];
@@ -103,6 +110,8 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
         arrival_date: validatedData.arrivalDate || null,
         max_weight_kg: validatedData.maxWeightKg,
         notes: validatedData.notes || null,
+        stopover_city_1: hasStops ? formData.stopoverCity1 || null : null,
+        stopover_city_2: hasStops ? formData.stopoverCity2 || null : null,
       };
 
       if (isEditing) {
@@ -171,6 +180,39 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
           <div className="space-y-1">
             <Label>Ville</Label>
             <CityAutocomplete value={formData.fromCity} onChange={(val) => setFormData({ ...formData, fromCity: val })} limitToCountry={formData.fromCountry as any} placeholder={`Ville de départ`} />
+          </div>
+
+          {/* Stops checkbox and cities */}
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="hasStops"
+                checked={hasStops}
+                onChange={(e) => setHasStops(e.target.checked)}
+                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+              />
+              <label htmlFor="hasStops" className="text-sm text-muted-foreground cursor-pointer">
+                Je fais des stops avant de prendre l'avion / bateau
+              </label>
+            </div>
+
+            {hasStops && (
+              <div className="space-y-3 pl-6 animate-in fade-in duration-200">
+                <CityAutocomplete
+                  value={formData.stopoverCity1}
+                  onChange={(val) => setFormData({ ...formData, stopoverCity1: val })}
+                  limitToCountry={formData.fromCountry as any}
+                  placeholder="1ère ville de passage (ex: Lyon)"
+                />
+                <CityAutocomplete
+                  value={formData.stopoverCity2}
+                  onChange={(val) => setFormData({ ...formData, stopoverCity2: val })}
+                  limitToCountry={formData.fromCountry as any}
+                  placeholder="2ème ville de passage (ex: Marseille)"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">

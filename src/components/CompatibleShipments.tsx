@@ -183,15 +183,24 @@ const CompatibleShipments = ({ userId }: CompatibleShipmentsProps) => {
 
           if (!isSameFromCountry || !isSameToCountry) continue;
 
-          // Check origin city (with regional matching)
+          // Check origin city (with stopover and regional matching)
           const tripFromCity = normalize(trip.from_city);
+          const tripStopover1 = normalize(trip.stopover_city_1 || "");
+          const tripStopover2 = normalize(trip.stopover_city_2 || "");
           const shipFromCity = normalize(shipment.from_city);
-          const isSameFromCity = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
 
-          // If not exact match, check if same region
+          const matchesOrigin = tripFromCity.includes(shipFromCity) || shipFromCity.includes(tripFromCity);
+          const matchesStopover1 = tripStopover1 && (tripStopover1.includes(shipFromCity) || shipFromCity.includes(tripStopover1));
+          const matchesStopover2 = tripStopover2 && (tripStopover2.includes(shipFromCity) || shipFromCity.includes(tripStopover2));
+
+          const isSameFromCity = matchesOrigin || matchesStopover1 || matchesStopover2;
+
+          // If not exact match, check if same region (including stopovers)
           const isSameFromRegion =
             !isSameFromCity &&
-            areCitiesInSameRegion(trip.from_city, trip.from_country, shipment.from_city, shipment.from_country);
+            (areCitiesInSameRegion(trip.from_city, trip.from_country, shipment.from_city, shipment.from_country) ||
+              (trip.stopover_city_1 && areCitiesInSameRegion(trip.stopover_city_1, trip.from_country, shipment.from_city, shipment.from_country)) ||
+              (trip.stopover_city_2 && areCitiesInSameRegion(trip.stopover_city_2, trip.from_country, shipment.from_city, shipment.from_country)));
 
           if (!isSameFromCity && !isSameFromRegion) continue;
 
