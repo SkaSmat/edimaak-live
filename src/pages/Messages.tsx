@@ -108,7 +108,7 @@ const Messages = () => {
 
   return (
     <DashboardLayout role={profile.role} fullName={profile.full_name} isAdmin={profile.role === "admin"}>
-      <div className="h-[calc(100vh-10rem)] sm:h-[calc(100vh-8rem)] flex flex-col">
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 12rem)' }}>
         <div className="md:hidden flex items-center justify-between mb-3 sm:mb-4">
           {selectedMatchId && (
             <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2 text-xs sm:text-sm">
@@ -139,9 +139,9 @@ const Messages = () => {
                 {selectedMatchId ? "Discussion" : "Sélectionnez une conversation"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-background md:bg-card">
+            <CardContent className="flex-1 overflow-hidden p-0 flex flex-col bg-background md:bg-card min-h-0">
               {selectedMatchId ? (
-                <div className="flex-1 p-0 md:p-3 lg:p-4 overflow-hidden h-full">
+                <div className="flex-1 p-2 md:p-3 overflow-hidden flex flex-col min-h-0">
                   <ChatWindow matchId={selectedMatchId} userId={user.id} />
                 </div>
               ) : (

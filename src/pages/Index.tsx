@@ -24,8 +24,9 @@ import {
   Eye,
 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
-import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { format } from "date-fns";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { SearchBarSection } from "@/components/landing/SearchBarSection";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -358,220 +359,30 @@ const Index = () => {
         </div>
       </header>
 
-      {/* HERO OPTIMISÉ */}
-      <section className="pt-8 pb-6 sm:pt-16 sm:pb-8 md:pt-24 md:pb-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="text-center mb-6 sm:mb-8 md:mb-12">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight px-2">
-              Faites voyager vos colis <br className="hidden sm:block" /> en toute confiance.
-            </h1>
-            <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-              ​La 1ère plateforme au service de la communauté algérienne,  connectant voyageurs et expéditeurs pour le
-              transport de colis.
-            </p>
-          </div>
-        </div>
-      </section>
 
-      {/* BARRE DE RECHERCHE MOBILE-FIRST */}
-      <form onSubmit={handleSearchClick} className="relative z-40 px-3 sm:px-4 mb-8">
-        <div className="container mx-auto max-w-4xl">
-          {/* VERSION MOBILE (< md) : Layout vertical */}
-          <div className="md:hidden bg-white rounded-2xl shadow-lg border border-gray-200 p-4 space-y-3">
-            {/* DÉPART */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Départ</span>
-                <select
-                  value={fromCountry}
-                  onChange={(e) => {
-                    setFromCountry(e.target.value);
-                    setLocalFromCity("");
-                  }}
-                  className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <CityAutocomplete
-                placeholder={`Ville de ${fromCountry}`}
-                value={localFromCity}
-                onChange={setLocalFromCity}
-                limitToCountry={fromCountry}
-                className="border border-gray-200 rounded-lg p-2.5 text-sm w-full"
-              />
-            </div>
+      <HeroSection />
 
-            {/* BOUTON INVERSER MOBILE */}
-            <div className="flex justify-center -my-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={toggleDirection}
-                className="rounded-full h-8 px-4 bg-gray-50 text-xs border-gray-200 gap-2"
-              >
-                <ArrowRightLeft className="w-3 h-3" /> Inverser
-              </Button>
-            </div>
-
-            {/* ARRIVÉE */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Arrivée</span>
-                <select
-                  value={toCountry}
-                  onChange={(e) => {
-                    setToCountry(e.target.value);
-                    setLocalToCity("");
-                  }}
-                  className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c} disabled={c === fromCountry}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <CityAutocomplete
-                placeholder={`Ville de ${toCountry}`}
-                value={localToCity}
-                onChange={setLocalToCity}
-                limitToCountry={toCountry}
-                className="border border-gray-200 rounded-lg p-2.5 text-sm w-full"
-              />
-            </div>
-
-            {/* DATE MOBILE */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-gray-500 block">Quand ?</label>
-              <Input
-                type="date"
-                value={localSearchDate}
-                onChange={(e) => setLocalSearchDate(e.target.value)}
-                className="border-gray-200 rounded-lg p-2.5 text-sm w-full"
-              />
-            </div>
-
-            {/* BOUTON RECHERCHE MOBILE */}
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full rounded-xl h-12 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold text-base"
-            >
-              <Search className="w-5 h-5 mr-2" />
-              Rechercher
-            </Button>
-          </div>
-
-          {/* VERSION DESKTOP (≥ md) : Layout horizontal */}
-          <div className="hidden md:flex bg-white rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.12)] border border-gray-200 items-center p-2 divide-x divide-gray-100 relative">
-            {/* DÉPART */}
-            <div className="flex-1 px-6 py-2.5 hover:bg-gray-50 rounded-full transition-colors">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Départ</span>
-                <div className="relative">
-                  <select
-                    value={fromCountry}
-                    onChange={(e) => {
-                      setFromCountry(e.target.value);
-                      setLocalFromCity("");
-                    }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase pr-4 cursor-pointer outline-none hover:text-primary pt-0 pb-[7px]"
-                  >
-                    {COUNTRIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-              <CityAutocomplete
-                placeholder={`Ville de ${fromCountry}`}
-                value={localFromCity}
-                onChange={setLocalFromCity}
-                limitToCountry={fromCountry}
-                className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full"
-              />
-            </div>
-
-            {/* BOUTON INVERSER DESKTOP - POSITION RESPONSIVE */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={toggleDirection}
-                className="rounded-full h-8 w-8 bg-white border-gray-200 shadow-sm hover:scale-110 transition-transform hover:bg-gray-50"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5 text-gray-600" />
-              </Button>
-            </div>
-
-            {/* ARRIVÉE */}
-            <div className="flex-1 px-6 py-2.5 hover:bg-gray-50 rounded-full transition-colors">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Arrivée</span>
-                <div className="relative">
-                  <select
-                    value={toCountry}
-                    onChange={(e) => {
-                      setToCountry(e.target.value);
-                      setLocalToCity("");
-                    }}
-                    className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase pr-4 cursor-pointer outline-none hover:text-primary pb-[7px]"
-                  >
-                    {COUNTRIES.map((c) => (
-                      <option key={c} value={c} disabled={c === fromCountry}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-              <CityAutocomplete
-                placeholder={`Ville de ${toCountry}`}
-                value={localToCity}
-                onChange={setLocalToCity}
-                limitToCountry={toCountry}
-                className="border-0 p-0 h-auto text-sm font-medium placeholder:text-gray-400 focus-visible:ring-0 bg-transparent w-full"
-              />
-            </div>
-
-            {/* DATE */}
-            <div className="flex-[0.8] px-6 py-2.5 hover:bg-gray-50 rounded-full transition-colors">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block mb-1">
-                Quand ?
-              </label>
-              <Input
-                type="date"
-                value={localSearchDate}
-                onChange={(e) => setLocalSearchDate(e.target.value)}
-                className="border-0 bg-transparent focus-visible:ring-0 text-sm font-medium w-full p-0 h-auto"
-              />
-            </div>
-
-            {/* BOUTON RECHERCHE */}
-            <div className="pl-2 pr-1">
-              <Button
-                type="submit"
-                size="lg"
-                className="rounded-full h-12 px-8 bg-orange-500 hover:bg-orange-600 text-white shadow-md font-bold"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </form>
+      <SearchBarSection
+        fromCountry={fromCountry}
+        toCountry={toCountry}
+        localFromCity={localFromCity}
+        localToCity={localToCity}
+        localSearchDate={localSearchDate}
+        countries={COUNTRIES}
+        onFromCountryChange={(country) => {
+          setFromCountry(country);
+          setLocalFromCity("");
+        }}
+        onToCountryChange={(country) => {
+          setToCountry(country);
+          setLocalToCity("");
+        }}
+        onLocalFromCityChange={setLocalFromCity}
+        onLocalToCityChange={setLocalToCity}
+        onLocalSearchDateChange={setLocalSearchDate}
+        onToggleDirection={toggleDirection}
+        onSubmit={handleSearchClick}
+      />
 
       {/* SECTION RÉSULTATS */}
       <main className="container mx-auto px-3 sm:px-4 max-w-7xl pb-12 sm:pb-20 pt-6 sm:pt-12" id="results-section">
