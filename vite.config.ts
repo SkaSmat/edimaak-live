@@ -12,15 +12,15 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
+    mode === "development" ? componentTagger() : null,
     // Bundle analyzer - run 'npm run build' to generate stats.html
-    process.env.ANALYZE && visualizer({
+    process.env.ANALYZE ? visualizer({
       open: true,
       filename: 'dist/stats.html',
       gzipSize: true,
       brotliSize: true,
-    }),
-  ].filter(Boolean),
+    }) : null,
+  ].filter(Boolean) as any,
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
