@@ -270,14 +270,14 @@ const Index = () => {
       if (session?.user?.id && session.user.id !== shipment.sender_id) {
         // Vérifier si l'utilisateur a déjà vu cette demande dans les dernières 24h
         const viewKey = `viewed_shipment_${shipment.id}`;
-        const lastViewed = localStorage.getItem(viewKey);
+        const lastViewed = safeLocalStorage.getItem(viewKey);
         const now = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000;
 
         if (!lastViewed || now - parseInt(lastViewed) > twentyFourHours) {
           // Incrémenter le compteur dans la base de données
           await supabase.rpc("increment_shipment_view_count", { shipment_id: shipment.id });
-          localStorage.setItem(viewKey, now.toString());
+          safeLocalStorage.setItem(viewKey, now.toString());
         }
       }
     },
@@ -285,13 +285,13 @@ const Index = () => {
   );
   const handleSignUp = useCallback(() => {
     if (selectedShipment) {
-      localStorage.setItem("targetShipmentId", selectedShipment.id);
+      safeLocalStorage.setItem("targetShipmentId", selectedShipment.id);
       navigate("/auth?role=traveler&view=signup");
     }
   }, [selectedShipment, navigate]);
   const handleLogin = useCallback(() => {
     if (selectedShipment) {
-      localStorage.setItem("targetShipmentId", selectedShipment.id);
+      safeLocalStorage.setItem("targetShipmentId", selectedShipment.id);
       navigate("/auth");
     }
   }, [selectedShipment, navigate]);
@@ -358,7 +358,6 @@ const Index = () => {
           </div>
         </div>
       </header>
-
 
       <HeroSection />
 
@@ -503,7 +502,7 @@ const Index = () => {
                       toCountry,
                       date: localSearchDate,
                     };
-                    localStorage.setItem("searchIntent", JSON.stringify(searchIntent));
+                    safeLocalStorage.setItem("searchIntent", JSON.stringify(searchIntent)); // ✅ SÉCURISÉ
                     navigate("/auth?role=traveler&view=signup");
                   }}
                   size="lg"
