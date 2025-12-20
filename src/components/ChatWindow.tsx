@@ -306,10 +306,10 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-16rem)] sm:h-[500px] md:h-[600px]">
+    <div className="flex flex-col h-full">
       {/* Header with other user info */}
       {otherUser && (
-        <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-card rounded-lg border shadow-sm">
+        <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-card rounded-lg border shadow-sm flex-shrink-0">
           <button
             onClick={() => navigate(`/user/${otherUser.id}`)}
             className="flex items-center gap-2 sm:gap-3 w-full hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors group"
@@ -337,25 +337,27 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
 
       {/* Transaction Tracking - Only show for accepted matches */}
       {matchTracking && matchTracking.status !== "pending" && (
-        <TransactionTracking
-          matchId={matchId}
-          tripId={matchTracking.trip_id}
-          shipmentRequestId={matchTracking.shipment_request_id}
-          userId={userId}
-          isSender={isSender}
-          senderHandedOver={matchTracking.sender_handed_over}
-          travelerPickedUp={matchTracking.traveler_picked_up}
-          travelerDelivered={matchTracking.traveler_delivered}
-          senderReceived={matchTracking.sender_received}
-          senderName={senderName}
-          travelerName={travelerName}
-          onUpdate={fetchMatchTracking}
-        />
+        <div className="flex-shrink-0 mb-2 sm:mb-3">
+          <TransactionTracking
+            matchId={matchId}
+            tripId={matchTracking.trip_id}
+            shipmentRequestId={matchTracking.shipment_request_id}
+            userId={userId}
+            isSender={isSender}
+            senderHandedOver={matchTracking.sender_handed_over}
+            travelerPickedUp={matchTracking.traveler_picked_up}
+            travelerDelivered={matchTracking.traveler_delivered}
+            senderReceived={matchTracking.sender_received}
+            senderName={senderName}
+            travelerName={travelerName}
+            onUpdate={fetchMatchTracking}
+          />
+        </div>
       )}
 
       {/* Match details */}
       {matchDetails && matchDetails.trips && (
-        <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-xs sm:text-sm">
+        <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800 text-xs sm:text-sm flex-shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
@@ -372,7 +374,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 p-3 sm:p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+      <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 p-2 sm:p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/50 min-h-[200px]">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
             <Send className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
@@ -412,7 +414,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="flex gap-2 mt-3 sm:mt-4">
+      <form onSubmit={handleSend} className="flex gap-2 mt-2 sm:mt-3 flex-shrink-0">
         <Input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value.slice(0, 2000))}
