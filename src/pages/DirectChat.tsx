@@ -208,7 +208,7 @@ const DirectChatPage = () => {
       const { error } = await supabase.from("direct_messages").insert({
         conversation_id: conversationId,
         sender_id: currentUserId,
-        content: newMessage.trim().slice(0, 2000),
+        content: newMessage.trim(),
       });
 
       if (error) throw error;
