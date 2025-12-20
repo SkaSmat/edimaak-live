@@ -203,7 +203,7 @@ const Index = () => {
                 const firstName = p.full_name ? p.full_name.split(" ")[0] : "Utilisateur";
                 senderInfoMap[p.id] = {
                   display_name: firstName,
-                  avatar_url: p.avatar_url,
+                  avatar_url: p.avatar_url || null,
                 };
               });
             }
