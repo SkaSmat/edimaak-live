@@ -60,7 +60,7 @@ export const SearchBarSection = ({
               value={localFromCity}
               onChange={onLocalFromCityChange}
               limitToCountry={fromCountry}
-              className="border border-gray-200 rounded-lg p-2.5 text-sm w-full"
+              className="border border-gray-200 rounded-lg p-2.5 text-base md:text-sm w-full"
             />
           </div>
 
@@ -98,7 +98,7 @@ export const SearchBarSection = ({
               value={localToCity}
               onChange={onLocalToCityChange}
               limitToCountry={toCountry}
-              className="border border-gray-200 rounded-lg p-2.5 text-sm w-full"
+              className="border border-gray-200 rounded-lg p-2.5 text-base md:text-sm w-full"
             />
           </div>
 
@@ -109,7 +109,7 @@ export const SearchBarSection = ({
               type="date"
               value={localSearchDate}
               onChange={(e) => onLocalSearchDateChange(e.target.value)}
-              className="border-gray-200 rounded-lg p-2.5 text-sm w-full"
+              className="border-gray-200 rounded-lg p-2.5 text-base md:text-sm w-full"
             />
           </div>
 
