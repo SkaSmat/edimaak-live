@@ -162,7 +162,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       if (error) throw error;
       setMessages(data || []);
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -179,7 +179,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       if (error) throw error;
       if (data) setMatchTracking(data as MatchTracking);
     } catch (error) {
-      console.error("Error fetching match tracking:", error);
+      // Error handled silently
     }
   };
 
@@ -252,7 +252,6 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
         if (privateData) setOtherUserPrivateInfo(privateData as OtherUserPrivateInfo);
       }
     } catch (error) {
-      console.error("Error fetching match details:", error);
       setAccessDenied(true);
     }
   };
@@ -273,7 +272,6 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       if (error) throw error;
       setNewMessage("");
     } catch (error) {
-      console.error("Error sending message:", error);
       toast.error("Impossible d'envoyer le message.");
     } finally {
       setSending(false);

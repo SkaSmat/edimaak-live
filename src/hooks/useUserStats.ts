@@ -75,7 +75,6 @@ export const useUserStats = (userId: string | undefined) => {
           isLoading: false,
         });
       } catch (error) {
-        console.error("Error fetching user stats:", error);
         setStats((prev) => ({ ...prev, isLoading: false }));
       }
     };

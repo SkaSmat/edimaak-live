@@ -42,7 +42,6 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
         })
         .eq("id", session.user.id);
       if (error) {
-        console.error("Erreur RLS:", error);
         toast.error("Erreur de droits. Demandez à l'admin d'activer la policy SQL.");
         return;
       }
@@ -51,7 +50,6 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
       // On recharge la page vers le bon dashboard
       window.location.href = newRole === "traveler" ? "/dashboard/traveler" : "/dashboard/sender";
     } catch (error) {
-      console.error(error);
       toast.error("Impossible de changer de mode");
     }
   };
@@ -66,12 +64,18 @@ export const DashboardLayout = ({ children, role, fullName, isAdmin = false }: D
     }
   };
   const updateCountsFromStorage = () => {
-    const msgStorage = localStorage.getItem("unreadMatches");
-    const msgList = msgStorage ? JSON.parse(msgStorage) : [];
-    setUnreadCount(msgList.length);
-    const matchStorage = localStorage.getItem("newMatches");
-    const matchList = matchStorage ? JSON.parse(matchStorage) : [];
-    setPendingMatchCount(matchList.length);
+    try {
+      const msgStorage = localStorage.getItem("unreadMatches");
+      const msgList = msgStorage ? JSON.parse(msgStorage) : [];
+      setUnreadCount(msgList.length);
+      const matchStorage = localStorage.getItem("newMatches");
+      const matchList = matchStorage ? JSON.parse(matchStorage) : [];
+      setPendingMatchCount(matchList.length);
+    } catch (error) {
+      // Corrupted localStorage, reset counts
+      setUnreadCount(0);
+      setPendingMatchCount(0);
+    }
   };
   useEffect(() => {
     updateCountsFromStorage();

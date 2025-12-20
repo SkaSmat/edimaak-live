@@ -78,7 +78,6 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
       setRequests(requests.filter((r) => r.id !== id));
       toast.success("Demande supprimée");
     } catch (error) {
-      console.error("Error deleting request:", error);
       toast.error("Erreur lors de la suppression");
     }
   };
@@ -144,10 +143,10 @@ const ShipmentRequestList = ({ userId, onCreateRequest }: ShipmentRequestListPro
                 <Badge variant={request.status === "open" ? "default" : "secondary"} className="text-xs">
                   {request.status === "open" ? "Ouvert" : request.status === "matched" ? "Associé" : "Fermé"}
                 </Badge>
-                <Button variant="ghost" size="sm" onClick={() => setEditingRequest(request)} className="h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={() => setEditingRequest(request)} className="h-8 w-8 p-0" aria-label="Modifier la demande" type="button">
                   <Pencil className="w-4 h-4 text-primary" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="h-8 w-8 p-0" aria-label="Supprimer la demande" type="button">
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </>

@@ -76,7 +76,6 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
       setTrips(trips.filter((t) => t.id !== id));
       toast.success("Voyage supprimé");
     } catch (error) {
-      console.error("Error deleting trip:", error);
       toast.error("Erreur lors de la suppression");
     }
   };
@@ -144,10 +143,10 @@ const TripList = ({ userId, onCreateTrip }: TripListProps) => {
             )}
             {!isCompleted && !isExpired && (
               <>
-                <Button variant="ghost" size="sm" onClick={() => setEditingTrip(trip)} className="h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={() => setEditingTrip(trip)} className="h-8 w-8 p-0" aria-label="Modifier le voyage" type="button">
                   <Pencil className="w-4 h-4 text-primary" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(trip.id)} className="h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(trip.id)} className="h-8 w-8 p-0" aria-label="Supprimer le voyage" type="button">
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </>

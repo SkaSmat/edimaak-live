@@ -15,9 +15,11 @@ const playNotificationSound = (): void => {
   try {
     const audio = new Audio("/notification.mp3");
     audio.volume = 0.5;
-    audio.play().catch((err) => console.warn("Son impossible:", err));
+    audio.play().catch(() => {
+      // Silently fail if audio cannot play
+    });
   } catch (error) {
-    console.warn("Audio non supporté");
+    // Audio not supported, fail silently
   }
 };
 
@@ -26,7 +28,7 @@ const triggerVibration = (): void => {
     try {
       navigator.vibrate([200, 100, 200]);
     } catch (e) {
-      console.warn("Vibration non supportée");
+      // Vibration not supported, fail silently
     }
   }
 };

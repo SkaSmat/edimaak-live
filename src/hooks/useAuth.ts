@@ -20,7 +20,6 @@ export const useAuth = () => {
       // Set a timeout to prevent infinite loading state
       timeoutRef.current = setTimeout(() => {
         if (mountedRef.current && isLoading) {
-          console.warn("Auth timeout - forcing loading to complete");
           setIsLoading(false);
         }
       }, AUTH_TIMEOUT_MS);
@@ -34,7 +33,6 @@ export const useAuth = () => {
         if (!mountedRef.current) return;
 
         if (error) {
-          console.error("Session error:", error);
           setSession(null);
           setIsLoading(false);
           return;
@@ -47,7 +45,6 @@ export const useAuth = () => {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error("Erreur d'initialisation:", error);
         if (mountedRef.current) {
           setIsLoading(false);
         }
@@ -90,13 +87,11 @@ export const useAuth = () => {
       if (!mountedRef.current) return;
 
       if (error) {
-        console.error("Erreur rôle:", error);
         setUserRole(null);
       } else {
         setUserRole((data?.role as UserRole) || null);
       }
     } catch (error) {
-      console.error("Erreur rôle:", error);
       if (mountedRef.current) {
         setUserRole(null);
       }

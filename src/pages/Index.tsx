@@ -224,7 +224,6 @@ const Index = () => {
         setShipmentRequests(data || []);
       }
     } catch (err) {
-      console.error("Erreur chargement", err);
       setError("Impossible de charger les annonces.");
     } finally {
       setIsLoading(false);
@@ -585,7 +584,7 @@ const Index = () => {
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(8)].map((_, i) => (
-              <SkeletonCard key={i} />
+              <SkeletonCard key={`skeleton-${i}`} />
             ))}
           </div>
         )}
@@ -653,7 +652,6 @@ const Index = () => {
                         );
                       }
                     } catch (err) {
-                      console.error("Error creating alert:", err);
                       toast.error("Erreur lors de la création de l'alerte");
                     } finally {
                       setIsCreatingAlert(false);

@@ -39,7 +39,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const loadNotifications = async () => {
     // Requête typée explicitement avec .returns<>
     const { data, error } = await supabase
-      .from("notifications" as any)
+      .from("notifications")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -47,7 +47,6 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
       .returns<Notification[]>();
 
     if (error) {
-      console.error("Erreur chargement notifications:", error);
       return;
     }
 
@@ -86,7 +85,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
 
   const markAsRead = async (notificationId: string) => {
     await supabase
-      .from("notifications" as any)
+      .from("notifications")
       .update({ read: true })
       .eq("id", notificationId);
 
