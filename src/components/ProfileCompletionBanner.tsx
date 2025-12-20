@@ -89,7 +89,7 @@ export const ProfileCompletionBanner = () => {
         hasBio: !!privateInfo?.phone,
       });
     } catch (error) {
-      console.error("Erreur calcul complétion:", error);
+      // Silently handle completion calculation errors
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export const ProfileCompletionBanner = () => {
 
   return (
     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6 relative">
-      <button onClick={() => setDismissed(true)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+      <button type="button" onClick={() => setDismissed(true)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" aria-label="Fermer la bannière de complétion de profil">
         <X className="w-4 h-4" />
       </button>
 

@@ -134,7 +134,7 @@ const SenderDashboard = () => {
         pendingMatches: pendingCount || 0,
       });
     } catch (error) {
-      console.error("Erreur dashboard:", error);
+      // Error silently handled
     } finally {
       setLoading(false);
     }

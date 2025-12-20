@@ -19,18 +19,22 @@ const Messages = () => {
 
   // NOUVELLE FONCTION : Marquer comme lu avec signal de rafraîchissement
   const markAsRead = (matchId: string) => {
-    const storage = localStorage.getItem("unreadMatches");
-    if (storage) {
-      let unreadList = JSON.parse(storage);
+    try {
+      const storage = localStorage.getItem("unreadMatches");
+      if (storage) {
+        let unreadList = JSON.parse(storage);
 
-      // On vérifie si l'ID est bien présent avant de modifier
-      if (unreadList.includes(matchId)) {
-        unreadList = unreadList.filter((id: string) => id !== matchId);
-        localStorage.setItem("unreadMatches", JSON.stringify(unreadList));
+        // On vérifie si l'ID est bien présent avant de modifier
+        if (unreadList.includes(matchId)) {
+          unreadList = unreadList.filter((id: string) => id !== matchId);
+          localStorage.setItem("unreadMatches", JSON.stringify(unreadList));
 
-        // LIGNE DE CODE CRITIQUE : Force la mise à jour globale
-        window.dispatchEvent(new Event("unread-change"));
+          // LIGNE DE CODE CRITIQUE : Force la mise à jour globale
+          window.dispatchEvent(new Event("unread-change"));
+        }
       }
+    } catch (error) {
+      // Corrupted localStorage, skip
     }
   };
 

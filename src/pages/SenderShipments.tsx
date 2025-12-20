@@ -53,7 +53,7 @@ const SenderShipments = ({ embedded = false }: SenderShipmentsProps) => {
 
       setProfile(profileData);
     } catch (error) {
-      console.error(error);
+      // Error handled by navigation
     } finally {
       setLoading(false);
     }

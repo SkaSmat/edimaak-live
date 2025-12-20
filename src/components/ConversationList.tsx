@@ -39,10 +39,15 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
 
   // Fonction pour charger les IDs non lus
   const loadUnreadStatus = () => {
-    const storage = localStorage.getItem("unreadMatches");
-    if (storage) {
-      setUnreadIds(JSON.parse(storage));
-    } else {
+    try {
+      const storage = localStorage.getItem("unreadMatches");
+      if (storage) {
+        setUnreadIds(JSON.parse(storage));
+      } else {
+        setUnreadIds([]);
+      }
+    } catch (error) {
+      // Corrupted localStorage, reset to empty
       setUnreadIds([]);
     }
   };
