@@ -247,7 +247,9 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span></Label>
-            <Input type="number" step="0.5" min="0" value={formData.maxWeightKg} onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })} placeholder="Ex: 23" />
+            <Input type="number"
+              inputMode="decimal" {/* 👈 AJOUT */}
+              step="0.5" min="0" value={formData.maxWeightKg} onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })} placeholder="Ex: 23" />
           </div>
         </div>
       </div>

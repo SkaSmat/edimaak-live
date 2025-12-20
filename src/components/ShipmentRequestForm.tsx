@@ -259,7 +259,9 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
         </div>
         <div className="space-y-2">
           <Label>Poids (kg) *</Label>
-          <Input type="number" step="0.1" min="0.1" value={formData.weightKg} onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })} required placeholder="Ex: 2" />
+          <Input type="number" 
+            inputMode="decimal" {/* 👈 AJOUT : Ouvre le pavé numérique avec virgule sur iPhone/Android */}
+            step="0.1" min="0.1" value={formData.weightKg} onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })} required placeholder="Ex: 2" />
         </div>
         <div className="space-y-2">
           <Label>Type d'objet *</Label>
@@ -292,7 +294,9 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
         )}
         <div className="space-y-2">
           <Label>Prix proposé (€) <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
-          <Input type="number" step="1" min="1" max="10000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="Ex: 50" />
+          <Input type="number" 
+            inputMode="numeric" {/* 👈 AJOUT : Ouvre le pavé numérique simple */}
+            step="1" min="1" max="10000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="Ex: 50" />
         </div>
       </div>
       <div className="space-y-2">
