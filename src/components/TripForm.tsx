@@ -222,18 +222,18 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
             </div>
 
             {hasStops && (
-              <div className="space-y-3 pl-6 animate-in fade-in duration-200">
+              <div className="space-y-3 pl-2 sm:pl-6 animate-in fade-in duration-200">
                 <CityAutocomplete
                   value={formData.stopoverCity1}
                   onChange={(val) => setFormData({ ...formData, stopoverCity1: val })}
                   limitToCountry={formData.fromCountry as any}
-                  placeholder="1ère ville de passage (ex: Lyon)"
+                  placeholder="1ère ville (ex: Lyon)"
                 />
                 <CityAutocomplete
                   value={formData.stopoverCity2}
                   onChange={(val) => setFormData({ ...formData, stopoverCity2: val })}
                   limitToCountry={formData.fromCountry as any}
-                  placeholder="2ème ville de passage (ex: Marseille)"
+                  placeholder="2ème ville (ex: Marseille)"
                 />
               </div>
             )}
