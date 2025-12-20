@@ -1,19 +1,35 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useShipmentRequests, ShipmentRequest } from "@/hooks/useShipmentRequests";
 import {
   Search,
+  Package,
+  MapPin,
+  Calendar,
+  Shield,
+  TrendingUp,
+  Zap,
+  ShieldCheck,
   Bell,
+  MessageCircle,
   ArrowRightLeft,
   ChevronDown,
-  Loader2,
+  ArrowRight,
   CheckCircle,
+  Loader2,
+  Star,
+  Eye,
 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
+import { format } from "date-fns";
+import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
+import { ImageLightbox } from "@/components/ImageLightbox";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
 import { toast } from "sonner";
 import { useAuth, UserRole } from "@/hooks/useAuth";
@@ -21,22 +37,44 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { NotificationBell } from "@/components/NotificationBell";
-// ShipmentRequest interface now imported from useShipmentRequests hook
+interface ShipmentRequest {
+  id: string;
+  from_city: string;
+  from_country: string;
+  to_city: string;
+  to_country: string;
+  earliest_date: string;
+  latest_date: string;
+  weight_kg: number;
+  item_type: string;
+  notes: string | null;
+  image_url: string | null;
+  view_count: number;
+  sender_id: string;
+  price: number | null;
+  status: string;
 
-// Import world data hook for lazy loading (reduces initial bundle size)
-import { useWorldData } from "@/hooks/useWorldData";
-import { ShipmentCard } from "@/components/landing/ShipmentCard";
+  public_profiles?: {
+    id: string;
+    display_first_name: string;
+    avatar_url: string | null;
+  };
+  sender_request_count?: number;
+  sender_kyc_verified?: boolean;
+  sender_rating?: number | null;
+  sender_reviews_count?: number;
+}
+
+// Import world countries for intelligent selection
+import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
+
+// Liste des pays disponibles - now uses all world countries
+const COUNTRIES = WORLD_COUNTRIES.map((c) => c.name);
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { session, userRole, isLoading: authLoading } = useAuth();
   const { unreadCount, resetUnreadCount } = useRealtimeNotifications(session?.user?.id);
-
-  // Lazy load world countries data
-  const { countries: worldCountries, isLoading: isLoadingCountries } = useWorldData();
-
-  // Memoize COUNTRIES to prevent re-renders and infinite loops
-  const COUNTRIES = useMemo(() => worldCountries.map((c) => c.name), [worldCountries]);
 
   // NOUVEAU : Gestion des pays indépendants
   const [fromCountry, setFromCountry] = useState("France");
@@ -44,10 +82,10 @@ const Index = () => {
   const [localFromCity, setLocalFromCity] = useState(searchParams.get("from") || "");
   const [localToCity, setLocalToCity] = useState(searchParams.get("to") || "");
   const [localSearchDate, setLocalSearchDate] = useState(searchParams.get("date") || "");
+  const [shipmentRequests, setShipmentRequests] = useState<ShipmentRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
-
-  // Use React Query hook for shipment requests with automatic caching
-  const { data: shipmentRequests = [], isLoading, error } = useShipmentRequests(session, authLoading);
   const [alertCreated, setAlertCreated] = useState(false);
   const [isCreatingAlert, setIsCreatingAlert] = useState(false);
   const currentFromCity = searchParams.get("from") || "";
@@ -58,12 +96,12 @@ const Index = () => {
   // --- LOGIQUE INTELLIGENTE DES PAYS ---
   // Si on change le départ et qu'il devient égal à l'arrivée, on change l'arrivée
   useEffect(() => {
-    if (fromCountry === toCountry && COUNTRIES.length > 0) {
+    if (fromCountry === toCountry) {
       const otherCountry = COUNTRIES.find((c) => c !== fromCountry) || "Algérie";
       setToCountry(otherCountry);
       setLocalToCity(""); // Reset ville car pays a changé
     }
-  }, [fromCountry, COUNTRIES]);
+  }, [fromCountry]);
 
   // Fonction d'inversion complète (Pays + Ville)
   const toggleDirection = () => {
@@ -84,6 +122,114 @@ const Index = () => {
     resetUnreadCount();
     navigate(getDashboardPath(userRole));
   }, [userRole, navigate, resetUnreadCount]);
+  useEffect(() => {
+    // Chargement initial des annonces même si l'auth n'est pas encore prête
+    fetchShipmentRequests(null);
+  }, []);
+
+  useEffect(() => {
+    // Lorsque l'utilisateur est connu, on refetch pour exclure ses propres annonces
+    if (!authLoading && session?.user?.id) {
+      fetchShipmentRequests(session.user.id);
+    }
+  }, [authLoading, session?.user?.id]);
+
+  const fetchShipmentRequests = async (currentUserId: string | null) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+
+      // Fetch both open and completed shipment requests, exclude expired ones
+      const { data, error: fetchError } = await supabase
+        .from("shipment_requests")
+        .select("*")
+        .in("status", ["open", "completed"])
+        .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
+        .gte("latest_date", today) // BUG 6 FIX: Exclude expired shipments
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (fetchError) throw fetchError;
+      if (data && data.length > 0) {
+        const senderIds = [...new Set(data.map((r) => r.sender_id))];
+
+        // 2. Fetch sender display info, KYC status, and ratings in parallel batches
+        const senderInfoMap: Record<string, { display_name: string; avatar_url: string | null }> = {};
+        const senderKycMap: Record<string, boolean> = {};
+        const senderRatingMap: Record<string, { rating: number | null; reviews_count: number }> = {};
+
+        if (session) {
+          // Batch all RPC calls for better performance
+          const senderPromises = senderIds.map((senderId) =>
+            Promise.all([
+              supabase.rpc("get_sender_display_info", { sender_uuid: senderId }),
+              supabase.rpc("get_public_kyc_status", { profile_id: senderId }),
+              supabase.rpc("get_user_rating", { user_id: senderId }),
+            ]).then(([senderResult, kycResult, ratingResult]) => {
+              if (senderResult.data && senderResult.data.length > 0) {
+                senderInfoMap[senderId] = {
+                  display_name: senderResult.data[0].display_name,
+                  avatar_url: senderResult.data[0].avatar_url,
+                };
+              }
+              senderKycMap[senderId] = kycResult.data === true;
+              senderRatingMap[senderId] = {
+                rating: ratingResult.data?.[0]?.average_rating || null,
+                reviews_count: ratingResult.data?.[0]?.reviews_count || 0,
+              };
+            }),
+          );
+          await Promise.all(senderPromises);
+        }
+
+        // 3. Fetch shipment counts per sender
+        const { data: counts } = await supabase
+          .from("shipment_requests")
+          .select("sender_id")
+          .in("sender_id", senderIds);
+        const countMap: Record<string, number> = (counts || []).reduce(
+          (acc, item) => {
+            acc[item.sender_id] = (acc[item.sender_id] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        );
+
+        // 4. Enrich data with sender info
+        const enrichedData = data.map((r) => ({
+          ...r,
+          sender_request_count: countMap[r.sender_id] || 0,
+          sender_kyc_verified: senderKycMap[r.sender_id] || false,
+          sender_rating: senderRatingMap[r.sender_id]?.rating || null,
+          sender_reviews_count: senderRatingMap[r.sender_id]?.reviews_count || 0,
+          public_profiles: senderInfoMap[r.sender_id]
+            ? {
+                id: r.sender_id,
+                display_first_name: senderInfoMap[r.sender_id].display_name,
+                avatar_url: senderInfoMap[r.sender_id].avatar_url,
+              }
+            : undefined,
+        }));
+
+        // Sort: open first, then completed
+        const sortedData = enrichedData.sort((a, b) => {
+          if (a.status === "open" && b.status === "completed") return -1;
+          if (a.status === "completed" && b.status === "open") return 1;
+          return 0;
+        });
+
+        setShipmentRequests(sortedData);
+      } else {
+        setShipmentRequests(data || []);
+      }
+    } catch (err) {
+      console.error("Erreur chargement", err);
+      setError("Impossible de charger les annonces.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const filteredRequests = useMemo(() => {
     let filtered = shipmentRequests;
     if (currentFromCity)
@@ -244,7 +390,6 @@ const Index = () => {
                     setLocalFromCity("");
                   }}
                   className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
-                  disabled={isLoadingCountries}
                 >
                   {COUNTRIES.map((c) => (
                     <option key={c} value={c}>
@@ -286,7 +431,6 @@ const Index = () => {
                     setLocalToCity("");
                   }}
                   className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
-                  disabled={isLoadingCountries}
                 >
                   {COUNTRIES.map((c) => (
                     <option key={c} value={c} disabled={c === fromCountry}>
@@ -340,7 +484,6 @@ const Index = () => {
                       setLocalFromCity("");
                     }}
                     className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase pr-4 cursor-pointer outline-none hover:text-primary pt-0 pb-[7px]"
-                    disabled={isLoadingCountries}
                   >
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c}>
@@ -385,7 +528,6 @@ const Index = () => {
                       setLocalToCity("");
                     }}
                     className="appearance-none bg-transparent text-[10px] font-extrabold text-gray-900 uppercase pr-4 cursor-pointer outline-none hover:text-primary pb-[7px]"
-                    disabled={isLoadingCountries}
                   >
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c} disabled={c === fromCountry}>
@@ -448,13 +590,7 @@ const Index = () => {
           </div>
         )}
 
-        {error && (
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 bg-red-50 rounded-2xl sm:rounded-3xl border border-red-200 text-center">
-            <p className="text-red-600">Impossible de charger les annonces. Veuillez réessayer.</p>
-          </div>
-        )}
-
-        {!isLoading && !error && filteredRequests.length === 0 && (
+        {!isLoading && filteredRequests.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 bg-white rounded-2xl sm:rounded-3xl border border-dashed border-gray-200 text-center">
             <div className="bg-primary/10 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
               <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
@@ -571,15 +707,140 @@ const Index = () => {
           </div>
         )}
 
-        {!isLoading && !error && filteredRequests.length > 0 && (
+        {!isLoading && filteredRequests.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredRequests.map((request) => (
-              <ShipmentCard
+              <div
                 key={request.id}
-                request={request}
-                isAuthenticated={!!session}
-                onShipmentClick={handleShipmentClick}
-              />
+                role={request.status === "completed" ? undefined : "button"}
+                className={`group bg-white rounded-xl overflow-hidden border border-gray-100 transition-all duration-300 flex flex-col relative ${
+                  request.status === "completed"
+                    ? "opacity-70 cursor-default"
+                    : "hover:border-gray-200 hover:shadow-xl cursor-pointer"
+                }`}
+                onClick={() => request.status !== "completed" && handleShipmentClick(request)}
+              >
+                {/* Header : Badge Type + Prix */}
+                <div className="p-3 sm:p-4 pb-2 flex items-center justify-between border-b border-gray-50">
+                  <Badge
+                    variant="secondary"
+                    className="bg-[hsl(var(--badge-primary-bg))] text-[hsl(var(--badge-primary-text))] border-0 text-xs flex items-center gap-1 font-semibold"
+                  >
+                    <Package className="w-3 h-3" />
+                    {request.item_type}
+                  </Badge>
+                  {request.price ? (
+                    <div className="bg-[hsl(var(--badge-emerald-bg))] text-white text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      💶 {request.price}€
+                    </div>
+                  ) : (
+                    <div className="bg-[hsl(var(--badge-orange-bg))] text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md">
+                      Prix à discuter
+                    </div>
+                  )}
+                </div>
+
+                {/* Image with overlay */}
+                <div className="relative h-32 sm:h-40 bg-gray-100">
+                  <div className={`h-full ${request.status === "completed" ? "pointer-events-none" : ""}`}>
+                    <ImageLightbox
+                      src={getShipmentImageUrl(request.image_url, request.item_type)}
+                      alt={request.item_type}
+                      className="w-full h-full"
+                      loading="lazy"
+                    />
+                  </div>
+                  {/* View count overlay badge */}
+                  {request.view_count > 5 && (
+                    <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-sm text-white text-[13px] font-medium px-3 py-1.5 rounded-[20px] flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" /> {request.view_count} vues
+                    </div>
+                  )}
+                </div>
+
+                {/* Trajet Principal */}
+                <div className="px-3 sm:px-4 pt-3 pb-2">
+                  <h3 className="font-bold text-gray-900 text-lg sm:text-xl leading-tight">
+                    {request.from_city} → {request.to_city}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 mt-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>
+                      {format(new Date(request.earliest_date), "dd MMM")} -{" "}
+                      {format(new Date(request.latest_date), "dd MMM")}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Expéditeur + Poids */}
+                <div className="px-3 sm:px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <UserAvatar
+                      fullName={session ? request.public_profiles?.display_first_name || "" : ""}
+                      avatarUrl={session ? request.public_profiles?.avatar_url : null}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      {session ? (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/user/${request.sender_id}`);
+                            }}
+                            className="text-xs sm:text-sm font-medium text-gray-900 truncate hover:underline hover:text-primary transition-colors text-left flex items-center gap-1"
+                          >
+                            {request.public_profiles?.display_first_name || "Utilisateur"}
+                            {request.sender_rating && request.sender_rating > 0 && (
+                              <span className="flex items-center gap-0.5 text-amber-500 font-medium ml-1">
+                                <Star className="w-3 h-3 fill-current" />
+                                {request.sender_rating.toFixed(1)}
+                              </span>
+                            )}
+                          </button>
+                          {request.sender_kyc_verified && (
+                            <p className="text-[10px] sm:text-xs text-green-600 font-medium flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Identité vérifiée
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-medium text-gray-600 truncate">
+                          Utilisateur anonyme
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-gray-200 text-gray-800 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0 ml-2">
+                    📦 {request.weight_kg} kg
+                  </div>
+                </div>
+
+                {/* Tags si description */}
+                {request.notes && (
+                  <div className="px-3 sm:px-4 pb-2 flex flex-wrap gap-1">
+                    <span className="bg-amber-50 text-amber-700 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full">
+                      📝 Description disponible
+                    </span>
+                  </div>
+                )}
+
+                {/* Bouton CTA */}
+                <div className="p-3 sm:p-4 pt-2 mt-auto">
+                  {request.status === "completed" ? (
+                    <div className="w-full bg-green-100 text-green-800 border border-green-300 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Colis livré
+                    </div>
+                  ) : (
+                    <div className="w-full bg-primary/15 hover:bg-primary/20 text-[hsl(var(--primary-dark))] font-semibold text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
+                      Proposer mon voyage
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         )}

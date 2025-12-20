@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Upload, X, AlertTriangle } from "lucide-react";
 import { CityAutocomplete } from "@/components/CityAutocomplete";
-import { useWorldData } from "@/hooks/useWorldData";
+import { WORLD_COUNTRIES } from "@/lib/worldData";
 import { z } from "zod";
 
 interface ShipmentRequestFormProps {
@@ -29,6 +29,8 @@ interface ShipmentRequestFormProps {
     image_url: string | null;
   };
 }
+
+const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
 const VALID_ITEM_TYPES = ["Documents", "Vêtements", "Médicaments", "Argent", "Autres"] as const;
 
 // Zod schema for shipment request validation - sans limite de poids
@@ -64,10 +66,6 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editData?.image_url || null);
-
-  // Lazy load world countries data to reduce bundle size
-  const { countries: worldCountries, isLoading: isLoadingCountries } = useWorldData();
-  const COUNTRIES = worldCountries.map((c) => c.name);
 
   const [formData, setFormData] = useState({
     fromCountry: editData?.from_country || "France",
@@ -205,7 +203,6 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
             value={formData.fromCountry}
             onChange={(e) => setFormData({ ...formData, fromCountry: e.target.value, fromCity: "" })}
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
-            disabled={isLoadingCountries}
             required
           >
             {COUNTRIES.map((c) => (
@@ -232,7 +229,6 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
             value={formData.toCountry}
             onChange={(e) => setFormData({ ...formData, toCountry: e.target.value, toCity: "" })}
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
-            disabled={isLoadingCountries}
             required
           >
             {COUNTRIES.map((c) => (
