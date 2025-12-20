@@ -24,7 +24,18 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 
-const queryClient = new QueryClient();
+// Configure React Query for optimal caching and performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes (formerly cacheTime)
+      retry: 1, // Retry failed requests once
+      refetchOnWindowFocus: false, // Don't refetch on window focus (better UX)
+      refetchOnMount: false, // Don't refetch on component mount if data is fresh
+    },
+  },
+});
 
 // Simple loading fallback
 const PageLoader = () => (
