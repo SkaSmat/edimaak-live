@@ -135,15 +135,15 @@ export const ShipmentCard = memo(({ request, isAuthenticated, onShipmentClick }:
         </div>
       )}
 
-      {/* Bouton CTA */}
+      {/* Bouton CTA - Touch-friendly with min-height for mobile accessibility */}
       <div className="p-3 sm:p-4 pt-2 mt-auto">
         {request.status === "completed" ? (
-          <div className="w-full bg-green-100 text-green-800 border border-green-300 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
+          <div className="w-full min-h-[44px] bg-green-100 text-green-800 border border-green-300 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
             <CheckCircle className="w-3.5 h-3.5" />
             Colis livré
           </div>
         ) : (
-          <div className="w-full bg-primary/15 hover:bg-primary/20 text-[hsl(var(--primary-dark))] font-semibold text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
+          <div className="w-full min-h-[44px] bg-primary/15 hover:bg-primary/20 text-[hsl(var(--primary-dark))] font-semibold text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
             Proposer mon voyage
             <ArrowRight className="w-3.5 h-3.5" />
           </div>

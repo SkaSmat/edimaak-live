@@ -168,6 +168,7 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
               value={formData.fromCountry}
               onChange={(e) => setFormData({ ...formData, fromCountry: e.target.value, fromCity: "" })}
               className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
+              disabled={isLoadingCountries}
             >
               {COUNTRIES.map((c) => (
                 <option key={c} value={c} disabled={c === formData.toCountry} className={c === formData.toCountry ? "text-gray-300" : ""}>
@@ -231,6 +232,7 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
               value={formData.toCountry}
               onChange={(e) => setFormData({ ...formData, toCountry: e.target.value, toCity: "" })}
               className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
+              disabled={isLoadingCountries}
             >
               {COUNTRIES.map((c) => (
                 <option key={c} value={c} disabled={c === formData.fromCountry} className={c === formData.fromCountry ? "text-gray-300" : ""}>
