@@ -28,38 +28,46 @@ interface TripFormProps {
   };
 }
 
-const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
+const COUNTRIES = WORLD_COUNTRIES.map((c) => c.name);
 
 // Zod schema for trip form validation - sans limite de poids
-const tripSchema = z.object({
-  fromCountry: z.string().min(1, "Pays de départ requis"),
-  fromCity: z.string().min(1, "Ville de départ requise").max(100, "Nom de ville trop long"),
-  toCountry: z.string().min(1, "Pays d'arrivée requis"),
-  toCity: z.string().min(1, "Ville d'arrivée requise").max(100, "Nom de ville trop long"),
-  departureDate: z.string().min(1, "Date de départ requise"),
-  arrivalDate: z.string().optional(),
-  maxWeightKg: z.string().optional().transform((val) => {
-    if (!val || val === "") return 0;
-    const num = parseFloat(val);
-    return isNaN(num) ? 0 : num;
-  }).refine((val) => val >= 0, "Le poids doit être positif ou nul"),
-  notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
-}).refine((data) => data.fromCountry !== data.toCountry, {
-  message: "Le départ et l'arrivée ne peuvent pas être le même pays",
-  path: ["toCountry"],
-}).refine((data) => {
-  if (!data.arrivalDate) return true;
-  return data.arrivalDate >= data.departureDate;
-}, {
-  message: "La date d'arrivée ne peut pas être avant la date de départ",
-  path: ["arrivalDate"],
-});
+const tripSchema = z
+  .object({
+    fromCountry: z.string().min(1, "Pays de départ requis"),
+    fromCity: z.string().min(1, "Ville de départ requise").max(100, "Nom de ville trop long"),
+    toCountry: z.string().min(1, "Pays d'arrivée requis"),
+    toCity: z.string().min(1, "Ville d'arrivée requise").max(100, "Nom de ville trop long"),
+    departureDate: z.string().min(1, "Date de départ requise"),
+    arrivalDate: z.string().optional(),
+    maxWeightKg: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val || val === "") return 0;
+        const num = parseFloat(val);
+        return isNaN(num) ? 0 : num;
+      })
+      .refine((val) => val >= 0, "Le poids doit être positif ou nul"),
+    notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
+  })
+  .refine((data) => data.fromCountry !== data.toCountry, {
+    message: "Le départ et l'arrivée ne peuvent pas être le même pays",
+    path: ["toCountry"],
+  })
+  .refine(
+    (data) => {
+      if (!data.arrivalDate) return true;
+      return data.arrivalDate >= data.departureDate;
+    },
+    {
+      message: "La date d'arrivée ne peut pas être avant la date de départ",
+      path: ["arrivalDate"],
+    },
+  );
 
 const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
   const [loading, setLoading] = useState(false);
-  const [hasStops, setHasStops] = useState(
-    !!(editData?.stopover_city_1 || editData?.stopover_city_2)
-  );
+  const [hasStops, setHasStops] = useState(!!(editData?.stopover_city_1 || editData?.stopover_city_2));
   const [formData, setFormData] = useState({
     fromCountry: editData?.from_country || "France",
     fromCity: editData?.from_city || "",
@@ -150,7 +158,13 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
         <span className="text-sm font-medium text-muted-foreground">Sens du voyage :</span>
         <div className="flex items-center gap-3">
           <span className="font-bold text-primary">{formData.fromCountry}</span>
-          <Button type="button" variant="ghost" size="icon" onClick={toggleDirection} className="h-8 w-8 rounded-full hover:bg-primary/10">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleDirection}
+            className="h-8 w-8 rounded-full hover:bg-primary/10"
+          >
             <ArrowRightLeft className="w-4 h-4 text-primary" />
           </Button>
           <span className="font-bold text-primary">{formData.toCountry}</span>
@@ -170,7 +184,12 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
               className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             >
               {COUNTRIES.map((c) => (
-                <option key={c} value={c} disabled={c === formData.toCountry} className={c === formData.toCountry ? "text-gray-300" : ""}>
+                <option
+                  key={c}
+                  value={c}
+                  disabled={c === formData.toCountry}
+                  className={c === formData.toCountry ? "text-gray-300" : ""}
+                >
                   {c}
                 </option>
               ))}
@@ -179,7 +198,12 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Ville</Label>
-            <CityAutocomplete value={formData.fromCity} onChange={(val) => setFormData({ ...formData, fromCity: val })} limitToCountry={formData.fromCountry as any} placeholder={`Ville de départ`} />
+            <CityAutocomplete
+              value={formData.fromCity}
+              onChange={(val) => setFormData({ ...formData, fromCity: val })}
+              limitToCountry={formData.fromCountry as any}
+              placeholder={`Ville de départ`}
+            />
           </div>
 
           {/* Stops checkbox and cities */}
@@ -217,7 +241,13 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Date</Label>
-            <Input type="date" min={today} value={formData.departureDate} onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })} required />
+            <Input
+              type="date"
+              min={today}
+              value={formData.departureDate}
+              onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+              required
+            />
           </div>
         </div>
 
@@ -233,7 +263,12 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
               className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             >
               {COUNTRIES.map((c) => (
-                <option key={c} value={c} disabled={c === formData.fromCountry} className={c === formData.fromCountry ? "text-gray-300" : ""}>
+                <option
+                  key={c}
+                  value={c}
+                  disabled={c === formData.fromCountry}
+                  className={c === formData.fromCountry ? "text-gray-300" : ""}
+                >
                   {c}
                 </option>
               ))}
@@ -242,21 +277,42 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>Ville</Label>
-            <CityAutocomplete value={formData.toCity} onChange={(val) => setFormData({ ...formData, toCity: val })} limitToCountry={formData.toCountry as any} placeholder={`Ville d'arrivée`} />
+            <CityAutocomplete
+              value={formData.toCity}
+              onChange={(val) => setFormData({ ...formData, toCity: val })}
+              limitToCountry={formData.toCountry as any}
+              placeholder={`Ville d'arrivée`}
+            />
           </div>
 
           <div className="space-y-1">
-            <Label>Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span></Label>
-            <Input type="number"
-              inputMode="decimal" {/* 👈 AJOUT */}
-              step="0.5" min="0" value={formData.maxWeightKg} onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })} placeholder="Ex: 23" />
+            <Label>
+              Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span>
+            </Label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.5"
+              min="0"
+              value={formData.maxWeightKg}
+              onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
+              placeholder="Ex: 23"
+            />
           </div>
         </div>
       </div>
 
       <div className="space-y-2 pt-2">
-        <Label>Notes (optionnel) <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span></Label>
-        <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })} maxLength={1000} placeholder="Ex: Je pars de Orly, je peux prendre des objets fragiles..." rows={2} />
+        <Label>
+          Notes (optionnel) <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span>
+        </Label>
+        <Textarea
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })}
+          maxLength={1000}
+          placeholder="Ex: Je pars de Orly, je peux prendre des objets fragiles..."
+          rows={2}
+        />
       </div>
 
       <Button type="submit" disabled={loading} className="w-full h-11 text-base">
@@ -264,8 +320,10 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {isEditing ? "Modification..." : "Publication..."}
           </>
+        ) : isEditing ? (
+          "Enregistrer les modifications"
         ) : (
-          isEditing ? "Enregistrer les modifications" : "Publier ce voyage"
+          "Publier ce voyage"
         )}
       </Button>
     </form>
