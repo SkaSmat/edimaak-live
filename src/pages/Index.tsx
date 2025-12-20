@@ -34,7 +34,9 @@ const Index = () => {
 
   // Lazy load world countries data
   const { countries: worldCountries, isLoading: isLoadingCountries } = useWorldData();
-  const COUNTRIES = worldCountries.map((c) => c.name);
+
+  // Memoize COUNTRIES to prevent re-renders and infinite loops
+  const COUNTRIES = useMemo(() => worldCountries.map((c) => c.name), [worldCountries]);
 
   // NOUVEAU : Gestion des pays indépendants
   const [fromCountry, setFromCountry] = useState("France");
