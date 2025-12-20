@@ -154,20 +154,20 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-5 border rounded-xl bg-card shadow-sm">
       {/* HEADER AVEC BOUTON D'INVERSION */}
-      <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
-        <span className="text-sm font-medium text-muted-foreground">Sens du voyage :</span>
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-primary">{formData.fromCountry}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-muted/30 p-3 rounded-lg border border-border/50">
+        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Sens du voyage</span>
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
+          <span className="font-bold text-primary text-sm sm:text-base truncate max-w-[100px] sm:max-w-none">{formData.fromCountry}</span>
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={toggleDirection}
-            className="h-8 w-8 rounded-full hover:bg-primary/10"
+            className="h-8 w-8 shrink-0 rounded-full hover:bg-primary/10"
           >
             <ArrowRightLeft className="w-4 h-4 text-primary" />
           </Button>
-          <span className="font-bold text-primary">{formData.toCountry}</span>
+          <span className="font-bold text-primary text-sm sm:text-base truncate max-w-[100px] sm:max-w-none">{formData.toCountry}</span>
         </div>
       </div>
 
