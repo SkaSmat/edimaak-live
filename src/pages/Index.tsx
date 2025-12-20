@@ -176,32 +176,30 @@ const Index = () => {
         const senderKycMap: Record<string, boolean> = {};
         const senderRatingMap: Record<string, { rating: number | null; reviews_count: number }> = {};
 
-        // --- DÉBUT DU BLOC OPTIMISÉ ---
         if (session) {
           try {
-            // 1. Récupération groupée des profils (1 seule requête pour tous)
+            // 1. Récupération groupée des profils
             const { data: profiles } = await supabase
               .from("profiles")
               .select("id, full_name, avatar_url")
               .in("id", senderIds);
 
-            // 2. Récupération groupée des avis (1 seule requête pour tous)
+            // 2. Récupération groupée des avis
+            // ✅ CORRECTION ICI : 'reviewed_id' au lieu de 'target_id'
             const { data: reviews } = await supabase
               .from("reviews")
-              .select("target_id, rating")
-              .in("target_id", senderIds);
+              .select("reviewed_id, rating")
+              .in("reviewed_id", senderIds);
 
-            // 3. KYC (On garde le RPC pour la sécurité, mais en parallèle)
-            // Note : Si vous avez une table 'kyc_verifications' publique, on pourrait aussi la batcher.
+            // 3. KYC (En parallèle)
             const kycPromises = senderIds.map((id) => supabase.rpc("get_public_kyc_status", { profile_id: id }));
             const kycResults = await Promise.all(kycPromises);
 
-            // --- Traitement des données en mémoire (Rapide) ---
+            // --- Traitement des données en mémoire ---
 
             // A. Mapping des Profils
             if (profiles) {
               profiles.forEach((p) => {
-                // On formate le prénom comme avant
                 const firstName = p.full_name ? p.full_name.split(" ")[0] : "Utilisateur";
                 senderInfoMap[p.id] = {
                   display_name: firstName,
@@ -210,17 +208,16 @@ const Index = () => {
               });
             }
 
-            // B. Calcul des notes (Moyenne)
+            // B. Calcul des notes
             if (reviews) {
               const reviewsBySender: Record<string, number[]> = {};
-              // Grouper les notes par utilisateur
               reviews.forEach((r) => {
-                if (r.target_id && r.rating) {
-                  if (!reviewsBySender[r.target_id]) reviewsBySender[r.target_id] = [];
-                  reviewsBySender[r.target_id].push(r.rating);
+                // ✅ CORRECTION ICI : Utilisation de 'reviewed_id'
+                if (r.reviewed_id && r.rating) {
+                  if (!reviewsBySender[r.reviewed_id]) reviewsBySender[r.reviewed_id] = [];
+                  reviewsBySender[r.reviewed_id].push(r.rating);
                 }
               });
-              // Calculer la moyenne pour chaque expéditeur
               senderIds.forEach((id) => {
                 const ratings = reviewsBySender[id] || [];
                 const avg = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
@@ -239,9 +236,10 @@ const Index = () => {
               });
             }
           } catch (err) {
-            console.error("Erreur lors du chargement optimisé", err);
+            console.error("Erreur chargement optimisé", err);
           }
         }
+
         // 3. Fetch shipment counts per sender
         const { data: counts } = await supabase
           .from("shipment_requests")
