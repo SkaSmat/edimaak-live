@@ -176,30 +176,72 @@ const Index = () => {
         const senderKycMap: Record<string, boolean> = {};
         const senderRatingMap: Record<string, { rating: number | null; reviews_count: number }> = {};
 
+        // --- DÉBUT DU BLOC OPTIMISÉ ---
         if (session) {
-          // Batch all RPC calls for better performance
-          const senderPromises = senderIds.map((senderId) =>
-            Promise.all([
-              supabase.rpc("get_sender_display_info", { sender_uuid: senderId }),
-              supabase.rpc("get_public_kyc_status", { profile_id: senderId }),
-              supabase.rpc("get_user_rating", { user_id: senderId }),
-            ]).then(([senderResult, kycResult, ratingResult]) => {
-              if (senderResult.data && senderResult.data.length > 0) {
-                senderInfoMap[senderId] = {
-                  display_name: senderResult.data[0].display_name,
-                  avatar_url: senderResult.data[0].avatar_url,
-                };
-              }
-              senderKycMap[senderId] = kycResult.data === true;
-              senderRatingMap[senderId] = {
-                rating: ratingResult.data?.[0]?.average_rating || null,
-                reviews_count: ratingResult.data?.[0]?.reviews_count || 0,
-              };
-            }),
-          );
-          await Promise.all(senderPromises);
-        }
+          try {
+            // 1. Récupération groupée des profils (1 seule requête pour tous)
+            const { data: profiles } = await supabase
+              .from("profiles")
+              .select("id, full_name, avatar_url")
+              .in("id", senderIds);
 
+            // 2. Récupération groupée des avis (1 seule requête pour tous)
+            const { data: reviews } = await supabase
+              .from("reviews")
+              .select("target_id, rating")
+              .in("target_id", senderIds);
+
+            // 3. KYC (On garde le RPC pour la sécurité, mais en parallèle)
+            // Note : Si vous avez une table 'kyc_verifications' publique, on pourrait aussi la batcher.
+            const kycPromises = senderIds.map((id) => supabase.rpc("get_public_kyc_status", { profile_id: id }));
+            const kycResults = await Promise.all(kycPromises);
+
+            // --- Traitement des données en mémoire (Rapide) ---
+
+            // A. Mapping des Profils
+            if (profiles) {
+              profiles.forEach((p) => {
+                // On formate le prénom comme avant
+                const firstName = p.full_name ? p.full_name.split(" ")[0] : "Utilisateur";
+                senderInfoMap[p.id] = {
+                  display_name: firstName,
+                  avatar_url: p.avatar_url,
+                };
+              });
+            }
+
+            // B. Calcul des notes (Moyenne)
+            if (reviews) {
+              const reviewsBySender: Record<string, number[]> = {};
+              // Grouper les notes par utilisateur
+              reviews.forEach((r) => {
+                if (r.target_id && r.rating) {
+                  if (!reviewsBySender[r.target_id]) reviewsBySender[r.target_id] = [];
+                  reviewsBySender[r.target_id].push(r.rating);
+                }
+              });
+              // Calculer la moyenne pour chaque expéditeur
+              senderIds.forEach((id) => {
+                const ratings = reviewsBySender[id] || [];
+                const avg = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+                senderRatingMap[id] = {
+                  rating: avg,
+                  reviews_count: ratings.length,
+                };
+              });
+            }
+
+            // C. Mapping du KYC
+            if (kycResults) {
+              kycResults.forEach((res, index) => {
+                const senderId = senderIds[index];
+                senderKycMap[senderId] = res.data === true;
+              });
+            }
+          } catch (err) {
+            console.error("Erreur lors du chargement optimisé", err);
+          }
+        }
         // 3. Fetch shipment counts per sender
         const { data: counts } = await supabase
           .from("shipment_requests")
