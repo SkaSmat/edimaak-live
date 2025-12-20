@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => ({
   },
   // AJOUT ICI : Optimisation du build pour séparer les dépendances
   build: {
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,6 +26,10 @@ export default defineConfig(({ mode }) => ({
           supabase: ["@supabase/supabase-js"],
         },
       },
+    },
+    // Supprime automatiquement les debugger et console en production
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
     },
   },
 }));
