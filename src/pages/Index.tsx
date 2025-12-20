@@ -71,6 +71,22 @@ import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
 
 // Liste des pays disponibles - now uses all world countries
 const COUNTRIES = WORLD_COUNTRIES.map((c) => c.name);
+const safeLocalStorage = {
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      // Si le stockage est désactivé, on ignore silencieusement
+    }
+  },
+};
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
