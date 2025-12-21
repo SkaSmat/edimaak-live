@@ -22,6 +22,7 @@ import {
   Loader2,
   Star,
   Eye,
+  LayoutDashboard,
 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { format } from "date-fns";
@@ -395,9 +396,14 @@ const Index = () => {
                   onClick={handleDashboardClick}
                   size="sm"
                   className="rounded-full font-medium relative overflow-visible text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-10"
+                  aria-label="Mon Dashboard" // Accessibilité
                 >
                   <span className="hidden sm:inline">Mon Dashboard</span>
-                  <span className="sm:hidden">Dashboard</span>
+                  {/* Mobile : Icône Dashboard au lieu du texte */}
+                  <span className="sm:hidden">
+                    <LayoutDashboard className="w-4 h-4" />
+                  </span>
+
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[9px] sm:text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
                       {unreadCount > 9 ? "9+" : unreadCount}

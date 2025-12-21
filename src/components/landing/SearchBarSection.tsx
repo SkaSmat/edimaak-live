@@ -46,7 +46,7 @@ export const SearchBarSection = ({
               <select
                 value={fromCountry}
                 onChange={(e) => onFromCountryChange(e.target.value)}
-                className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
+                className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 h-10 w-full bg-white"
               >
                 {countries.map((c) => (
                   <option key={c} value={c}>
@@ -84,7 +84,7 @@ export const SearchBarSection = ({
               <select
                 value={toCountry}
                 onChange={(e) => onToCountryChange(e.target.value)}
-                className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1"
+                className="text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 h-10 w-full bg-white"
               >
                 {countries.map((c) => (
                   <option key={c} value={c} disabled={c === fromCountry}>

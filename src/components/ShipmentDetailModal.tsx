@@ -1,7 +1,19 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Weight, Package, User, Info, ArrowRight, ChevronRight, AlertCircle, Eye, CheckCircle } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  Weight,
+  Package,
+  User,
+  Info,
+  ArrowRight,
+  ChevronRight,
+  AlertCircle,
+  Eye,
+  CheckCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -111,7 +123,7 @@ export const ShipmentDetailModal = ({
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          
+
           {/* Prix en haut à droite */}
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
             {shipment.price ? (
@@ -124,7 +136,7 @@ export const ShipmentDetailModal = ({
               </div>
             )}
           </div>
-          
+
           <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 text-white">
             <Badge
               variant="secondary"
@@ -133,7 +145,7 @@ export const ShipmentDetailModal = ({
               {shipment.item_type}
             </Badge>
             <h2 className="text-lg sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <span className="truncate max-w-[120px] sm:max-w-none">{shipment.from_city}</span>
+              <span className="break-words max-w-[120px] sm:max-w-none leading-tight">{shipment.from_city}</span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               <span className="truncate max-w-[120px] sm:max-w-none">{shipment.to_city}</span>
             </h2>
@@ -159,9 +171,7 @@ export const ShipmentDetailModal = ({
                   <p className="font-medium text-foreground text-sm sm:text-base truncate">
                     {shipment.public_profiles?.display_first_name || "Utilisateur"}
                   </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                    Cliquez pour voir le profil
-                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Cliquez pour voir le profil</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -169,16 +179,9 @@ export const ShipmentDetailModal = ({
           ) : (
             <div className="w-full flex items-center p-3 sm:p-4 bg-muted/30 rounded-lg">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <UserAvatar
-                  fullName=""
-                  avatarUrl={null}
-                  size="sm"
-                  className="flex-shrink-0"
-                />
+                <UserAvatar fullName="" avatarUrl={null} size="sm" className="flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="font-medium text-muted-foreground text-sm sm:text-base truncate">
-                    Utilisateur anonyme
-                  </p>
+                  <p className="font-medium text-muted-foreground text-sm sm:text-base truncate">Utilisateur anonyme</p>
                   <p className="text-xs sm:text-sm text-muted-foreground truncate">
                     Connectez-vous pour voir le profil
                   </p>
@@ -249,7 +252,7 @@ export const ShipmentDetailModal = ({
           {/* Actions */}
           <div className="pt-2">
             {/* BUG 4: Don't show actions for completed shipments */}
-            {shipment.status === 'completed' ? (
+            {shipment.status === "completed" ? (
               <div className="w-full bg-green-50 text-green-600 border border-green-200 font-medium text-sm py-3 rounded-lg flex items-center justify-center gap-2">
                 <CheckCircle className="w-4 h-4" />
                 Ce colis a été livré
