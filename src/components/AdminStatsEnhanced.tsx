@@ -40,6 +40,10 @@ interface Stats {
   matchesToday: number;
   matchesThisWeek: number;
   conversionRate: number;
+  averageRating: number;
+  realCompletionRate: number;
+  activeUsers30d: number;
+  totalMessages: number;
 }
 
 interface RecentActivity {
@@ -55,14 +59,23 @@ interface RecentActivity {
   to_city?: string;
 }
 
+interface TopRoute {
+  route: string;
+  count: number;
+  fromCity: string;
+  toCity: string;
+}
+
 export const AdminStatsEnhanced = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [topRoutes, setTopRoutes] = useState<TopRoute[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
     fetchRecentActivity();
+    fetchTopRoutes();
   }, []);
 
   const fetchStats = async () => {
@@ -70,7 +83,11 @@ export const AdminStatsEnhanced = () => {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       const weekAgoISO = weekAgo.toISOString();
-      
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayISO = today.toISOString();
@@ -91,6 +108,9 @@ export const AdminStatsEnhanced = () => {
         completedMatchesRes,
         matchesTodayRes,
         matchesWeekRes,
+        reviewsRes,
+        activeUsers30dRes,
+        totalMessagesRes,
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "traveler"),
@@ -107,15 +127,30 @@ export const AdminStatsEnhanced = () => {
         supabase.from("matches").select("*", { count: "exact", head: true }).eq("status", "completed"),
         supabase.from("matches").select("*", { count: "exact", head: true }).gte("created_at", todayISO),
         supabase.from("matches").select("*", { count: "exact", head: true }).gte("created_at", weekAgoISO),
+        supabase.from("reviews").select("rating"),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("updated_at", thirtyDaysAgoISO),
+        supabase.from("messages").select("*", { count: "exact", head: true }),
       ]);
 
       const totalMatches = totalMatchesRes.count || 0;
       const acceptedMatches = acceptedMatchesRes.count || 0;
       const completedMatches = completedMatchesRes.count || 0;
-      
+
       // Taux de conversion = (acceptés + complétés) / total propositions
-      const conversionRate = totalMatches > 0 
-        ? Math.round(((acceptedMatches + completedMatches) / totalMatches) * 100) 
+      const conversionRate = totalMatches > 0
+        ? Math.round(((acceptedMatches + completedMatches) / totalMatches) * 100)
+        : 0;
+
+      // Calcul moyenne des reviews
+      const reviews = reviewsRes.data || [];
+      const averageRating = reviews.length > 0
+        ? Math.round((reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / reviews.length) * 10) / 10
+        : 0;
+
+      // Taux de complétion réel = complétés / (acceptés + complétés)
+      const totalAcceptedAndCompleted = acceptedMatches + completedMatches;
+      const realCompletionRate = totalAcceptedAndCompleted > 0
+        ? Math.round((completedMatches / totalAcceptedAndCompleted) * 100)
         : 0;
 
       setStats({
@@ -135,6 +170,10 @@ export const AdminStatsEnhanced = () => {
         matchesToday: matchesTodayRes.count || 0,
         matchesThisWeek: matchesWeekRes.count || 0,
         conversionRate: conversionRate,
+        averageRating: averageRating,
+        realCompletionRate: realCompletionRate,
+        activeUsers30d: activeUsers30dRes.count || 0,
+        totalMessages: totalMessagesRes.count || 0,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -243,6 +282,49 @@ export const AdminStatsEnhanced = () => {
     }
   };
 
+  const fetchTopRoutes = async () => {
+    try {
+      // Fetch all trips to count routes
+      const { data: trips } = await supabase
+        .from("trips")
+        .select("from_city, to_city");
+
+      if (!trips) return;
+
+      // Count routes
+      const routeCount = new Map<string, { fromCity: string; toCity: string; count: number }>();
+
+      trips.forEach((trip) => {
+        const routeKey = `${trip.from_city}→${trip.to_city}`;
+        if (routeCount.has(routeKey)) {
+          const existing = routeCount.get(routeKey)!;
+          routeCount.set(routeKey, { ...existing, count: existing.count + 1 });
+        } else {
+          routeCount.set(routeKey, {
+            fromCity: trip.from_city,
+            toCity: trip.to_city,
+            count: 1,
+          });
+        }
+      });
+
+      // Convert to array and sort by count
+      const sortedRoutes = Array.from(routeCount.values())
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map((r) => ({
+          route: `${r.fromCity} → ${r.toCity}`,
+          count: r.count,
+          fromCity: r.fromCity,
+          toCity: r.toCity,
+        }));
+
+      setTopRoutes(sortedRoutes);
+    } catch (error) {
+      console.error("Error fetching top routes:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -284,6 +366,13 @@ export const AdminStatsEnhanced = () => {
       bgColor: "bg-green-500/10",
     },
     {
+      icon: Activity,
+      value: stats.activeUsers30d,
+      label: "Actifs (30j)",
+      color: "text-cyan-500",
+      bgColor: "bg-cyan-500/10",
+    },
+    {
       icon: Plane,
       value: stats.activeTrips,
       label: "Voyages actifs",
@@ -296,6 +385,13 @@ export const AdminStatsEnhanced = () => {
       label: "Demandes actives",
       color: "text-orange-500",
       bgColor: "bg-orange-500/10",
+    },
+    {
+      icon: MessageSquare,
+      value: stats.totalMessages,
+      label: "Messages échangés",
+      color: "text-pink-500",
+      bgColor: "bg-pink-500/10",
     },
   ];
 
@@ -337,9 +433,24 @@ export const AdminStatsEnhanced = () => {
       color: "text-teal-500",
       bgColor: "bg-teal-500/10",
     },
+    {
+      icon: Handshake,
+      value: `${stats.realCompletionRate}%`,
+      label: "Taux de complétion",
+      color: "text-blue-600",
+      bgColor: "bg-blue-600/10",
+      subtitle: `${stats.completedMatches} livrés`,
+    },
   ];
 
   const otherStats = [
+    {
+      icon: TrendingUp,
+      value: stats.averageRating > 0 ? `⭐ ${stats.averageRating}/5` : "N/A",
+      label: "Note moyenne",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-600/10",
+    },
     {
       icon: Clock,
       value: stats.pendingKyc,
@@ -561,6 +672,46 @@ export const AdminStatsEnhanced = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Routes Section */}
+      {topRoutes.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Plane className="w-5 h-5 text-purple-500" />
+              Top 5 des routes les plus populaires
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Routes les plus fréquentes sur la plateforme
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {topRoutes.map((route, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-transparent hover:from-purple-100 transition-colors border border-purple-100"
+                >
+                  <div className="h-10 w-10 bg-purple-500 text-white rounded-lg flex items-center justify-center flex-shrink-0 font-bold">
+                    #{index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground">
+                      {route.route}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {route.count} voyage{route.count > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <ArrowRight className="w-5 h-5 text-purple-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
