@@ -661,11 +661,11 @@ const Index = () => {
           <div className="flex flex-wrap justify-center gap-4 mb-4 text-xs sm:text-sm">
             <button
               onClick={() => navigate("/securite")}
-              className="text-gray-500 hover:text-primary transition-colors"
+              className="text-gray-500 hover:text-primary transition-colors min-h-[44px] px-3"
             >
               Sécurité
             </button>
-            <button onClick={() => navigate("/legal")} className="text-gray-500 hover:text-primary transition-colors">
+            <button onClick={() => navigate("/legal")} className="text-gray-500 hover:text-primary transition-colors min-h-[44px] px-3">
               Mentions légales
             </button>
           </div>
