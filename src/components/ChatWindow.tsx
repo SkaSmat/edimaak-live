@@ -374,7 +374,7 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 p-2 sm:p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/50 min-h-[200px]">
+      <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 p-2 sm:p-3 border rounded-lg bg-slate-50 dark:bg-slate-900/50 min-h-[300px]">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
             <Send className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
@@ -395,13 +395,13 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
                   }`}
                 >
                   {!isOwn && (
-                    <p className="text-[9px] sm:text-[10px] font-bold mb-1 opacity-50 uppercase tracking-wider truncate">
+                    <p className="text-[10px] sm:text-[11px] font-bold mb-1 opacity-50 uppercase tracking-wider truncate">
                       {senderDisplayName}
                     </p>
                   )}
                   <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                   <p
-                    className={`text-[9px] sm:text-[10px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}
+                    className={`text-[10px] sm:text-[11px] mt-1 text-right ${isOwn ? "opacity-70" : "text-muted-foreground"}`}
                   >
                     {format(new Date(message.created_at), "HH:mm", { locale: fr })}
                   </p>
@@ -421,9 +421,9 @@ const ChatWindow = ({ matchId, userId }: ChatWindowProps) => {
           placeholder="Écrivez votre message..."
           disabled={sending}
           maxLength={2000}
-          className="flex-1 text-sm h-9 sm:h-10"
+          className="flex-1 text-sm h-11 sm:h-10"
         />
-        <Button type="submit" disabled={sending || !newMessage.trim()} size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+        <Button type="submit" disabled={sending || !newMessage.trim()} size="icon" className="h-11 w-11 sm:h-10 sm:w-10">
           <Send className="w-4 h-4" />
         </Button>
       </form>

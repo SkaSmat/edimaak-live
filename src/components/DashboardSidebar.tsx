@@ -281,7 +281,7 @@ export const DashboardMobileHeader = ({
         {role && role !== "admin" && onSwitchRole && (
           <button
             onClick={onSwitchRole}
-            className="h-9 px-3 flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/50 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
+            className="h-11 px-3 flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/50 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>{role === "traveler" ? "Expéditeur" : "Voyageur"}</span>
@@ -289,7 +289,7 @@ export const DashboardMobileHeader = ({
         )}
         <button
           onClick={onLogout}
-          className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-full hover:bg-muted/50"
+          className="h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-full hover:bg-muted/50"
         >
           <LogOut className="h-5 w-5" />
         </button>

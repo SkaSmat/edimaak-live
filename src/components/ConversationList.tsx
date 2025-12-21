@@ -134,7 +134,7 @@ const ConversationList = ({ userId, onSelectMatch, selectedMatchId }: Conversati
             )}
 
             {isUnread && !isSelected && (
-              <span className="absolute top-2 right-2 h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-500 animate-pulse border-2 border-red-100" />
+              <span className="absolute top-2 right-2 h-3 w-3 rounded-full bg-red-500 animate-pulse border-2 border-red-100" />
             )}
 
             <div
