@@ -3,14 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Loader2, Search, EyeOff, Eye } from "lucide-react";
@@ -62,11 +55,11 @@ const AdminTrips = () => {
     try {
       const { data, error } = await supabase
         .from("trips")
-        .select("*, profiles:traveler_id(full_name)")
+        .select("*, profiles(full_name)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setTrips(data as any || []);
+      setTrips((data as any) || []);
     } catch (error) {
       console.error("Error fetching trips:", error);
     } finally {
@@ -82,16 +75,13 @@ const AdminTrips = () => {
         trip.from_city.toLowerCase().includes(query) ||
         trip.to_city.toLowerCase().includes(query) ||
         trip.profiles?.full_name?.toLowerCase().includes(query) ||
-        trip.status.toLowerCase().includes(query)
+        trip.status.toLowerCase().includes(query),
     );
   }, [trips, searchQuery]);
 
   // Pagination
   const totalPages = Math.ceil(filteredTrips.length / ITEMS_PER_PAGE);
-  const paginatedTrips = filteredTrips.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const paginatedTrips = filteredTrips.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -100,16 +90,13 @@ const AdminTrips = () => {
   const handleToggleVisibility = async (id: string, currentStatus: string) => {
     setToggling(id);
     const newStatus = currentStatus === "closed" ? "open" : "closed";
-    
+
     try {
-      const { error } = await supabase
-        .from("trips")
-        .update({ status: newStatus })
-        .eq("id", id);
+      const { error } = await supabase.from("trips").update({ status: newStatus }).eq("id", id);
 
       if (error) throw error;
-      
-      setTrips(trips.map(t => t.id === id ? { ...t, status: newStatus } : t));
+
+      setTrips(trips.map((t) => (t.id === id ? { ...t, status: newStatus } : t)));
       toast.success(newStatus === "closed" ? "Voyage masqué" : "Voyage remis en ligne");
     } catch (error: any) {
       console.error("Error toggling trip visibility:", error);
@@ -128,7 +115,11 @@ const AdminTrips = () => {
       case "completed":
         return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">✓ Livraison validée</Badge>;
       case "closed":
-        return <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">Masqué</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">
+            Masqué
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -140,7 +131,11 @@ const AdminTrips = () => {
     { key: "from_city", label: "Départ" },
     { key: "to_city", label: "Arrivée" },
     { key: "departure_date", label: "Date départ", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
-    { key: "arrival_date", label: "Date arrivée", transform: (val: string | null) => val ? format(new Date(val), "dd/MM/yyyy") : "" },
+    {
+      key: "arrival_date",
+      label: "Date arrivée",
+      transform: (val: string | null) => (val ? format(new Date(val), "dd/MM/yyyy") : ""),
+    },
     { key: "max_weight_kg", label: "Capacité (kg)" },
     { key: "status", label: "Statut" },
     { key: "created_at", label: "Créé le", transform: (val: string) => format(new Date(val), "dd/MM/yyyy") },
@@ -181,11 +176,13 @@ const AdminTrips = () => {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-medium text-foreground truncate">{trip.profiles?.full_name || "-"}</p>
-                  <p className="text-sm text-muted-foreground">{trip.from_city} → {trip.to_city}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {trip.from_city} → {trip.to_city}
+                  </p>
                 </div>
                 {getStatusBadge(trip.status)}
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-muted-foreground">Départ:</span>
@@ -196,7 +193,7 @@ const AdminTrips = () => {
                   <p className="font-medium">{trip.max_weight_kg} kg</p>
                 </div>
               </div>
-              
+
               {trip.status !== "matched" && trip.status !== "completed" && (
                 <div className="pt-2 border-t">
                   <AlertDialog>
@@ -225,9 +222,7 @@ const AdminTrips = () => {
                     <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
                       <AlertDialogHeader>
                         <AlertDialogTitle>
-                          {trip.status === "closed" 
-                            ? "Remettre en ligne ce voyage ?" 
-                            : "Masquer ce voyage ?"}
+                          {trip.status === "closed" ? "Remettre en ligne ce voyage ?" : "Masquer ce voyage ?"}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                           {trip.status === "closed"
@@ -237,7 +232,10 @@ const AdminTrips = () => {
                       </AlertDialogHeader>
                       <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                         <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
-                        <AlertDialogAction className="w-full sm:w-auto" onClick={() => handleToggleVisibility(trip.id, trip.status)}>
+                        <AlertDialogAction
+                          className="w-full sm:w-auto"
+                          onClick={() => handleToggleVisibility(trip.id, trip.status)}
+                        >
                           {trip.status === "closed" ? "Remettre en ligne" : "Masquer"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -279,20 +277,13 @@ const AdminTrips = () => {
                   <TableCell>
                     {trip.from_city} → {trip.to_city}
                   </TableCell>
+                  <TableCell>{format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}</TableCell>
                   <TableCell>
-                    {format(new Date(trip.departure_date), "d MMM yyyy", { locale: fr })}
-                  </TableCell>
-                  <TableCell>
-                    {trip.arrival_date 
-                      ? format(new Date(trip.arrival_date), "d MMM yyyy", { locale: fr })
-                      : "-"
-                    }
+                    {trip.arrival_date ? format(new Date(trip.arrival_date), "d MMM yyyy", { locale: fr }) : "-"}
                   </TableCell>
                   <TableCell>{trip.max_weight_kg} kg</TableCell>
                   <TableCell>{getStatusBadge(trip.status)}</TableCell>
-                  <TableCell>
-                    {format(new Date(trip.created_at), "d MMM yyyy", { locale: fr })}
-                  </TableCell>
+                  <TableCell>{format(new Date(trip.created_at), "d MMM yyyy", { locale: fr })}</TableCell>
                   <TableCell>
                     {trip.status !== "matched" && trip.status !== "completed" && (
                       <AlertDialog>
@@ -321,9 +312,7 @@ const AdminTrips = () => {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              {trip.status === "closed" 
-                                ? "Remettre en ligne ce voyage ?" 
-                                : "Masquer ce voyage ?"}
+                              {trip.status === "closed" ? "Remettre en ligne ce voyage ?" : "Masquer ce voyage ?"}
                             </AlertDialogTitle>
                             <AlertDialogDescription>
                               {trip.status === "closed"
