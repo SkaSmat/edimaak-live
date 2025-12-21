@@ -38,6 +38,10 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { NotificationBell } from "@/components/NotificationBell";
+
+// Import world countries for intelligent selection
+import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
+
 interface ShipmentRequest {
   id: string;
   from_city: string;
@@ -66,11 +70,9 @@ interface ShipmentRequest {
   sender_reviews_count?: number;
 }
 
-// Import world countries for intelligent selection
-import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
-
 // Liste des pays disponibles - now uses all world countries
 const COUNTRIES = WORLD_COUNTRIES.map((c) => c.name);
+
 const safeLocalStorage = {
   getItem: (key: string) => {
     try {
@@ -87,6 +89,7 @@ const safeLocalStorage = {
     }
   },
 };
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -105,6 +108,7 @@ const Index = () => {
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
   const [alertCreated, setAlertCreated] = useState(false);
   const [isCreatingAlert, setIsCreatingAlert] = useState(false);
+
   const currentFromCity = searchParams.get("from") || "";
   const currentToCity = searchParams.get("to") || "";
   const currentSearchDate = searchParams.get("date") || "";
@@ -130,15 +134,18 @@ const Index = () => {
     setLocalFromCity(localToCity);
     setLocalToCity(tempCity);
   };
+
   const getDashboardPath = (userRole: UserRole): string => {
     if (userRole === "sender") return "/dashboard/sender";
     if (userRole === "admin") return "/admin";
     return "/dashboard/traveler";
   };
+
   const handleDashboardClick = useCallback(() => {
     resetUnreadCount();
     navigate(getDashboardPath(userRole));
   }, [userRole, navigate, resetUnreadCount]);
+
   useEffect(() => {
     // Chargement initial des annonces même si l'auth n'est pas encore prête
     fetchShipmentRequests(null);
@@ -161,12 +168,13 @@ const Index = () => {
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
         .select("*")
-        .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")�
+        .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
         .or(`status.eq.completed,and(status.eq.open,latest_date.gte.${today})`)
         .order("created_at", { ascending: false })
         .limit(30);
 
       if (fetchError) throw fetchError;
+
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map((r) => r.sender_id))];
 
@@ -285,6 +293,7 @@ const Index = () => {
       setIsLoading(false);
     }
   };
+
   const filteredRequests = useMemo(() => {
     let filtered = shipmentRequests;
     if (currentFromCity)
@@ -294,6 +303,7 @@ const Index = () => {
     if (currentSearchDate) filtered = filtered.filter((req) => isDateInRange(req, currentSearchDate));
     return filtered;
   }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate]);
+
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -317,6 +327,7 @@ const Index = () => {
       }, 100);
     }
   };
+
   const handleShipmentClick = useCallback(
     async (shipment: ShipmentRequest) => {
       setSelectedShipment(shipment);
@@ -338,24 +349,28 @@ const Index = () => {
     },
     [session?.user?.id],
   );
+
   const handleSignUp = useCallback(() => {
     if (selectedShipment) {
       safeLocalStorage.setItem("targetShipmentId", selectedShipment.id);
       navigate("/auth?role=traveler&view=signup");
     }
   }, [selectedShipment, navigate]);
+
   const handleLogin = useCallback(() => {
     if (selectedShipment) {
       safeLocalStorage.setItem("targetShipmentId", selectedShipment.id);
       navigate("/auth");
     }
   }, [selectedShipment, navigate]);
+
   const handleViewProfile = useCallback(
     (userId: string) => {
       navigate(`/user/${userId}`);
     },
     [navigate],
   );
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* HEADER OPTIMISÉ */}
