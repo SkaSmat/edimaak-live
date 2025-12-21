@@ -161,9 +161,8 @@ const Index = () => {
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
         .select("*")
-        .in("status", ["open", "completed"])
-        .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
-        .gte("latest_date", today) // BUG 6 FIX: Exclude expired shipments
+        .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")�
+        .or(`status.eq.completed,and(status.eq.open,latest_date.gte.${today})`)
         .order("created_at", { ascending: false })
         .limit(30);
 
