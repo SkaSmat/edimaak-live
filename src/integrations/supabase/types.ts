@@ -576,6 +576,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_batch_kyc_status: {
+        Args: { profile_ids: string[] }
+        Returns: {
+          kyc_verified: boolean
+          profile_id: string
+        }[]
+      }
+      get_batch_sender_display_info: {
+        Args: { sender_uuids: string[] }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          sender_uuid: string
+        }[]
+      }
+      get_batch_user_rating: {
+        Args: { user_ids: string[] }
+        Returns: {
+          average_rating: number
+          reviews_count: number
+          user_id: string
+        }[]
+      }
       get_public_kyc_status: { Args: { profile_id: string }; Returns: boolean }
       get_public_profile: {
         Args: { profile_id: string }

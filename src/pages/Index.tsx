@@ -186,15 +186,16 @@ const Index = () => {
 
         if (session) {
           // Use batch RPC calls instead of N+1 queries (1 call per batch vs N calls)
+          // Cast to any to work around TypeScript types not being regenerated yet
           const [senderInfoResult, kycResult, ratingResult] = await Promise.all([
-            supabase.rpc("get_batch_sender_display_info", { sender_uuids: senderIds }),
-            supabase.rpc("get_batch_kyc_status", { profile_ids: senderIds }),
-            supabase.rpc("get_batch_user_rating", { user_ids: senderIds }),
+            supabase.rpc("get_batch_sender_display_info" as any, { sender_uuids: senderIds }),
+            supabase.rpc("get_batch_kyc_status" as any, { profile_ids: senderIds }),
+            supabase.rpc("get_batch_user_rating" as any, { user_ids: senderIds }),
           ]);
 
           // Map results to lookup objects
-          if (senderInfoResult.data) {
-            senderInfoResult.data.forEach((sender: any) => {
+          if (senderInfoResult.data && Array.isArray(senderInfoResult.data)) {
+            (senderInfoResult.data as any[]).forEach((sender) => {
               senderInfoMap[sender.sender_uuid] = {
                 display_name: sender.display_name,
                 avatar_url: sender.avatar_url,
@@ -202,14 +203,14 @@ const Index = () => {
             });
           }
 
-          if (kycResult.data) {
-            kycResult.data.forEach((kyc: any) => {
+          if (kycResult.data && Array.isArray(kycResult.data)) {
+            (kycResult.data as any[]).forEach((kyc) => {
               senderKycMap[kyc.profile_id] = kyc.kyc_verified === true;
             });
           }
 
-          if (ratingResult.data) {
-            ratingResult.data.forEach((rating: any) => {
+          if (ratingResult.data && Array.isArray(ratingResult.data)) {
+            (ratingResult.data as any[]).forEach((rating) => {
               senderRatingMap[rating.user_id] = {
                 rating: rating.average_rating ? Number(rating.average_rating) : null,
                 reviews_count: Number(rating.reviews_count) || 0,
