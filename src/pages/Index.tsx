@@ -185,66 +185,36 @@ const Index = () => {
         const senderRatingMap: Record<string, { rating: number | null; reviews_count: number }> = {};
 
         if (session) {
-          try {
-            // 1. Récupération groupée des profils
-            const { data: profiles } = await supabase
-              .from("profiles")
-              .select("id, full_name, avatar_url")
-              .in("id", senderIds);
+          // Use batch RPC calls instead of N+1 queries (1 call per batch vs N calls)
+          const [senderInfoResult, kycResult, ratingResult] = await Promise.all([
+            supabase.rpc("get_batch_sender_display_info", { sender_uuids: senderIds }),
+            supabase.rpc("get_batch_kyc_status", { profile_ids: senderIds }),
+            supabase.rpc("get_batch_user_rating", { user_ids: senderIds }),
+          ]);
 
-            // 2. Récupération groupée des avis
-            // ✅ CORRECTION ICI : 'reviewed_id' au lieu de 'target_id'
-            const { data: reviews } = await supabase
-              .from("reviews")
-              .select("reviewed_id, rating")
-              .in("reviewed_id", senderIds);
+          // Map results to lookup objects
+          if (senderInfoResult.data) {
+            senderInfoResult.data.forEach((sender: any) => {
+              senderInfoMap[sender.sender_uuid] = {
+                display_name: sender.display_name,
+                avatar_url: sender.avatar_url,
+              };
+            });
+          }
 
-            // 3. KYC (En parallèle)
-            const kycPromises = senderIds.map((id) => supabase.rpc("get_public_kyc_status", { profile_id: id }));
-            const kycResults = await Promise.all(kycPromises);
+          if (kycResult.data) {
+            kycResult.data.forEach((kyc: any) => {
+              senderKycMap[kyc.profile_id] = kyc.kyc_verified === true;
+            });
+          }
 
-            // --- Traitement des données en mémoire ---
-
-            // A. Mapping des Profils
-            if (profiles) {
-              profiles.forEach((p) => {
-                const firstName = p.full_name ? p.full_name.split(" ")[0] : "Utilisateur";
-                senderInfoMap[p.id] = {
-                  display_name: firstName,
-                  avatar_url: p.avatar_url || null,
-                };
-              });
-            }
-
-            // B. Calcul des notes
-            if (reviews) {
-              const reviewsBySender: Record<string, number[]> = {};
-              reviews.forEach((r) => {
-                // ✅ CORRECTION ICI : Utilisation de 'reviewed_id'
-                if (r.reviewed_id && r.rating) {
-                  if (!reviewsBySender[r.reviewed_id]) reviewsBySender[r.reviewed_id] = [];
-                  reviewsBySender[r.reviewed_id].push(r.rating);
-                }
-              });
-              senderIds.forEach((id) => {
-                const ratings = reviewsBySender[id] || [];
-                const avg = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-                senderRatingMap[id] = {
-                  rating: avg,
-                  reviews_count: ratings.length,
-                };
-              });
-            }
-
-            // C. Mapping du KYC
-            if (kycResults) {
-              kycResults.forEach((res, index) => {
-                const senderId = senderIds[index];
-                senderKycMap[senderId] = res.data === true;
-              });
-            }
-          } catch (err) {
-            console.error("Erreur chargement optimisé", err);
+          if (ratingResult.data) {
+            ratingResult.data.forEach((rating: any) => {
+              senderRatingMap[rating.user_id] = {
+                rating: rating.average_rating ? Number(rating.average_rating) : null,
+                reviews_count: Number(rating.reviews_count) || 0,
+              };
+            });
           }
         }
 
