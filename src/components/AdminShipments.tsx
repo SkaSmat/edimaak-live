@@ -3,14 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Loader2, Search, EyeOff, Eye } from "lucide-react";
@@ -63,11 +56,11 @@ const AdminShipments = () => {
     try {
       const { data, error } = await supabase
         .from("shipment_requests")
-        .select("*, profiles:sender_id(full_name)")
+        .select("*, profiles(full_name)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setShipments(data as any || []);
+      setShipments((data as any) || []);
     } catch (error) {
       console.error("Error fetching shipments:", error);
     } finally {
@@ -84,16 +77,13 @@ const AdminShipments = () => {
         shipment.to_city.toLowerCase().includes(query) ||
         shipment.profiles?.full_name?.toLowerCase().includes(query) ||
         shipment.item_type.toLowerCase().includes(query) ||
-        shipment.status.toLowerCase().includes(query)
+        shipment.status.toLowerCase().includes(query),
     );
   }, [shipments, searchQuery]);
 
   // Pagination
   const totalPages = Math.ceil(filteredShipments.length / ITEMS_PER_PAGE);
-  const paginatedShipments = filteredShipments.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const paginatedShipments = filteredShipments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -102,16 +92,13 @@ const AdminShipments = () => {
   const handleToggleVisibility = async (id: string, currentStatus: string) => {
     setToggling(id);
     const newStatus = currentStatus === "closed" ? "open" : "closed";
-    
+
     try {
-      const { error } = await supabase
-        .from("shipment_requests")
-        .update({ status: newStatus })
-        .eq("id", id);
+      const { error } = await supabase.from("shipment_requests").update({ status: newStatus }).eq("id", id);
 
       if (error) throw error;
-      
-      setShipments(shipments.map(s => s.id === id ? { ...s, status: newStatus } : s));
+
+      setShipments(shipments.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
       toast.success(newStatus === "closed" ? "Demande masquée" : "Demande remise en ligne");
     } catch (error: any) {
       console.error("Error toggling shipment visibility:", error);
@@ -130,7 +117,11 @@ const AdminShipments = () => {
       case "completed":
         return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">✓ Colis livré</Badge>;
       case "closed":
-        return <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">Masquée</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">
+            Masquée
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -184,11 +175,13 @@ const AdminShipments = () => {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-medium text-foreground truncate">{shipment.profiles?.full_name || "-"}</p>
-                  <p className="text-sm text-muted-foreground">{shipment.from_city} → {shipment.to_city}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {shipment.from_city} → {shipment.to_city}
+                  </p>
                 </div>
                 {getStatusBadge(shipment.status)}
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-muted-foreground">Type:</span>
@@ -206,7 +199,7 @@ const AdminShipments = () => {
                   </p>
                 </div>
               </div>
-              
+
               {shipment.status !== "matched" && shipment.status !== "completed" && (
                 <div className="pt-2 border-t">
                   <AlertDialog>
@@ -235,8 +228,8 @@ const AdminShipments = () => {
                     <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
                       <AlertDialogHeader>
                         <AlertDialogTitle>
-                          {shipment.status === "closed" 
-                            ? "Remettre en ligne cette demande ?" 
+                          {shipment.status === "closed"
+                            ? "Remettre en ligne cette demande ?"
                             : "Masquer cette demande ?"}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
@@ -247,7 +240,10 @@ const AdminShipments = () => {
                       </AlertDialogHeader>
                       <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                         <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
-                        <AlertDialogAction className="w-full sm:w-auto" onClick={() => handleToggleVisibility(shipment.id, shipment.status)}>
+                        <AlertDialogAction
+                          className="w-full sm:w-auto"
+                          onClick={() => handleToggleVisibility(shipment.id, shipment.status)}
+                        >
                           {shipment.status === "closed" ? "Remettre en ligne" : "Masquer"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -296,9 +292,7 @@ const AdminShipments = () => {
                   <TableCell>{shipment.item_type}</TableCell>
                   <TableCell>{shipment.weight_kg} kg</TableCell>
                   <TableCell>{getStatusBadge(shipment.status)}</TableCell>
-                  <TableCell>
-                    {format(new Date(shipment.created_at), "d MMM yyyy", { locale: fr })}
-                  </TableCell>
+                  <TableCell>{format(new Date(shipment.created_at), "d MMM yyyy", { locale: fr })}</TableCell>
                   <TableCell>
                     {shipment.status !== "matched" && shipment.status !== "completed" && (
                       <AlertDialog>
@@ -327,8 +321,8 @@ const AdminShipments = () => {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              {shipment.status === "closed" 
-                                ? "Remettre en ligne cette demande ?" 
+                              {shipment.status === "closed"
+                                ? "Remettre en ligne cette demande ?"
                                 : "Masquer cette demande ?"}
                             </AlertDialogTitle>
                             <AlertDialogDescription>

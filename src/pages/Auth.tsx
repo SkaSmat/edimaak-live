@@ -29,10 +29,22 @@ const phoneCodeOptions = getPhoneCodeOptions();
 // Google icon SVG
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-    <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-    <path d="M3.964 10.706A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
-    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.962L3.964 7.294C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    <path
+      d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+      fill="#4285F4"
+    />
+    <path
+      d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
+      fill="#34A853"
+    />
+    <path
+      d="M3.964 10.706A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"
+      fill="#FBBC05"
+    />
+    <path
+      d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.962L3.964 7.294C4.672 5.166 6.656 3.58 9 3.58z"
+      fill="#EA4335"
+    />
   </svg>
 );
 
@@ -101,18 +113,13 @@ const Auth = () => {
   const checkSocialLoginCompletion = async (userId: string) => {
     try {
       // First check if user is admin - admins don't need to complete profile
-      const { data: isAdminResult } = await supabase
-        .rpc('has_role', { _user_id: userId, _role: 'admin' });
-      
+      const { data: isAdminResult } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+
       if (isAdminResult) {
         return false; // Admin, no completion needed
       }
 
-      const { data: privateInfo } = await supabase
-        .from("private_info")
-        .select("phone")
-        .eq("id", userId)
-        .maybeSingle();
+      const { data: privateInfo } = await supabase.from("private_info").select("phone").eq("id", userId).maybeSingle();
 
       // If no phone number, show completion modal
       if (!privateInfo?.phone) {
@@ -148,7 +155,7 @@ const Auth = () => {
       if (event === "PASSWORD_RECOVERY") {
         navigate("/profile");
       }
-      
+
       // Handle social login return (SIGNED_IN event from OAuth)
       if (event === "SIGNED_IN" && session && !isNewSignupRef.current) {
         const needsCompletion = await checkSocialLoginCompletion(session.user.id);
@@ -219,7 +226,7 @@ const Auth = () => {
         });
 
         if (error) throw error;
-        
+
         if (data.session) {
           // Mark as new signup IMMEDIATELY (ref updates sync) to prevent auto-redirect
           isNewSignupRef.current = true;
@@ -267,7 +274,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
 
   const handleSocialCompletionDone = () => {
     setShowSocialCompletion(false);
@@ -324,7 +330,6 @@ const Auth = () => {
                   <GoogleIcon />
                   <span>Continuer avec Google</span>
                 </Button>
-
               </div>
 
               {/* Separator */}
@@ -345,113 +350,115 @@ const Auth = () => {
                       <Input
                         id="fullName"
                         value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      required
-                      placeholder="Jean Dupont"
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Je veux commencer par *</Label>
-                    <select
-                      id="role"
-                      value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value as "traveler" | "sender" })}
-                      className="w-full h-11 px-3 py-2 border border-input rounded-md bg-background text-sm"
-                    >
-                      <option value="traveler">Voyager (Transporteur)</option>
-                      <option value="sender">Expédier (Envoyer un colis)</option>
-                    </select>
-                    <p className="text-[10px] text-muted-foreground">
-                      Pas d'inquiétude, vous pourrez changer de rôle plus tard avec le même compte.
-                    </p>
-                  </div>
-
-                  {/* SÉLECTEUR DE PAYS + TÉLÉPHONE */}
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone *</Label>
-                    <div className="flex gap-2">
-                      <div className="w-44">
-                        <SearchableSelect
-                          options={phoneCodeOptions}
-                          value={phoneCode}
-                          onValueChange={setPhoneCode}
-                          placeholder="Indicatif"
-                          searchPlaceholder="Rechercher un pays..."
-                          emptyMessage="Aucun pays trouvé."
-                          triggerClassName="h-11"
-                        />
-                      </div>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="6 12 34 56 78"
-                        className="h-11 flex-1"
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         required
+                        placeholder="Jean Dupont"
+                        className="h-11"
                       />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Recherchez votre pays pour sélectionner l'indicatif.</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Je veux commencer par *</Label>
+                      <select
+                        id="role"
+                        value={formData.role}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as "traveler" | "sender" })}
+                        className="w-full h-11 px-3 py-2 border border-input rounded-md bg-background text-sm"
+                      >
+                        <option value="traveler">Voyager (Transporteur)</option>
+                        <option value="sender">Expédier (Envoyer un colis)</option>
+                      </select>
+                      <p className="text-[10px] text-muted-foreground">
+                        Pas d'inquiétude, vous pourrez changer de rôle plus tard avec le même compte.
+                      </p>
+                    </div>
+
+                    {/* SÉLECTEUR DE PAYS + TÉLÉPHONE */}
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Téléphone *</Label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="w-full sm:w-44">
+                          <SearchableSelect
+                            options={phoneCodeOptions}
+                            value={phoneCode}
+                            onValueChange={setPhoneCode}
+                            placeholder="Indicatif"
+                            searchPlaceholder="Rechercher..."
+                            emptyMessage="Aucun pays trouvé."
+                            triggerClassName="h-11 w-full"
+                          />
+                        </div>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="6 12 34 56 78"
+                          className="h-11 flex-1"
+                          required
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Recherchez votre pays pour sélectionner l'indicatif.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    placeholder="vous@example.com"
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Mot de passe *</Label>
+                    {view === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => setView("reset_password")}
+                        className="text-sm text-primary hover:underline font-medium"
+                      >
+                        Mot de passe oublié ?
+                      </button>
+                    )}
                   </div>
-                </>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  placeholder="vous@example.com"
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mot de passe *</Label>
-                  {view === "login" && (
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      placeholder="••••••••"
+                      className="h-11 pr-10"
+                    />
                     <button
                       type="button"
-                      onClick={() => setView("reset_password")}
-                      className="text-sm text-primary hover:underline font-medium"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     >
-                      Mot de passe oublié ?
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
-                  )}
+                  </div>
                 </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    placeholder="••••••••"
-                    className="h-11 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
 
-              <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : view === "login" ? (
-                  "Se connecter"
-                ) : (
-                  "Créer mon compte"
-                )}
-              </Button>
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : view === "login" ? (
+                    "Se connecter"
+                  ) : (
+                    "Créer mon compte"
+                  )}
+                </Button>
               </form>
             </div>
           )}
@@ -475,10 +482,7 @@ const Auth = () => {
       </Card>
 
       {/* Onboarding Modal for new signups */}
-      <OnboardingModal 
-        isOpen={showOnboarding} 
-        onClose={() => setShowOnboarding(false)} 
-      />
+      <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
 
       {/* Social Login Completion Modal - for Google/Facebook signups missing phone */}
       <SocialLoginCompletionModal

@@ -22,6 +22,7 @@ import {
   Loader2,
   Star,
   Eye,
+  LayoutDashboard,
 } from "lucide-react";
 import { LogoEdiM3ak } from "@/components/LogoEdiM3ak";
 import { format } from "date-fns";
@@ -38,6 +39,10 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { NotificationBell } from "@/components/NotificationBell";
+
+// Import world countries for intelligent selection
+import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
+
 interface ShipmentRequest {
   id: string;
   from_city: string;
@@ -66,11 +71,26 @@ interface ShipmentRequest {
   sender_reviews_count?: number;
 }
 
-// Import world countries for intelligent selection
-import { WORLD_COUNTRIES, getWorldCountryOptions } from "@/lib/worldData";
-
 // Liste des pays disponibles - now uses all world countries
 const COUNTRIES = WORLD_COUNTRIES.map((c) => c.name);
+
+const safeLocalStorage = {
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      // Si le stockage est désactivé, on ignore silencieusement
+    }
+  },
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -89,6 +109,7 @@ const Index = () => {
   const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
   const [alertCreated, setAlertCreated] = useState(false);
   const [isCreatingAlert, setIsCreatingAlert] = useState(false);
+
   const currentFromCity = searchParams.get("from") || "";
   const currentToCity = searchParams.get("to") || "";
   const currentSearchDate = searchParams.get("date") || "";
@@ -114,15 +135,18 @@ const Index = () => {
     setLocalFromCity(localToCity);
     setLocalToCity(tempCity);
   };
+
   const getDashboardPath = (userRole: UserRole): string => {
     if (userRole === "sender") return "/dashboard/sender";
     if (userRole === "admin") return "/admin";
     return "/dashboard/traveler";
   };
+
   const handleDashboardClick = useCallback(() => {
     resetUnreadCount();
     navigate(getDashboardPath(userRole));
   }, [userRole, navigate, resetUnreadCount]);
+
   useEffect(() => {
     // Chargement initial des annonces même si l'auth n'est pas encore prête
     fetchShipmentRequests(null);
@@ -145,13 +169,13 @@ const Index = () => {
       const { data, error: fetchError } = await supabase
         .from("shipment_requests")
         .select("*")
-        .in("status", ["open", "completed"])
         .neq("sender_id", currentUserId || "00000000-0000-0000-0000-000000000000")
-        .gte("latest_date", today) // BUG 6 FIX: Exclude expired shipments
+        .or(`status.eq.completed,and(status.eq.open,latest_date.gte.${today})`)
         .order("created_at", { ascending: false })
         .limit(30);
 
       if (fetchError) throw fetchError;
+
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map((r) => r.sender_id))];
 
@@ -240,6 +264,7 @@ const Index = () => {
       setIsLoading(false);
     }
   };
+
   const filteredRequests = useMemo(() => {
     let filtered = shipmentRequests;
     if (currentFromCity)
@@ -249,6 +274,7 @@ const Index = () => {
     if (currentSearchDate) filtered = filtered.filter((req) => isDateInRange(req, currentSearchDate));
     return filtered;
   }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate]);
+
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -272,6 +298,7 @@ const Index = () => {
       }, 100);
     }
   };
+
   const handleShipmentClick = useCallback(
     async (shipment: ShipmentRequest) => {
       setSelectedShipment(shipment);
@@ -280,37 +307,41 @@ const Index = () => {
       if (session?.user?.id && session.user.id !== shipment.sender_id) {
         // Vérifier si l'utilisateur a déjà vu cette demande dans les dernières 24h
         const viewKey = `viewed_shipment_${shipment.id}`;
-        const lastViewed = localStorage.getItem(viewKey);
+        const lastViewed = safeLocalStorage.getItem(viewKey);
         const now = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000;
 
         if (!lastViewed || now - parseInt(lastViewed) > twentyFourHours) {
           // Incrémenter le compteur dans la base de données
           await supabase.rpc("increment_shipment_view_count", { shipment_id: shipment.id });
-          localStorage.setItem(viewKey, now.toString());
+          safeLocalStorage.setItem(viewKey, now.toString());
         }
       }
     },
     [session?.user?.id],
   );
+
   const handleSignUp = useCallback(() => {
     if (selectedShipment) {
-      localStorage.setItem("targetShipmentId", selectedShipment.id);
+      safeLocalStorage.setItem("targetShipmentId", selectedShipment.id);
       navigate("/auth?role=traveler&view=signup");
     }
   }, [selectedShipment, navigate]);
+
   const handleLogin = useCallback(() => {
     if (selectedShipment) {
-      localStorage.setItem("targetShipmentId", selectedShipment.id);
+      safeLocalStorage.setItem("targetShipmentId", selectedShipment.id);
       navigate("/auth");
     }
   }, [selectedShipment, navigate]);
+
   const handleViewProfile = useCallback(
     (userId: string) => {
       navigate(`/user/${userId}`);
     },
     [navigate],
   );
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* HEADER OPTIMISÉ */}
@@ -335,9 +366,14 @@ const Index = () => {
                   onClick={handleDashboardClick}
                   size="sm"
                   className="rounded-full font-medium relative overflow-visible text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-10"
+                  aria-label="Mon Dashboard" // Accessibilité
                 >
                   <span className="hidden sm:inline">Mon Dashboard</span>
-                  <span className="sm:hidden">Dashboard</span>
+                  {/* Mobile : Icône Dashboard au lieu du texte */}
+                  <span className="sm:hidden">
+                    <LayoutDashboard className="w-4 h-4" />
+                  </span>
+
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 animate-bounce items-center justify-center rounded-full bg-red-600 text-[9px] sm:text-[10px] font-bold text-white shadow-sm ring-2 ring-white z-50">
                       {unreadCount > 9 ? "9+" : unreadCount}
@@ -368,7 +404,6 @@ const Index = () => {
           </div>
         </div>
       </header>
-
 
       <HeroSection />
 
@@ -513,7 +548,7 @@ const Index = () => {
                       toCountry,
                       date: localSearchDate,
                     };
-                    localStorage.setItem("searchIntent", JSON.stringify(searchIntent));
+                    safeLocalStorage.setItem("searchIntent", JSON.stringify(searchIntent)); // ✅ SÉCURISÉ
                     navigate("/auth?role=traveler&view=signup");
                   }}
                   size="lg"

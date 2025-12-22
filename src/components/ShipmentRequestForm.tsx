@@ -30,37 +30,48 @@ interface ShipmentRequestFormProps {
   };
 }
 
-const COUNTRIES = WORLD_COUNTRIES.map(c => c.name);
+const COUNTRIES = WORLD_COUNTRIES.map((c) => c.name);
 const VALID_ITEM_TYPES = ["Documents", "Vêtements", "Médicaments", "Argent", "Autres"] as const;
 
 // Zod schema for shipment request validation - sans limite de poids
-const shipmentSchema = z.object({
-  fromCountry: z.string().min(1, "Pays d'origine requis"),
-  fromCity: z.string().min(1, "Ville d'origine requise").max(100, "Nom de ville trop long"),
-  toCountry: z.string().min(1, "Pays de destination requis"),
-  toCity: z.string().min(1, "Ville de destination requise").max(100, "Nom de ville trop long"),
-  earliestDate: z.string().min(1, "Date de début requise"),
-  latestDate: z.string().min(1, "Date limite requise"),
-  weightKg: z.string().min(1, "Poids requis").transform((val) => {
-    const num = parseFloat(val);
-    if (isNaN(num)) throw new Error("Poids invalide");
-    return num;
-  }).refine((val) => val > 0, "Le poids doit être supérieur à 0"),
-  itemType: z.enum(VALID_ITEM_TYPES, { errorMap: () => ({ message: "Type d'objet invalide" }) }),
-  notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
-  price: z.string().optional().transform((val) => {
-    if (!val || val === "") return null;
-    const num = parseFloat(val);
-    if (isNaN(num)) return null;
-    return num;
-  }).refine((val) => val === null || (val > 0 && val <= 10000), "Le prix doit être entre 1 et 10000 €"),
-}).refine((data) => data.fromCountry !== data.toCountry, {
-  message: "Le départ et l'arrivée ne peuvent pas être le même pays",
-  path: ["toCountry"],
-}).refine((data) => data.latestDate >= data.earliestDate, {
-  message: "La date limite ne peut pas être avant la date de début",
-  path: ["latestDate"],
-});
+const shipmentSchema = z
+  .object({
+    fromCountry: z.string().min(1, "Pays d'origine requis"),
+    fromCity: z.string().min(1, "Ville d'origine requise").max(100, "Nom de ville trop long"),
+    toCountry: z.string().min(1, "Pays de destination requis"),
+    toCity: z.string().min(1, "Ville de destination requise").max(100, "Nom de ville trop long"),
+    earliestDate: z.string().min(1, "Date de début requise"),
+    latestDate: z.string().min(1, "Date limite requise"),
+    weightKg: z
+      .string()
+      .min(1, "Poids requis")
+      .transform((val) => {
+        const num = parseFloat(val);
+        if (isNaN(num)) throw new Error("Poids invalide");
+        return num;
+      })
+      .refine((val) => val > 0, "Le poids doit être supérieur à 0"),
+    itemType: z.enum(VALID_ITEM_TYPES, { errorMap: () => ({ message: "Type d'objet invalide" }) }),
+    notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
+    price: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val || val === "") return null;
+        const num = parseFloat(val);
+        if (isNaN(num)) return null;
+        return num;
+      })
+      .refine((val) => val === null || (val > 0 && val <= 10000), "Le prix doit être entre 1 et 10000 €"),
+  })
+  .refine((data) => data.fromCountry !== data.toCountry, {
+    message: "Le départ et l'arrivée ne peuvent pas être le même pays",
+    path: ["toCountry"],
+  })
+  .refine((data) => data.latestDate >= data.earliestDate, {
+    message: "La date limite ne peut pas être avant la date de début",
+    path: ["latestDate"],
+  });
 
 const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -75,7 +86,7 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
     earliestDate: editData?.earliest_date || "",
     latestDate: editData?.latest_date || "",
     weightKg: editData?.weight_kg?.toString() || "",
-    itemType: (editData?.item_type || "") as typeof VALID_ITEM_TYPES[number] | "",
+    itemType: (editData?.item_type || "") as (typeof VALID_ITEM_TYPES)[number] | "",
     itemTypeOther: "", // BUG 7: Field for "Autres, précisez"
     notes: editData?.notes || "",
     price: editData?.price?.toString() || "",
@@ -143,7 +154,9 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
         const fileName = `${userId}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from("shipment-images").upload(fileName, imageFile);
         if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from("shipment-images").getPublicUrl(fileName);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("shipment-images").getPublicUrl(fileName);
         imageUrl = publicUrl;
       } else if (imagePreview === null && editData?.image_url) {
         imageUrl = null;
@@ -206,7 +219,12 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
             required
           >
             {COUNTRIES.map((c) => (
-              <option key={c} value={c} disabled={c === formData.toCountry} className={c === formData.toCountry ? "text-gray-300" : ""}>
+              <option
+                key={c}
+                value={c}
+                disabled={c === formData.toCountry}
+                className={c === formData.toCountry ? "text-gray-300" : ""}
+              >
                 {c}
               </option>
             ))}
@@ -232,7 +250,12 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
             required
           >
             {COUNTRIES.map((c) => (
-              <option key={c} value={c} disabled={c === formData.fromCountry} className={c === formData.fromCountry ? "text-gray-300" : ""}>
+              <option
+                key={c}
+                value={c}
+                disabled={c === formData.fromCountry}
+                className={c === formData.fromCountry ? "text-gray-300" : ""}
+              >
                 {c}
               </option>
             ))}
@@ -251,38 +274,67 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
 
         <div className="space-y-2">
           <Label>Dispo à partir du *</Label>
-          <Input type="date" min={today} value={formData.earliestDate} onChange={(e) => setFormData({ ...formData, earliestDate: e.target.value })} required />
+          <Input
+            type="date"
+            min={today}
+            value={formData.earliestDate}
+            onChange={(e) => setFormData({ ...formData, earliestDate: e.target.value })}
+            required
+          />
         </div>
         <div className="space-y-2">
           <Label>Jusqu'au *</Label>
-          <Input type="date" min={formData.earliestDate || today} value={formData.latestDate} onChange={(e) => setFormData({ ...formData, latestDate: e.target.value })} required />
+          <Input
+            type="date"
+            min={formData.earliestDate || today}
+            value={formData.latestDate}
+            onChange={(e) => setFormData({ ...formData, latestDate: e.target.value })}
+            required
+          />
         </div>
         <div className="space-y-2">
           <Label>Poids (kg) *</Label>
-          <Input type="number" step="0.1" min="0.1" value={formData.weightKg} onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })} required placeholder="Ex: 2" />
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            min="0.1"
+            value={formData.weightKg}
+            onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })}
+            required
+            placeholder="Ex: 2"
+          />
         </div>
         <div className="space-y-2">
           <Label>Type d'objet *</Label>
           <select
             value={formData.itemType}
-            onChange={(e) => setFormData({ ...formData, itemType: e.target.value as typeof VALID_ITEM_TYPES[number], itemTypeOther: "" })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                itemType: e.target.value as (typeof VALID_ITEM_TYPES)[number],
+                itemTypeOther: "",
+              })
+            }
             className="w-full px-3 py-2 border border-input rounded-md bg-background h-10"
             required
           >
             <option value="">Sélectionner...</option>
             {VALID_ITEM_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
+              <option key={type} value={type}>
+                {type}
+              </option>
             ))}
           </select>
         </div>
-        
+
         {/* BUG 7: Conditional field for "Autres, précisez" */}
         {formData.itemType === "Autres" && (
           <div className="space-y-2">
             <Label>Précisez le type *</Label>
-            <Input 
-              type="text" 
-              value={formData.itemTypeOther} 
+            <Input
+              type="text"
+              value={formData.itemTypeOther}
               onChange={(e) => setFormData({ ...formData, itemTypeOther: e.target.value })}
               placeholder="Ex: Jouets, Livres, Accessoires..."
               required
@@ -291,8 +343,19 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
           </div>
         )}
         <div className="space-y-2">
-          <Label>Prix proposé (€) <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
-          <Input type="number" step="1" min="1" max="10000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="Ex: 50" />
+          <Label>
+            Prix proposé (€) <span className="text-muted-foreground font-normal">(optionnel)</span>
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            step="1"
+            min="1"
+            max="10000"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            placeholder="Ex: 50"
+          />
         </div>
       </div>
       <div className="space-y-2">
@@ -300,7 +363,13 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
         {imagePreview ? (
           <div className="relative">
             <img src={imagePreview} alt="Aperçu" className="w-full h-48 object-cover rounded-lg border" />
-            <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={removeImage}
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -308,12 +377,19 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-muted/40">
             <Upload className="w-8 h-8 text-muted-foreground mb-2" />
             <span className="text-sm text-muted-foreground">Ajouter une photo (Max 5Mo, JPG/PNG/WebP/GIF)</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} className="hidden" />
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleImageChange}
+              className="hidden"
+            />
           </label>
         )}
       </div>
       <div className="space-y-2">
-        <Label>Notes <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span></Label>
+        <Label>
+          Notes <span className="text-muted-foreground text-xs">({formData.notes.length}/1000)</span>
+        </Label>
         <Textarea
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })}
@@ -330,11 +406,18 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
           <div className="flex-1 space-y-3">
             <p className="text-sm text-amber-800 font-medium">⚠️ Limite de valeur : 200€ maximum pour débuter</p>
             <p className="text-xs text-amber-700">
-              Pour votre sécurité, les colis de grande valeur (électronique, bijoux, argent liquide) ne sont pas couverts.
-              <a href="/securite" className="underline hover:text-amber-900 ml-1">En savoir plus</a>
+              Pour votre sécurité, les colis de grande valeur (électronique, bijoux, argent liquide) ne sont pas
+              couverts.
+              <a href="/securite" className="underline hover:text-amber-900 ml-1">
+                En savoir plus
+              </a>
             </p>
             <div className="flex items-center space-x-2">
-              <Checkbox id="value-limit" checked={valueLimitConfirmed} onCheckedChange={(checked) => setValueLimitConfirmed(checked === true)} />
+              <Checkbox
+                id="value-limit"
+                checked={valueLimitConfirmed}
+                onCheckedChange={(checked) => setValueLimitConfirmed(checked === true)}
+              />
               <label htmlFor="value-limit" className="text-sm text-amber-900 cursor-pointer">
                 Je confirme que la valeur de mon colis ne dépasse pas 200€
               </label>
@@ -344,7 +427,13 @@ const ShipmentRequestForm = ({ userId, onSuccess, editData }: ShipmentRequestFor
       </div>
 
       <Button type="submit" disabled={loading || !valueLimitConfirmed} className="w-full">
-        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isEditing ? "Enregistrer les modifications" : "Créer la demande"}
+        {loading ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : isEditing ? (
+          "Enregistrer les modifications"
+        ) : (
+          "Créer la demande"
+        )}
       </Button>
     </form>
   );
