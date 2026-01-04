@@ -13,7 +13,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getPhoneCodeOptions, getPhoneCodeById } from "@/lib/countryData";
 import { validatePhoneNumber, formatFullPhoneNumber } from "@/lib/phoneValidation";
 import { OnboardingModal } from "@/components/OnboardingModal";
-import { SocialLoginCompletionModal } from "@/components/SocialLoginCompletionModal";
+
 
 const authSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -58,8 +58,6 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showSocialCompletion, setShowSocialCompletion] = useState(false);
-  const [socialUserId, setSocialUserId] = useState<string>("");
   // Use ref instead of state to prevent race condition with onAuthStateChange
   const isNewSignupRef = useRef(false);
 
@@ -108,7 +106,6 @@ const Auth = () => {
   };
 
   // Check if user needs to complete profile (social login without phone)
-  // Check if user needs to complete profile (social login without phone)
   // Admins are excluded from this check
   const checkSocialLoginCompletion = async (userId: string) => {
     try {
@@ -121,10 +118,9 @@ const Auth = () => {
 
       const { data: privateInfo } = await supabase.from("private_info").select("phone").eq("id", userId).maybeSingle();
 
-      // If no phone number, show completion modal
+      // If no phone number, redirect to complete-profile page
       if (!privateInfo?.phone) {
-        setSocialUserId(userId);
-        setShowSocialCompletion(true);
+        navigate("/complete-profile");
         return true; // needs completion
       }
       return false; // profile complete
@@ -275,10 +271,6 @@ const Auth = () => {
     }
   };
 
-  const handleSocialCompletionDone = () => {
-    setShowSocialCompletion(false);
-    setShowOnboarding(true);
-  };
 
   return (
     <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
@@ -484,12 +476,6 @@ const Auth = () => {
       {/* Onboarding Modal for new signups */}
       <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
 
-      {/* Social Login Completion Modal - for Google/Facebook signups missing phone */}
-      <SocialLoginCompletionModal
-        isOpen={showSocialCompletion}
-        userId={socialUserId}
-        onComplete={handleSocialCompletionDone}
-      />
     </div>
   );
 };
