@@ -9,7 +9,7 @@ import { getPhoneCodeOptions } from "@/lib/countryData";
 import { validatePhoneNumber, formatFullPhoneNumber } from "@/lib/phoneValidation";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Plane, Package, Shield } from "lucide-react";
+import { Loader2, Plane, Package, Shield, LogOut } from "lucide-react";
 import { AuthLogo } from "@/components/LogoIcon";
 
 const phoneCodeOptions = getPhoneCodeOptions();
@@ -129,6 +129,11 @@ const CompleteProfile = () => {
     );
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg shadow-lg rounded-2xl border-0">
@@ -244,6 +249,17 @@ const CompleteProfile = () => {
               ) : (
                 "Valider mon profil"
               )}
+            </Button>
+
+            {/* Logout option */}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full mt-2 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Changer de compte
             </Button>
           </form>
         </CardContent>
