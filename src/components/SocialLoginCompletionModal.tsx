@@ -65,6 +65,13 @@ export const SocialLoginCompletionModal = ({ isOpen, userId, onComplete }: Socia
       if (profileError) throw profileError;
 
       toast.success("Profil complété !");
+      // Track Meta Pixel CompleteRegistration for Google signup
+      if (typeof (window as any).fbq === "function") {
+        (window as any).fbq("track", "CompleteRegistration", {
+          method: "google",
+          content_name: role,
+        });
+      }
       onComplete();
     } catch (error: any) {
       console.error("Error completing profile:", error);

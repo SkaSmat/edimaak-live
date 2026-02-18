@@ -237,6 +237,13 @@ const Auth = () => {
           }
 
           toast.success("Compte créé !");
+          // Track Meta Pixel CompleteRegistration for email signup
+          if (typeof (window as any).fbq === "function") {
+            (window as any).fbq("track", "CompleteRegistration", {
+              method: "email",
+              content_name: formData.role,
+            });
+          }
           // Show onboarding modal for new signups instead of direct redirect
           setShowOnboarding(true);
         } else {
