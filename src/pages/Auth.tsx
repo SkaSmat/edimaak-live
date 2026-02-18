@@ -226,6 +226,16 @@ const Auth = () => {
         if (data.session) {
           // Mark as new signup IMMEDIATELY (ref updates sync) to prevent auto-redirect
           isNewSignupRef.current = true;
+
+          // Facebook Pixel: CompleteRegistration
+          if (typeof window !== "undefined" && (window as any).fbq) {
+            (window as any).fbq('track', 'CompleteRegistration', {
+              user_type: formData.role,
+              method: 'email',
+              user_id: data.user?.id || '',
+            });
+          }
+
           toast.success("Compte créé !");
           // Show onboarding modal for new signups instead of direct redirect
           setShowOnboarding(true);
