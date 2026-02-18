@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
+import { RequireCompleteProfile } from "@/components/RequireCompleteProfile";
 
 // Lazy load all pages except the landing page for better initial load
 const Auth = lazy(() => import("./pages/Auth"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const TravelerDashboard = lazy(() => import("./pages/TravelerDashboard"));
 const TravelerTrips = lazy(() => import("./pages/TravelerTrips"));
 const TravelerMatches = lazy(() => import("./pages/TravelerMatches"));
@@ -39,148 +41,159 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
+        <RequireCompleteProfile>
+          <Routes>
+            <Route path="/" element={<Index />} />
 
-          <Route
-            path="/auth"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Auth />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/auth"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Auth />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/reset-password"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <ResetPassword />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/complete-profile"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <CompleteProfile />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/user/:userId"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <PublicProfile />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/reset-password"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <ResetPassword />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/dashboard/traveler"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TravelerDashboard />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/dashboard/traveler/trips"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TravelerTrips />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/dashboard/traveler/matches"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TravelerMatches />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/user/:userId"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <PublicProfile />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/dashboard/sender"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <SenderDashboard />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/dashboard/sender/shipments"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <SenderShipments />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/dashboard/sender/matches"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <SenderMatches />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/dashboard/traveler"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <TravelerDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/dashboard/traveler/trips"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <TravelerTrips />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/dashboard/traveler/matches"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <TravelerMatches />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/messages"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Messages />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/messages/direct/:conversationId"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <DirectChat />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/dashboard/sender"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <SenderDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/dashboard/sender/shipments"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <SenderShipments />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/dashboard/sender/matches"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <SenderMatches />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/admin"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Admin />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/messages"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Messages />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/messages/direct/:conversationId"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <DirectChat />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Profile />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/admin"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Admin />
+                </Suspense>
+              }
+            />
 
-          <Route
-            path="/legal"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Legal />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/securite"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Security />
-              </Suspense>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Profile />
+                </Suspense>
+              }
+            />
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route
-            path="*"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <NotFound />
-              </Suspense>
-            }
-          />
-        </Routes>
+            <Route
+              path="/legal"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Legal />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/securite"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Security />
+                </Suspense>
+              }
+            />
+
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <NotFound />
+                </Suspense>
+              }
+            />
+          </Routes>
+        </RequireCompleteProfile>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
