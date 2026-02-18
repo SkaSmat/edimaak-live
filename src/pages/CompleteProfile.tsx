@@ -105,6 +105,15 @@ const CompleteProfile = () => {
 
       if (profileError) throw profileError;
 
+      // Facebook Pixel: CompleteRegistration (social login)
+      if (typeof window !== "undefined" && (window as any).fbq) {
+        (window as any).fbq('track', 'CompleteRegistration', {
+          user_type: role,
+          method: 'google',
+          user_id: userId || '',
+        });
+      }
+
       toast.success("Profil complété avec succès !");
 
       // Redirect based on role
