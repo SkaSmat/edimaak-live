@@ -31,9 +31,9 @@ export const ProfileAvatarUpload = ({
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("L'image ne doit pas dépasser 2 Mo");
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 5 Mo");
       return;
     }
 
