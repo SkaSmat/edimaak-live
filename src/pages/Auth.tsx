@@ -213,6 +213,10 @@ const Auth = () => {
         // Construire le numéro complet avec indicatif
         const fullPhone = formatFullPhoneNumber(formData.phone, phoneCode);
 
+        // Set ref BEFORE signUp to prevent onAuthStateChange from triggering
+        // checkSocialLoginCompletion while signUp is in progress (would cause double events)
+        isNewSignupRef.current = true;
+
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -228,8 +232,6 @@ const Auth = () => {
         if (error) throw error;
 
         if (data.session) {
-          // Mark as new signup IMMEDIATELY (ref updates sync) to prevent auto-redirect
-          isNewSignupRef.current = true;
           toast.success("Compte créé !");
           // Track Meta Pixel CompleteRegistration for email signup
           if (typeof (window as any).fbq === "function") {
@@ -245,6 +247,8 @@ const Auth = () => {
         }
       }
     } catch (error: any) {
+      // Reset signup flag on error so user can retry
+      isNewSignupRef.current = false;
       if (error.message.includes("already registered")) {
         toast.error("Cet email a déjà un compte. Connectez-vous !");
         setView("login");
