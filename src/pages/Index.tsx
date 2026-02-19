@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { useAuth, UserRole } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { isDateInRange } from "@/lib/utils/shipmentHelpers";
+import { getFlexibleMatchInfo, getCountryOnlyMatchInfo, areCitiesInSameRegion, FlexibleMatchInfo } from "@/lib/regionMapping";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -268,14 +269,82 @@ const Index = () => {
   };
 
   const filteredRequests = useMemo(() => {
-    let filtered = shipmentRequests;
-    if (currentFromCity)
-      filtered = filtered.filter((req) => req.from_city.toLowerCase().includes(currentFromCity.toLowerCase().trim()));
-    if (currentToCity)
-      filtered = filtered.filter((req) => req.to_city.toLowerCase().includes(currentToCity.toLowerCase().trim()));
-    if (currentSearchDate) filtered = filtered.filter((req) => isDateInRange(req, currentSearchDate));
-    return filtered;
-  }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate]);
+    // If no search criteria, return all shipments
+    if (!currentFromCity && !currentToCity && !currentSearchDate) {
+      return shipmentRequests;
+    }
+
+    const normalize = (text: string) => (text ? text.toLowerCase().trim() : "");
+    const searchFromCity = normalize(currentFromCity);
+    const searchToCity = normalize(currentToCity);
+
+    // Use the same flexible matching system as the traveler dashboard
+    return shipmentRequests
+      .map((req) => {
+        // Origin matching: exact city name or same region
+        if (searchFromCity) {
+          const reqFromCity = normalize(req.from_city);
+          const isExactFrom = reqFromCity.includes(searchFromCity) || searchFromCity.includes(reqFromCity);
+          const isSameFromRegion = !isExactFrom && areCitiesInSameRegion(
+            currentFromCity, fromCountry,
+            req.from_city, req.from_country
+          );
+          if (!isExactFrom && !isSameFromRegion) return null;
+        }
+
+        // Destination matching: use getFlexibleMatchInfo (includes date + city/region)
+        if (searchToCity && currentSearchDate) {
+          const matchInfo = getFlexibleMatchInfo(
+            currentSearchDate,
+            currentToCity,
+            toCountry,
+            req.earliest_date,
+            req.latest_date,
+            req.to_city,
+            req.to_country
+          );
+          if (matchInfo) return { ...req, _matchScore: matchInfo.score, _matchInfo: matchInfo };
+
+          // Fallback: country-only match
+          const countryMatch = getCountryOnlyMatchInfo(
+            currentSearchDate,
+            toCountry,
+            req.earliest_date,
+            req.latest_date,
+            req.to_country
+          );
+          if (countryMatch) return { ...req, _matchScore: countryMatch.score, _matchInfo: countryMatch };
+          return null;
+        }
+
+        // Destination city only (no date)
+        if (searchToCity) {
+          const reqToCity = normalize(req.to_city);
+          const isExactTo = reqToCity.includes(searchToCity) || searchToCity.includes(reqToCity);
+          const isSameToRegion = !isExactTo && areCitiesInSameRegion(
+            currentToCity, toCountry,
+            req.to_city, req.to_country
+          );
+          if (!isExactTo && !isSameToRegion) return null;
+        }
+
+        // Date only (no destination city)
+        if (currentSearchDate && !searchToCity) {
+          const dateInfo = getFlexibleMatchInfo(
+            currentSearchDate,
+            req.to_city, req.to_country,
+            req.earliest_date, req.latest_date,
+            req.to_city, req.to_country
+          );
+          if (!dateInfo) return null;
+          return { ...req, _matchScore: dateInfo.score, _matchInfo: dateInfo };
+        }
+
+        return { ...req, _matchScore: 50 };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => (b._matchScore || 0) - (a._matchScore || 0)) as typeof shipmentRequests;
+  }, [shipmentRequests, currentFromCity, currentToCity, currentSearchDate, fromCountry, toCountry]);
 
   const handleSearchClick = (e: React.FormEvent) => {
     e.preventDefault();
