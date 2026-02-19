@@ -197,7 +197,7 @@ const PublicListings = () => {
                     <ShareButtons
                       title={`Colis ${shipment.from_city} → ${shipment.to_city}`}
                       text={`Cherche un voyageur pour transporter un colis de ${shipment.from_city} vers ${shipment.to_city} (${shipment.weight_kg}kg) sur EdiMaak`}
-                      url={`https://edimaak.com/annonces`}
+                      url={`https://edimaak.com/?shipment=${shipment.id}`}
                     />
                   </div>
                 </div>
