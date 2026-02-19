@@ -52,8 +52,8 @@ const MyMatches = ({ userId }: MyMatchesProps) => {
         .from("matches")
         .select(`
           *,
-          trips:trip_id(id, from_city, to_city, departure_date, traveler_id),
-          shipment_requests:shipment_request_id(id, item_type, from_city, to_city, sender_id, profiles:sender_id(full_name))
+          trips:trip_id!inner(id, from_city, to_city, departure_date, traveler_id),
+          shipment_requests:shipment_request_id!inner(id, item_type, from_city, to_city, sender_id, profiles:sender_id(full_name))
         `)
         .eq("trips.traveler_id", userId)
         .in("status", ["accepted", "completed"])
