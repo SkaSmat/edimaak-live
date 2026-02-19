@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Package, Calendar, MapPin, ArrowRight, Weight, Search, Loader2 } from "lucide-react";
@@ -75,8 +76,23 @@ const PublicListings = () => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
+  const pageTitle = routeFilter
+    ? `Colis ${routeFilter.replace("-", " → ")} - EDIMAAK`
+    : "Annonces de colis entre particuliers - EDIMAAK";
+  const pageDescription = `${totalCount} demande${totalCount > 1 ? "s" : ""} d'expédition active${totalCount > 1 ? "s" : ""}. Trouvez un voyageur pour transporter votre colis en toute sécurité.`;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content={`https://edimaak.com/annonces${routeFilter ? `?route=${routeFilter}` : ""}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://edimaak.com/og-image.png" />
+        <link rel="canonical" href={`https://edimaak.com/annonces${routeFilter ? `?route=${routeFilter}` : ""}`} />
+      </Helmet>
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -180,8 +196,8 @@ const PublicListings = () => {
                     </Button>
                     <ShareButtons
                       title={`Colis ${shipment.from_city} → ${shipment.to_city}`}
-                      text={`Cherche un voyageur pour transporter un colis de ${shipment.from_city} vers ${shipment.to_city} (${shipment.weight_kg}kg)`}
-                      url="https://edimaak.com/annonces"
+                      text={`Cherche un voyageur pour transporter un colis de ${shipment.from_city} vers ${shipment.to_city} (${shipment.weight_kg}kg) sur EdiMaak`}
+                      url={`https://edimaak.com/annonces`}
                     />
                   </div>
                 </div>
