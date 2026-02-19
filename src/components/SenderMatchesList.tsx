@@ -75,8 +75,8 @@ const SenderMatchesList = ({ embedded = false, userId }: SenderMatchesListProps)
         .select(
           `
           *,
-          trips:trip_id(id, from_city, to_city, departure_date, traveler_id, profiles:traveler_id(full_name)),
-          shipment_requests:shipment_request_id(id, item_type, from_city, to_city, sender_id)
+          trips:trip_id!inner(id, from_city, to_city, departure_date, traveler_id, profiles:traveler_id(full_name)),
+          shipment_requests:shipment_request_id!inner(id, item_type, from_city, to_city, sender_id)
         `,
         )
         .eq("shipment_requests.sender_id", userId)
