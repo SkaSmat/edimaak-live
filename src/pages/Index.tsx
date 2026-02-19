@@ -695,13 +695,6 @@ const Index = () => {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   )}
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ShareButtons
-                      title={`Colis ${request.from_city} → ${request.to_city}`}
-                      text={`Quelqu'un cherche un voyageur pour transporter un colis de ${request.from_city} vers ${request.to_city}. Poids: ${request.weight_kg}kg`}
-                      url={`https://edimaak.com/`}
-                    />
-                  </div>
                 </div>
               </div>
             ))}
