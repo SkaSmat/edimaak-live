@@ -164,6 +164,27 @@ const Index = () => {
     }
   }, [authLoading, session?.user?.id]);
 
+  // Auto-open modal if ?shipment=ID is in URL
+  useEffect(() => {
+    const shipmentId = searchParams.get("shipment");
+    if (shipmentId && shipmentRequests.length > 0 && !selectedShipment) {
+      const found = shipmentRequests.find((s) => s.id === shipmentId);
+      if (found) {
+        setSelectedShipment(found);
+      } else {
+        // Fetch the specific shipment if not in current list
+        supabase
+          .from("shipment_requests")
+          .select("*")
+          .eq("id", shipmentId)
+          .single()
+          .then(({ data }) => {
+            if (data) setSelectedShipment(data as ShipmentRequest);
+          });
+      }
+    }
+  }, [searchParams, shipmentRequests]);
+
   const fetchShipmentRequests = async (currentUserId: string | null) => {
     setIsLoading(true);
     setError(null);
@@ -783,7 +804,7 @@ const Index = () => {
                     <ShareButtons
                       title={`Colis ${request.from_city} → ${request.to_city}`}
                       text={`Quelqu'un cherche un voyageur pour transporter un colis de ${request.from_city} vers ${request.to_city} (${request.weight_kg}kg) sur EdiMaak`}
-                      url={`https://edimaak.com/?from=${encodeURIComponent(request.from_city)}&to=${encodeURIComponent(request.to_city)}`}
+                      url={`https://edimaak.com/?shipment=${request.id}`}
                     />
                   </div>
                 </div>
