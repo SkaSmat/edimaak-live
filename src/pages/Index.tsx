@@ -31,6 +31,7 @@ import { SearchBarSection } from "@/components/landing/SearchBarSection";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import ShareButtons from "@/components/ShareButtons";
+import FlexibleMatchBadge from "@/components/FlexibleMatchBadge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
@@ -71,6 +72,8 @@ interface ShipmentRequest {
   sender_kyc_verified?: boolean;
   sender_rating?: number | null;
   sender_reviews_count?: number;
+  _matchInfo?: FlexibleMatchInfo;
+  _matchScore?: number;
 }
 
 // Liste des pays disponibles - now uses all world countries
@@ -697,6 +700,17 @@ const Index = () => {
                   </div>
                 </div>
 
+                {/* Badge de matching flexible */}
+                {isSearching && request._matchInfo && (
+                  <div className="px-3 sm:px-4 pb-1">
+                    <FlexibleMatchBadge
+                      matchInfo={request._matchInfo}
+                      tripDate={currentSearchDate ? format(new Date(currentSearchDate), "dd MMM") : undefined}
+                      shipmentDateRange={`${format(new Date(request.earliest_date), "dd MMM")} - ${format(new Date(request.latest_date), "dd MMM")}`}
+                    />
+                  </div>
+                )}
+
                 {/* Expéditeur + Poids */}
                 <div className="px-3 sm:px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -764,6 +778,14 @@ const Index = () => {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   )}
+                  {/* Boutons de partage */}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ShareButtons
+                      title={`Colis ${request.from_city} → ${request.to_city}`}
+                      text={`Quelqu'un cherche un voyageur pour transporter un colis de ${request.from_city} vers ${request.to_city} (${request.weight_kg}kg) sur EdiMaak`}
+                      url={`https://edimaak.com/?from=${encodeURIComponent(request.from_city)}&to=${encodeURIComponent(request.to_city)}`}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
