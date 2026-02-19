@@ -272,7 +272,7 @@ export const isDateFlexiblyCompatible = (
   tripDate: string,
   earliestDate: string,
   latestDate: string,
-  toleranceDays: number = 5
+  toleranceDays: number = MATCH_TOLERANCE_DAYS
 ): { isCompatible: boolean; isExact: boolean; daysDifference: number } => {
   const trip = new Date(tripDate);
   const earliest = new Date(earliestDate);
@@ -308,8 +308,11 @@ export const isDateFlexiblyCompatible = (
   };
 };
 
+// Dynamic tolerance: wider for small platforms (cold start)
+export const MATCH_TOLERANCE_DAYS = 10;
+
 // Types for match quality
-export type MatchType = 'exact' | 'flexible_date' | 'flexible_location' | 'flexible_both';
+export type MatchType = 'exact' | 'flexible_date' | 'flexible_location' | 'flexible_both' | 'country_only';
 
 export interface FlexibleMatchInfo {
   matchType: MatchType;
@@ -317,7 +320,37 @@ export interface FlexibleMatchInfo {
   isExactLocation: boolean;
   dateDifference: number; // Days
   regionName?: string;
+  score: number; // 0-100 match quality score
 }
+
+// Calculate a quality score for sorting matches
+export const calculateMatchScore = (matchType: MatchType, isExactDate: boolean, isExactLocation: boolean, dateDifference: number): number => {
+  let score = 0;
+
+  // Location score (0-50)
+  if (isExactLocation) {
+    score += 50;
+  } else if (matchType === 'flexible_location' || matchType === 'flexible_both') {
+    score += 30; // Regional match
+  } else if (matchType === 'country_only') {
+    score += 10; // Same country only
+  }
+
+  // Date score (0-50)
+  if (isExactDate) {
+    score += 50;
+  } else if (dateDifference <= 3) {
+    score += 40;
+  } else if (dateDifference <= 7) {
+    score += 30;
+  } else if (dateDifference <= 10) {
+    score += 20;
+  } else {
+    score += 5;
+  }
+
+  return score;
+};
 
 // Determine match type and info
 export const getFlexibleMatchInfo = (
@@ -361,11 +394,55 @@ export const getFlexibleMatchInfo = (
     matchType = 'flexible_location';
   }
   
+  const isExactLocation = isExactCity;
+  const score = calculateMatchScore(matchType, dateCheck.isExact, isExactLocation, dateCheck.daysDifference);
+
   return {
     matchType,
     isExactDate: dateCheck.isExact,
-    isExactLocation: isExactCity,
+    isExactLocation,
     dateDifference: dateCheck.daysDifference,
-    regionName: isSameRegion ? getRegionName(shipmentToCity, shipmentToCountry) || undefined : undefined
+    regionName: isSameRegion ? getRegionName(shipmentToCity, shipmentToCountry) || undefined : undefined,
+    score,
+  };
+};
+
+// Country-only match info for suggestions (relaxed matching for cold start)
+export const getCountryOnlyMatchInfo = (
+  tripDate: string,
+  tripToCountry: string,
+  shipmentEarliestDate: string,
+  shipmentLatestDate: string,
+  shipmentToCountry: string,
+): FlexibleMatchInfo | null => {
+  // Must be same destination country
+  if (tripToCountry.toLowerCase() !== shipmentToCountry.toLowerCase()) return null;
+
+  const trip = new Date(tripDate);
+  const earliest = new Date(shipmentEarliestDate);
+  const latest = new Date(shipmentLatestDate);
+
+  let daysDiff = 0;
+  const isExact = trip >= earliest && trip <= latest;
+  if (!isExact) {
+    if (trip < earliest) {
+      daysDiff = getDateDifferenceInDays(tripDate, shipmentEarliestDate);
+    } else {
+      daysDiff = getDateDifferenceInDays(tripDate, shipmentLatestDate);
+    }
+  }
+
+  // Only show suggestions within 30 days
+  if (daysDiff > 30) return null;
+
+  const matchType: MatchType = 'country_only';
+  const score = calculateMatchScore(matchType, isExact, false, daysDiff);
+
+  return {
+    matchType,
+    isExactDate: isExact,
+    isExactLocation: false,
+    dateDifference: daysDiff,
+    score,
   };
 };

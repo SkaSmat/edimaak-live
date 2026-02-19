@@ -41,13 +41,13 @@ const tripSchema = z
     arrivalDate: z.string().optional(),
     maxWeightKg: z
       .string()
-      .optional()
+      .min(1, "Indiquez le poids disponible (meme approximatif)")
       .transform((val) => {
         if (!val || val === "") return 0;
         const num = parseFloat(val);
         return isNaN(num) ? 0 : num;
       })
-      .refine((val) => val >= 0, "Le poids doit être positif ou nul"),
+      .refine((val) => val > 0, "Le poids doit etre superieur a 0"),
     notes: z.string().max(1000, "Notes trop longues (max 1000 caractères)").optional(),
   })
   .refine((data) => data.fromCountry !== data.toCountry, {
@@ -287,17 +287,42 @@ const TripForm = ({ userId, onSuccess, editData }: TripFormProps) => {
 
           <div className="space-y-1">
             <Label>
-              Poids Dispo (kg) <span className="text-muted-foreground font-normal">(Optionnel)</span>
+              Poids disponible (kg) <span className="text-destructive">*</span>
             </Label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {[
+                { label: "5 kg", value: "5" },
+                { label: "10 kg", value: "10" },
+                { label: "20 kg", value: "20" },
+                { label: "30 kg", value: "30" },
+              ].map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, maxWeightKg: preset.value })}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    formData.maxWeightKg === preset.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
             <Input
               type="number"
               inputMode="decimal"
               step="0.5"
-              min="0"
+              min="0.5"
               value={formData.maxWeightKg}
               onChange={(e) => setFormData({ ...formData, maxWeightKg: e.target.value })}
               placeholder="Ex: 23"
+              required
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Aide les expediteurs a savoir si vous pouvez transporter leur colis.
+            </p>
           </div>
         </div>
       </div>

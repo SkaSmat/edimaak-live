@@ -30,6 +30,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { SearchBarSection } from "@/components/landing/SearchBarSection";
 import { getShipmentImageUrl } from "@/lib/shipmentImageHelper";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import ShareButtons from "@/components/ShareButtons";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatShortName } from "@/lib/nameHelper";
 import { ShipmentDetailModal } from "@/components/ShipmentDetailModal";
@@ -682,11 +683,11 @@ const Index = () => {
                 )}
 
                 {/* Bouton CTA */}
-                <div className="p-3 sm:p-4 pt-2 mt-auto">
+                <div className="p-3 sm:p-4 pt-2 mt-auto space-y-2">
                   {request.status === "completed" ? (
                     <div className="w-full bg-green-100 text-green-800 border border-green-300 font-medium text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-default">
                       <CheckCircle className="w-3.5 h-3.5" />
-                      Colis livré
+                      Colis livre
                     </div>
                   ) : (
                     <div className="w-full bg-primary/15 hover:bg-primary/20 text-[hsl(var(--primary-dark))] font-semibold text-xs sm:text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors group-hover:bg-primary group-hover:text-white">
@@ -694,6 +695,13 @@ const Index = () => {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   )}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ShareButtons
+                      title={`Colis ${request.from_city} → ${request.to_city}`}
+                      text={`Quelqu'un cherche un voyageur pour transporter un colis de ${request.from_city} vers ${request.to_city}. Poids: ${request.weight_kg}kg`}
+                      url={`https://edimaak.com/`}
+                    />
+                  </div>
                 </div>
               </div>
             ))}

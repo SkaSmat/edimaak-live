@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import SenderMatchesList from "@/components/SenderMatchesList";
 import CompatibleTrips from "@/components/CompatibleTrips";
+import AlertManager from "@/components/AlertManager";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Package, Handshake, ChevronRight, Loader2, CheckCircle, Clock, XCircle, AlertCircle, ArrowRight, Plane, Users } from "lucide-react";
@@ -291,7 +292,7 @@ const SenderDashboard = () => {
               <h2 className="text-lg sm:text-xl font-bold text-foreground">Voyageurs compatibles</h2>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Voyageurs dont le trajet correspond à vos demandes (matching flexible : ±5 jours, villes proches)
+              Voyageurs dont le trajet correspond a vos demandes (matching flexible : ±10 jours, villes proches)
             </p>
           </div>
           <CompatibleTrips userId={profile?.id} />
@@ -316,6 +317,13 @@ const SenderDashboard = () => {
             </Button>
           </div>
           <SenderMatchesList embedded={true} userId={profile?.id} />
+        </div>
+
+        {/* Alert management section */}
+        <div className="pt-2 sm:pt-4">
+          <section className="bg-card rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6">
+            <AlertManager userId={profile?.id} />
+          </section>
         </div>
       </div>
     </DashboardLayout>
