@@ -25,6 +25,7 @@ const Security = lazy(() => import("./pages/Security"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+const PublicListings = lazy(() => import("./pages/PublicListings"));
 
 const queryClient = new QueryClient();
 
@@ -179,6 +180,15 @@ const App = () => (
               element={
                 <Suspense fallback={<PageLoader />}>
                   <Security />
+                </Suspense>
+              }
+            />
+
+            <Route
+              path="/annonces"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <PublicListings />
                 </Suspense>
               }
             />

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CompatibleShipments from "@/components/CompatibleShipments";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import AlertManager from "@/components/AlertManager";
 
 const TravelerDashboard = () => {
   const navigate = useNavigate();
@@ -198,6 +199,11 @@ const TravelerDashboard = () => {
             </div>
           </div>
           <CompatibleShipments userId={user.id} />
+        </section>
+
+        {/* Alert management section */}
+        <section className="bg-card rounded-xl sm:rounded-2xl shadow-sm border p-4 sm:p-6">
+          <AlertManager userId={user.id} />
         </section>
       </div>
     </DashboardLayout>

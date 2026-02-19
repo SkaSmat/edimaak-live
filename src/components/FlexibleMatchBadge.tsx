@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, MapPin } from "lucide-react";
+import { CheckCircle, Clock, MapPin, Globe } from "lucide-react";
 import { FlexibleMatchInfo } from "@/lib/regionMapping";
 
 interface FlexibleMatchBadgeProps {
@@ -58,7 +58,23 @@ const FlexibleMatchBadge = ({
             </div>
           </div>
         );
-      
+
+      case "country_only":
+        return (
+          <div className="flex flex-wrap gap-1">
+            <Badge variant="outline" className={`bg-gray-50 text-gray-600 border-gray-200 ${className}`}>
+              <Globe className="w-3 h-3 mr-1" />
+              Même pays
+            </Badge>
+            {!matchInfo.isExactDate && matchInfo.dateDifference > 0 && (
+              <Badge variant="outline" className={`bg-amber-50 text-amber-700 border-amber-200 ${className}`}>
+                <Clock className="w-3 h-3 mr-1" />
+                {matchInfo.dateDifference}j d'écart
+              </Badge>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
