@@ -24,6 +24,16 @@ function formatDateFr(date: Date): string {
   return `${day} ${month} ${year}`;
 }
 
+function escapeHtml(unsafe: string | number | null | undefined): string {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
@@ -199,8 +209,8 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Content -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 16px 16px;">
-              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${senderFirstName},</p>
-              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${traveler_name} se rend à ${villeArrivee} et propose de transporter votre colis !</p>
+              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${escapeHtml(senderFirstName)},</p>
+              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${escapeHtml(traveler_name)} se rend à ${escapeHtml(villeArrivee)} et propose de transporter votre colis !</p>
               
               <!-- Trip Details Card -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f4f0; border-radius: 12px; margin-bottom: 24px;">
@@ -211,25 +221,25 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr>
                         <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                           <span style="color: #666666; font-size: 14px;">Départ</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${villeDepart}</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(villeDepart)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                           <span style="color: #666666; font-size: 14px;">Arrivée</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${villeArrivee}</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(villeArrivee)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                           <span style="color: #666666; font-size: 14px;">Date</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${dateVoyage}</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(dateVoyage)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0;">
                           <span style="color: #666666; font-size: 14px;">Capacité disponible</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${capacite} kg</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(capacite)} kg</span>
                         </td>
                       </tr>
                     </table>
@@ -246,7 +256,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </tr>
               </table>
               
-              <p style="margin: 24px 0 0 0; font-size: 14px; color: #666666; text-align: center;">Consultez le profil de ${traveler_name} et échangez directement avec lui/elle.</p>
+              <p style="margin: 24px 0 0 0; font-size: 14px; color: #666666; text-align: center;">Consultez le profil de ${escapeHtml(traveler_name)} et échangez directement avec lui/elle.</p>
               
               <!-- Warning -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">

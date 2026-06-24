@@ -6,6 +6,16 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
 
+function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -136,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
     <p>Excellente nouvelle !</p>
     
     <div class="highlight">
-      <strong>${sender_name}</strong> a accepté votre proposition pour transporter son colis sur le trajet <strong>${shipment_route}</strong>
+      <strong>${escapeHtml(sender_name)}</strong> a accepté votre proposition pour transporter son colis sur le trajet <strong>${escapeHtml(shipment_route)}</strong>
     </div>
     
     <p>Vous pouvez maintenant discuter des détails de la remise du colis via la messagerie.</p>

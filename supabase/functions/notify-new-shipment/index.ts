@@ -6,6 +6,16 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+function escapeHtml(unsafe: string | number | null | undefined): string {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
@@ -287,15 +297,15 @@ const handler = async (req: Request): Promise<Response> => {
 <body>
   <div class="header">
     <h1>📦 ${isAlert ? "Alerte : Nouveau colis disponible !" : "Nouvelle demande d'expédition"}</h1>
-    <p>${record.from_city} → ${record.to_city}</p>
+    <p>${escapeHtml(record.from_city)} → ${escapeHtml(record.to_city)}</p>
   </div>
   <div class="content">
     ${isAlert ? '<span class="alert-badge">✓ Correspond à votre alerte</span>' : ''}
-    <p>Bonjour <strong>${firstName}</strong>,</p>
+    <p>Bonjour <strong>${escapeHtml(firstName)}</strong>,</p>
     ${introMessage}
     
-    <div class="detail">🗺️ <strong>Trajet :</strong> ${record.from_city} (${record.from_country}) → ${record.to_city} (${record.to_country})</div>
-    <div class="detail">📦 <strong>Type :</strong> ${record.item_type}</div>
+    <div class="detail">🗺️ <strong>Trajet :</strong> ${escapeHtml(record.from_city)} (${escapeHtml(record.from_country)}) → ${escapeHtml(record.to_city)} (${escapeHtml(record.to_country)})</div>
+    <div class="detail">📦 <strong>Type :</strong> ${escapeHtml(record.item_type)}</div>
     ${priceSection}
     <div class="detail">📅 <strong>Date souhaitée :</strong> Entre le ${formatDate(record.earliest_date)} et le ${formatDate(record.latest_date)}</div>
     

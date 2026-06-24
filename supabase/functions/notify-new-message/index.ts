@@ -17,6 +17,16 @@ function formatTimeFr(date: Date): string {
   return `${hours}h${minutes}`;
 }
 
+function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
@@ -242,8 +252,8 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Content -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 16px 16px;">
-              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${recipientFirstName},</p>
-              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${senderFirstName} vous a envoyé un message concernant votre ${typeAnnonce}.</p>
+              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${escapeHtml(recipientFirstName)},</p>
+              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${escapeHtml(senderFirstName)} vous a envoyé un message concernant votre ${escapeHtml(typeAnnonce)}.</p>
               
               <!-- Message Card -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f4f0; border-radius: 12px; margin-bottom: 24px;">
@@ -252,16 +262,16 @@ const handler = async (req: Request): Promise<Response> => {
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                       <tr>
                         <td width="48" valign="top">
-                          <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #E75C3C, #FF7A3A); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; line-height: 40px; text-align: center;">${senderInitial}</div>
+                          <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #E75C3C, #FF7A3A); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; line-height: 40px; text-align: center;">${escapeHtml(senderInitial)}</div>
                         </td>
                         <td style="padding-left: 12px;" valign="top">
-                          <p style="margin: 0; font-weight: 600; color: #333333; font-size: 14px;">${senderFirstName}</p>
-                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #999999;">${heureMessage}</p>
+                          <p style="margin: 0; font-weight: 600; color: #333333; font-size: 14px;">${escapeHtml(senderFirstName)}</p>
+                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #999999;">${escapeHtml(heureMessage)}</p>
                         </td>
                       </tr>
                     </table>
                     <div style="margin-top: 16px; padding: 16px; background-color: #ffffff; border-radius: 8px; border-left: 3px solid #E75C3C;">
-                      <p style="margin: 0; font-size: 14px; color: #333333; font-style: italic;">"${apercuMessage}"</p>
+                      <p style="margin: 0; font-size: 14px; color: #333333; font-style: italic;">"${escapeHtml(apercuMessage)}"</p>
                     </div>
                   </td>
                 </tr>
@@ -281,8 +291,8 @@ const handler = async (req: Request): Promise<Response> => {
                 <tr>
                   <td style="text-align: center; padding: 16px; background-color: #f8f4f0; border-radius: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #666666; text-transform: uppercase; letter-spacing: 1px;">📍 Trajet concerné</p>
-                    <p style="margin: 0; font-size: 16px; color: #333333; font-weight: 600;">${villeDepart} → ${villeArrivee}</p>
-                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #666666;">${dateVoyage}</p>
+                    <p style="margin: 0; font-size: 16px; color: #333333; font-weight: 600;">${escapeHtml(villeDepart)} → ${escapeHtml(villeArrivee)}</p>
+                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #666666;">${escapeHtml(dateVoyage)}</p>
                   </td>
                 </tr>
               </table>
