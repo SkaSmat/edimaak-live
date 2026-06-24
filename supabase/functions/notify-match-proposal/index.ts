@@ -221,25 +221,25 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr>
                         <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                           <span style="color: #666666; font-size: 14px;">Départ</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${villeDepart}</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(villeDepart)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                           <span style="color: #666666; font-size: 14px;">Arrivée</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${villeArrivee}</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(villeArrivee)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                           <span style="color: #666666; font-size: 14px;">Date</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${dateVoyage}</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(dateVoyage)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0;">
                           <span style="color: #666666; font-size: 14px;">Capacité disponible</span>
-                          <span style="float: right; color: #333333; font-weight: 600;">${capacite} kg</span>
+                          <span style="float: right; color: #333333; font-weight: 600;">${escapeHtml(capacite)} kg</span>
                         </td>
                       </tr>
                     </table>
