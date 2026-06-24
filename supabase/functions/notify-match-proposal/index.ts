@@ -256,7 +256,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </tr>
               </table>
               
-              <p style="margin: 24px 0 0 0; font-size: 14px; color: #666666; text-align: center;">Consultez le profil de ${traveler_name} et échangez directement avec lui/elle.</p>
+              <p style="margin: 24px 0 0 0; font-size: 14px; color: #666666; text-align: center;">Consultez le profil de ${escapeHtml(traveler_name)} et échangez directement avec lui/elle.</p>
               
               <!-- Warning -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
