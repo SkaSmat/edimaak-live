@@ -291,8 +291,8 @@ const handler = async (req: Request): Promise<Response> => {
                 <tr>
                   <td style="text-align: center; padding: 16px; background-color: #f8f4f0; border-radius: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #666666; text-transform: uppercase; letter-spacing: 1px;">📍 Trajet concerné</p>
-                    <p style="margin: 0; font-size: 16px; color: #333333; font-weight: 600;">${villeDepart} → ${villeArrivee}</p>
-                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #666666;">${dateVoyage}</p>
+                    <p style="margin: 0; font-size: 16px; color: #333333; font-weight: 600;">${escapeHtml(villeDepart)} → ${escapeHtml(villeArrivee)}</p>
+                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #666666;">${escapeHtml(dateVoyage)}</p>
                   </td>
                 </tr>
               </table>
