@@ -96,7 +96,7 @@ const TransactionTracking = ({
       // Update match
       const { error } = await supabase
         .from("matches")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", matchId);
 
       if (error) throw error;
