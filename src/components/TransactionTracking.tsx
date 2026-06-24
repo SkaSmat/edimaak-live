@@ -81,7 +81,7 @@ const TransactionTracking = ({
   const handleUpdate = async (field: string) => {
     setLoading(field);
     try {
-      const updateData: Record<string, any> = { [field]: true };
+      const updateData: Record<string, unknown> = { [field]: true };
       
       // Si les deux confirmations de livraison sont faites, marquer comme completed
       const isCompleting = 
@@ -96,7 +96,7 @@ const TransactionTracking = ({
       // Update match
       const { error } = await supabase
         .from("matches")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", matchId);
 
       if (error) throw error;
