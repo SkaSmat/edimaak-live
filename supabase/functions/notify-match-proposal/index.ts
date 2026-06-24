@@ -209,8 +209,8 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Content -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 16px 16px;">
-              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${senderFirstName},</p>
-              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${traveler_name} se rend à ${villeArrivee} et propose de transporter votre colis !</p>
+              <p style="margin: 0 0 20px 0; font-size: 16px; color: #333333;">Bonjour ${escapeHtml(senderFirstName)},</p>
+              <p style="margin: 0 0 24px 0; font-size: 16px; color: #333333;">${escapeHtml(traveler_name)} se rend à ${escapeHtml(villeArrivee)} et propose de transporter votre colis !</p>
               
               <!-- Trip Details Card -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f4f0; border-radius: 12px; margin-bottom: 24px;">
