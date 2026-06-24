@@ -146,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
     <p>Excellente nouvelle !</p>
     
     <div class="highlight">
-      <strong>${sender_name}</strong> a accepté votre proposition pour transporter son colis sur le trajet <strong>${shipment_route}</strong>
+      <strong>${escapeHtml(sender_name)}</strong> a accepté votre proposition pour transporter son colis sur le trajet <strong>${escapeHtml(shipment_route)}</strong>
     </div>
     
     <p>Vous pouvez maintenant discuter des détails de la remise du colis via la messagerie.</p>
