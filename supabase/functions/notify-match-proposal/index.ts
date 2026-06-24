@@ -24,6 +24,16 @@ function formatDateFr(date: Date): string {
   return `${day} ${month} ${year}`;
 }
 
+function escapeHtml(unsafe: string | number | null | undefined): string {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
